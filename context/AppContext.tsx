@@ -32,7 +32,18 @@ const STORAGE_KEYS = {
 
 const NOTIFICATION_SOUND_URL = "https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3";
 
-// -- Helpers to map between DB (snake_case) and App (camelCase) --
+// -- Helpers --
+
+// Robust UUID generator that works in all environments
+const generateUUID = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
 
 const mapUserFromDB = (dbUser: any): User => {
   try {
@@ -80,14 +91,20 @@ const mapUserToDB = (user: User) => ({
   requests: user.requests,
 });
 
-const mapMessageFromDB = (dbMsg: any): Message => ({
-  id: dbMsg.id,
-  senderId: dbMsg.sender_id,
-  receiverId: dbMsg.receiver_id,
-  content: dbMsg.content,
-  timestamp: Number(dbMsg.timestamp),
-  read: !!dbMsg.read
-});
+const mapMessageFromDB = (dbMsg: any): Message => {
+  const ts = Number(dbMsg.timestamp);
+  // Handle both numeric timestamps (bigint) and ISO strings (timestamptz)
+  const finalTs = isNaN(ts) ? new Date(dbMsg.timestamp).getTime() : ts;
+  
+  return {
+    id: dbMsg.id,
+    senderId: dbMsg.sender_id,
+    receiverId: dbMsg.receiver_id,
+    content: dbMsg.content,
+    timestamp: isNaN(finalTs) ? Date.now() : finalTs, // Fallback to now if parsing fails completely
+    read: !!dbMsg.read
+  };
+};
 
 const mapMessageToDB = (msg: Message) => ({
   id: msg.id,
@@ -133,20 +150,30 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const isHidden = document.hidden;
     const hasPermission = "Notification" in window && Notification.permission === "granted";
 
-    if (isHidden && hasPermission) {
-      // Background: Use system notification with system sound (remove silent: true)
-      try {
-        new Notification(title, {
-          body,
-          icon: icon || '/favicon.ico',
-          badge: '/favicon.ico',
-          silent: false // Ensure system default sound plays
-        });
-      } catch (e) {
-        console.error("Notification error:", e);
+    if (isHidden) {
+      if (hasPermission) {
+        // Background: Use system notification logic
+        // Setting silent: false requests the system default notification sound
+        try {
+          new Notification(title, {
+            body,
+            icon: icon || '/favicon.ico',
+            badge: '/favicon.ico',
+            silent: false 
+          });
+        } catch (e) {
+          console.error("System notification error:", e);
+        }
+      } else {
+        // Fallback: Try playing audio even if permission missing (best effort for background)
+        try {
+           const audio = new Audio(NOTIFICATION_SOUND_URL);
+           audio.volume = 0.6;
+           audio.play().catch(() => {}); // Ignore errors in background
+        } catch (e) {}
       }
     } else {
-      // Foreground OR No Permission: Play custom sound
+      // Foreground: Play custom sound
       try {
         const audio = new Audio(NOTIFICATION_SOUND_URL);
         audio.volume = 0.6;
@@ -206,9 +233,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Realtime Subscriptions
   useEffect(() => {
     const channel = supabase.channel('public:data')
+      // Listen for new messages
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
         const newMsg = mapMessageFromDB(payload.new);
-        setMessages(prev => [...prev, newMsg]);
+        
+        // Avoid duplicates (optimistic UI might have already added it)
+        setMessages(prev => {
+            if (prev.some(m => m.id === newMsg.id)) return prev;
+            return [...prev, newMsg];
+        });
 
         // Handle Notifications for Messages
         if (currentUserRef.current && newMsg.receiverId === currentUserRef.current.id) {
@@ -230,6 +263,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           triggerNotification(`Message from ${senderName}`, newMsg.content, sender?.avatar);
         }
       })
+      // Listen for message updates (e.g., read receipts)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload) => {
+        const updatedMsg = mapMessageFromDB(payload.new);
+        // Update local state to reflect read status change or other updates
+        setMessages(prev => prev.map(m => m.id === updatedMsg.id ? updatedMsg : m));
+      })
+      // Listen for user updates
       .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, (payload) => {
         if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
           const updatedUser = mapUserFromDB(payload.new);
@@ -280,7 +320,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const loginWithCredentials = async (email: string, pass: string) => {
-     // Simulate auth check against loaded users (Real app would use Supabase Auth)
      const found = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === pass);
      if (found) {
        await login(found);
@@ -310,7 +349,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       alert("Failed to update profile");
       return;
     }
-    // State updates via realtime subscription
   };
 
   const deleteAccount = async () => {
@@ -322,7 +360,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const sendMessage = async (receiverId: string, content: string) => {
     if (!currentUser) return;
     const newMsg: Message = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       senderId: currentUser.id,
       receiverId,
       content,
@@ -378,15 +416,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const markConversationAsRead = async (senderId: string) => {
     if (!currentUser) return;
     
-    // Optimistic
+    // Optimistic Local Update
     setMessages(prev => prev.map(m => 
       (m.senderId === senderId && m.receiverId === currentUser.id && !m.read) 
         ? { ...m, read: true } 
         : m
     ));
 
-    // DB Update (Batch update not simple in Supabase JS without stored procedure, doing individual for simplicity or rely on backend trigger in real app)
-    // For this demo, we'll update locally mainly. To persist read status:
+    // DB Update to trigger realtime event for sender
     const unreadIds = messages
        .filter(m => m.senderId === senderId && m.receiverId === currentUser.id && !m.read)
        .map(m => m.id);

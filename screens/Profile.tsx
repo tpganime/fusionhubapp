@@ -6,6 +6,46 @@ import { Camera, Save, ArrowLeft, MessageCircle, UserPlus, Check, Lock, Calendar
 import { Gender } from '../types';
 import { useParams, useNavigate } from 'react-router-dom';
 
+// Helper to compress images before upload to ensure they fit in DB payload
+const compressImage = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 600; // Resize to reasonable max width
+        const MAX_HEIGHT = 600;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        // Compress to JPEG at 0.7 quality
+        resolve(canvas.toDataURL('image/jpeg', 0.7));
+      };
+      img.onerror = (error) => reject(error);
+    };
+    reader.onerror = (error) => reject(error);
+  });
+};
+
 export const ProfileScreen: React.FC = () => {
   const { currentUser, users, updateProfile, sendFriendRequest } = useApp();
   const { userId } = useParams<{ userId: string }>();
@@ -56,14 +96,21 @@ export const ProfileScreen: React.FC = () => {
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
      const file = e.target.files?.[0];
      if (file) {
-       const reader = new FileReader();
-       reader.onloadend = () => {
-         setAvatar(reader.result as string);
-       };
-       reader.readAsDataURL(file);
+       try {
+         const compressedBase64 = await compressImage(file);
+         setAvatar(compressedBase64);
+       } catch (err) {
+         console.error("Image compression failed", err);
+         // Fallback to uncompressed if something goes wrong
+         const reader = new FileReader();
+         reader.onloadend = () => {
+           setAvatar(reader.result as string);
+         };
+         reader.readAsDataURL(file);
+       }
      }
   };
 
@@ -72,6 +119,9 @@ export const ProfileScreen: React.FC = () => {
   const isRequested = profileUser.requests.includes(currentUser?.id || '');
   const canViewDetails = isOwnProfile || !profileUser.isPrivateProfile || isFriend;
 
+  // Display avatar: use local state if editing, otherwise profileUser
+  const displayAvatar = isEditing ? avatar : profileUser.avatar;
+
   return (
     <div className="min-h-screen pb-24 transition-colors duration-300">
       {isOwnProfile ? <TopBar /> : (
@@ -79,7 +129,7 @@ export const ProfileScreen: React.FC = () => {
         <div className="absolute top-0 left-0 z-50 p-4">
            <button 
              onClick={() => navigate(-1)} 
-             className="p-2 rounded-full bg-white/20 backdrop-blur-md border border-white/20 text-white shadow-lg hover:bg-white/30 transition-all"
+             className="p-2 rounded-full bg-black/20 backdrop-blur-md border border-white/20 text-white shadow-lg hover:bg-black/30 transition-all"
            >
              <ArrowLeft className="w-6 h-6" />
            </button>
@@ -88,20 +138,24 @@ export const ProfileScreen: React.FC = () => {
 
       {/* Profile Banner & Header */}
       <div className="relative">
-         <div className="h-48 w-full bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 overflow-hidden">
-            <div className="absolute inset-0 bg-black/10"></div>
-            <div className="absolute -top-10 -left-10 w-64 h-64 bg-blue-300/40 rounded-full mix-blend-overlay filter blur-3xl animate-blob"></div>
-            <div className="absolute top-20 -right-10 w-64 h-64 bg-yellow-300/40 rounded-full mix-blend-overlay filter blur-3xl animate-blob animation-delay-2000"></div>
+         {/* Background Image based on Avatar */}
+         <div className="h-48 w-full overflow-hidden relative bg-gray-200 dark:bg-gray-800">
+            <img 
+              src={displayAvatar} 
+              className="w-full h-full object-cover opacity-80 blur-md scale-110" 
+              alt="Banner Background"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/40"></div>
          </div>
          
          <div className="px-4">
             <div className="relative -mt-20 mb-4 flex flex-col items-center">
                <div className="relative w-32 h-32 group">
-                  <div className="absolute inset-0 rounded-full bg-white/30 dark:bg-black/30 blur-md transform translate-y-2"></div>
+                  <div className="absolute inset-0 rounded-full bg-black/20 blur-md transform translate-y-2"></div>
                   <img 
-                    src={isEditing ? avatar : profileUser.avatar} 
+                    src={displayAvatar} 
                     alt="Profile" 
-                    className="w-full h-full rounded-full object-cover border-[6px] border-white dark:border-dark-bg shadow-xl relative z-10" 
+                    className="w-full h-full rounded-full object-cover border-[6px] border-white dark:border-dark-bg shadow-xl relative z-10 bg-white dark:bg-gray-800" 
                   />
                   {isEditing && (
                     <label className="absolute bottom-2 right-2 z-20 bg-blue-500 p-2 rounded-full text-white shadow-lg cursor-pointer hover:bg-blue-600 transition-transform hover:scale-110">

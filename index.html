@@ -59,6 +59,28 @@
         box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
         border-top: 1px solid rgba(255, 255, 255, 0.4);
       }
+
+      /* Mesh Gradient Background matching the photo */
+      .mesh-bg {
+        background-color: #f4f9ff;
+        background-image: 
+            radial-gradient(at 100% 0%, rgba(255, 177, 94, 0.7) 0px, transparent 50%),
+            radial-gradient(at 100% 100%, rgba(163, 255, 167, 0.7) 0px, transparent 50%),
+            radial-gradient(at 0% 100%, rgba(148, 210, 255, 0.7) 0px, transparent 50%),
+            radial-gradient(at 0% 0%, rgba(255, 255, 255, 0.8) 0px, transparent 50%);
+        background-size: 100% 100%;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+      }
+      
+      .dark .mesh-bg {
+        background-color: #000000;
+        background-image: 
+            radial-gradient(at 100% 0%, rgba(255, 100, 0, 0.2) 0px, transparent 50%),
+            radial-gradient(at 100% 100%, rgba(0, 255, 0, 0.2) 0px, transparent 50%),
+            radial-gradient(at 0% 100%, rgba(0, 100, 255, 0.2) 0px, transparent 50%);
+        background-attachment: fixed;
+      }
     </style>
   <script type="importmap">
 {

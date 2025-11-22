@@ -29,7 +29,7 @@ export const SearchScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen pb-24 bg-gray-50/50 dark:bg-dark-bg transition-colors duration-300">
+    <div className="min-h-screen pb-24 transition-colors duration-300">
       <TopBar />
       <main className="px-4 pt-4">
         <h1 className="text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white">Search</h1>
@@ -41,7 +41,7 @@ export const SearchScreen: React.FC = () => {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by username..."
-            className="w-full pl-12 pr-4 py-3 rounded-2xl bg-white dark:bg-dark-surface border border-gray-200 dark:border-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-sm text-gray-900 dark:text-white transition-colors"
+            className="w-full pl-12 pr-4 py-3 rounded-2xl bg-white/60 dark:bg-dark-surface/60 backdrop-blur-sm border border-white/50 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-sm text-gray-900 dark:text-white transition-colors"
           />
         </div>
 
@@ -57,7 +57,7 @@ export const SearchScreen: React.FC = () => {
               <div 
                 key={user.id} 
                 onClick={() => navigate(`/user/${user.id}`)}
-                className="bg-white dark:bg-dark-surface p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center justify-between transition-all hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer group"
+                className="bg-white/70 dark:bg-dark-surface/70 backdrop-blur-sm p-4 rounded-2xl shadow-sm border border-white/50 dark:border-gray-700 flex items-center justify-between transition-all hover:bg-white/90 dark:hover:bg-dark-surface/90 cursor-pointer group"
               >
                 <div className="flex items-center space-x-3">
                   <img src={user.avatar} alt={user.username} className="w-12 h-12 rounded-full object-cover border border-gray-100 dark:border-gray-700" />

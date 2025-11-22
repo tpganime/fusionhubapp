@@ -48,9 +48,9 @@ export const SettingsScreen: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-dark-bg transition-colors duration-300">
-      <div className="sticky top-0 bg-white/80 dark:bg-dark-surface/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 p-4 flex items-center z-50">
-        <button onClick={() => navigate('/profile')} className="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 text-gray-900 dark:text-white">
+    <div className="min-h-screen transition-colors duration-300">
+      <div className="sticky top-0 bg-white/60 dark:bg-dark-surface/80 backdrop-blur-md border-b border-white/50 dark:border-gray-800 p-4 flex items-center z-50">
+        <button onClick={() => navigate('/profile')} className="p-2 -ml-2 rounded-full hover:bg-white/40 dark:hover:bg-white/10 text-gray-900 dark:text-white">
           <ArrowLeft className="w-6 h-6" />
         </button>
         <h2 className="text-xl font-bold ml-2 text-gray-900 dark:text-white">Settings</h2>
@@ -61,7 +61,7 @@ export const SettingsScreen: React.FC = () => {
         {/* Appearance */}
         <section>
           <h3 className="text-xs font-bold text-gray-400 uppercase mb-2 ml-3">Appearance</h3>
-          <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+          <div className="bg-white/70 dark:bg-dark-surface rounded-2xl shadow-sm border border-white/50 dark:border-gray-800 overflow-hidden">
              <div className="p-4 flex items-center justify-between">
                <div className="flex items-center gap-3">
                  <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-indigo-900 text-indigo-300' : 'bg-yellow-100 text-yellow-600'}`}>
@@ -80,7 +80,7 @@ export const SettingsScreen: React.FC = () => {
         {/* Privacy Controls */}
         <section>
           <h3 className="text-xs font-bold text-gray-400 uppercase mb-2 ml-3">Privacy</h3>
-          <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+          <div className="bg-white/70 dark:bg-dark-surface rounded-2xl shadow-sm border border-white/50 dark:border-gray-800 overflow-hidden">
             <div className="p-4 flex items-center justify-between border-b border-gray-50 dark:border-gray-800">
                <div className="flex items-center gap-3">
                  <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg text-purple-600 dark:text-purple-300"><Eye className="w-5 h-5" /></div>
@@ -107,8 +107,8 @@ export const SettingsScreen: React.FC = () => {
         {/* Information */}
         <section>
           <h3 className="text-xs font-bold text-gray-400 uppercase mb-2 ml-3">Legal</h3>
-          <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
-            <button onClick={() => setShowPrivacyPolicy(true)} className="w-full p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+          <div className="bg-white/70 dark:bg-dark-surface rounded-2xl shadow-sm border border-white/50 dark:border-gray-800 overflow-hidden">
+            <button onClick={() => setShowPrivacyPolicy(true)} className="w-full p-4 flex items-center justify-between hover:bg-white/80 dark:hover:bg-white/5 transition-colors">
                <div className="flex items-center gap-3">
                  <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg text-green-600 dark:text-green-300"><Shield className="w-5 h-5" /></div>
                  <span className="font-medium text-gray-900 dark:text-white">Privacy Policy</span>
@@ -121,14 +121,14 @@ export const SettingsScreen: React.FC = () => {
         {/* Account Actions */}
         <section>
           <h3 className="text-xs font-bold text-gray-400 uppercase mb-2 ml-3">Account</h3>
-          <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+          <div className="bg-white/70 dark:bg-dark-surface rounded-2xl shadow-sm border border-white/50 dark:border-gray-800 overflow-hidden">
             <button onClick={handleLogout} className="w-full p-4 flex items-center justify-between text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors border-b border-gray-50 dark:border-gray-800">
                <div className="flex items-center gap-3">
                  <div className="p-2 bg-orange-100 dark:bg-orange-900/50 rounded-lg"><LogOut className="w-5 h-5" /></div>
                  <span className="font-medium">Log Out</span>
                </div>
             </button>
-            <button onClick={() => alert("Account Deactivated (Simulation)")} className="w-full p-4 flex items-center justify-between text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors border-b border-gray-50 dark:border-gray-800">
+            <button onClick={() => alert("Account Deactivated (Simulation)")} className="w-full p-4 flex items-center justify-between text-gray-600 dark:text-gray-400 hover:bg-white/80 dark:hover:bg-white/5 transition-colors border-b border-gray-50 dark:border-gray-800">
                <div className="flex items-center gap-3">
                  <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg"><Lock className="w-5 h-5" /></div>
                  <span className="font-medium">Deactivate Account</span>
@@ -143,7 +143,7 @@ export const SettingsScreen: React.FC = () => {
           </div>
         </section>
 
-        <p className="text-center text-xs text-gray-400 mt-8">FusionHub v1.0.0</p>
+        <p className="text-center text-xs text-gray-400 mt-8">FusionHub v1.3.3</p>
 
       </main>
     </div>

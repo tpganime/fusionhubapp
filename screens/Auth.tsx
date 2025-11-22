@@ -68,14 +68,14 @@ export const AuthScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden bg-gray-50 dark:bg-dark-bg transition-colors duration-300">
-      {/* Background Blobs */}
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden mesh-bg transition-colors duration-300">
+      {/* Background Blobs - Keep these for extra flair on login */}
       <div className="absolute top-[-10%] left-[-10%] w-64 h-64 bg-blue-300 rounded-full mix-blend-multiply filter blur-2xl opacity-70 animate-blob dark:opacity-40 dark:mix-blend-normal dark:bg-blue-900"></div>
       <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-purple-300 rounded-full mix-blend-multiply filter blur-2xl opacity-70 animate-blob animation-delay-2000 dark:opacity-40 dark:mix-blend-normal dark:bg-purple-900"></div>
       <div className="absolute -bottom-8 left-20 w-64 h-64 bg-pink-300 rounded-full mix-blend-multiply filter blur-2xl opacity-70 animate-blob animation-delay-4000 dark:opacity-40 dark:mix-blend-normal dark:bg-pink-900"></div>
 
       <div className="w-full max-w-md glass-panel dark:bg-dark-surface/60 p-8 rounded-3xl shadow-2xl z-10 border border-white/30 dark:border-white/10">
-        <h1 className="text-3xl font-bold text-center mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400">
+        <h1 className="text-3xl font-bold text-center mb-2 text-black dark:text-white">
           FusionHub
         </h1>
         <p className="text-center text-gray-500 dark:text-gray-400 mb-8">{isLogin ? 'Welcome Back' : 'Create Account'}</p>

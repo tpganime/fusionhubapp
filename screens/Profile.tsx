@@ -72,7 +72,7 @@ export const ProfileScreen: React.FC = () => {
   const canViewDetails = isOwnProfile || !profileUser.isPrivateProfile || isFriend;
 
   return (
-    <div className="min-h-screen pb-24 bg-gray-50/50 dark:bg-dark-bg transition-colors duration-300">
+    <div className="min-h-screen pb-24 transition-colors duration-300">
       {isOwnProfile ? <TopBar /> : (
         // Custom Header for viewing other users
         <div className="absolute top-0 left-0 z-50 p-4">
@@ -149,7 +149,7 @@ export const ProfileScreen: React.FC = () => {
                            className={`px-6 py-2 rounded-full font-semibold flex items-center gap-2 transition-all ${
                              isRequested 
                                ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 cursor-default' 
-                               : 'bg-white dark:bg-dark-surface text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 shadow-sm'
+                               : 'bg-white/60 dark:bg-dark-surface/60 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-white/5 shadow-sm'
                            }`}
                          >
                            {isRequested ? 'Requested' : <><UserPlus className="w-4 h-4" /> Add Friend</>}
@@ -162,7 +162,7 @@ export const ProfileScreen: React.FC = () => {
                    {isOwnProfile && (
                       <button 
                         onClick={() => setIsEditing(true)}
-                        className="mt-6 px-6 py-2 bg-gray-100 dark:bg-white/5 rounded-full text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                        className="mt-6 px-6 py-2 bg-white/50 dark:bg-white/5 rounded-full text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-white/80 dark:hover:bg-white/10 transition-colors border border-white/30"
                       >
                         Edit Profile
                       </button>
@@ -177,7 +177,7 @@ export const ProfileScreen: React.FC = () => {
       {!isEditing && (
         <div className="px-4 mt-2">
           {canViewDetails ? (
-            <div className="bg-white dark:bg-dark-surface rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 space-y-5 animate-slide-up">
+            <div className="bg-white/70 dark:bg-dark-surface/80 backdrop-blur-sm rounded-3xl p-6 shadow-sm border border-white/50 dark:border-gray-800 space-y-5 animate-slide-up">
                <h3 className="font-bold text-gray-900 dark:text-white text-lg mb-4">About</h3>
                
                <div className="flex items-center gap-4">
@@ -213,7 +213,7 @@ export const ProfileScreen: React.FC = () => {
                )}
             </div>
           ) : (
-            <div className="bg-white/50 dark:bg-white/5 backdrop-blur-md rounded-3xl p-10 text-center border border-gray-100 dark:border-gray-800 mt-4">
+            <div className="bg-white/50 dark:bg-white/5 backdrop-blur-md rounded-3xl p-10 text-center border border-white/40 dark:border-gray-800 mt-4">
               <Lock className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
               <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Private Profile</h3>
               <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Only friends can see full details.</p>
@@ -225,7 +225,7 @@ export const ProfileScreen: React.FC = () => {
       {/* Edit Mode Form */}
       {isEditing && (
         <div className="px-4 mt-4 animate-fade-in">
-            <div className="bg-white dark:bg-dark-surface p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 space-y-4">
+            <div className="bg-white/80 dark:bg-dark-surface/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-white/50 dark:border-gray-800 space-y-4">
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase ml-1">Username</label>
                 <input 

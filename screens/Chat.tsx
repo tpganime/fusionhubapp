@@ -69,7 +69,7 @@ export const ChatScreen: React.FC = () => {
   // -- Chat List View --
   if (!selectedUser) {
     return (
-      <div className="min-h-screen pb-24 bg-gray-50/50 dark:bg-dark-bg transition-colors duration-300">
+      <div className="min-h-screen pb-24 transition-colors duration-300">
         <TopBar />
         <main className="px-4 pt-2">
           <h1 className="text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white">Chats</h1>
@@ -90,7 +90,7 @@ export const ChatScreen: React.FC = () => {
                   <button
                     key={user.id}
                     onClick={() => setSelectedUser(user)}
-                    className="w-full flex items-center p-3 bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                    className="w-full flex items-center p-3 bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white dark:border-gray-800 hover:bg-white dark:hover:bg-white/5 transition-colors"
                   >
                     <div className="relative">
                       <img src={user.avatar} alt={user.username} className="w-12 h-12 rounded-full object-cover border border-gray-200 dark:border-gray-700" />
@@ -117,7 +117,7 @@ export const ChatScreen: React.FC = () => {
 
   // -- Chat Detail View --
   return (
-    <div className="h-screen flex flex-col bg-gray-100 dark:bg-dark-bg transition-colors duration-300">
+    <div className="h-screen flex flex-col transition-colors duration-300">
       {/* Chat Header */}
       <div className="h-16 glass-panel dark:bg-dark-surface/80 flex items-center px-4 shadow-sm z-20 dark:border-gray-800">
         <button onClick={() => setSelectedUser(null)} className="p-2 -ml-2 mr-2 rounded-full hover:bg-gray-200/50 dark:hover:bg-white/10 text-gray-900 dark:text-white">

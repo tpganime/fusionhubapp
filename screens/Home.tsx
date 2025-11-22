@@ -44,13 +44,13 @@ export const HomeScreen: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50/50 dark:bg-dark-bg transition-colors duration-300">
+    <div className="min-h-screen transition-colors duration-300">
       <TopBar />
       
       <main className="px-4 pt-4 pb-32 space-y-6 animate-fade-in">
         
         {/* Header Card */}
-        <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-dark-surface shadow-xl p-6 border border-white/50 dark:border-gray-700 group hover:shadow-2xl transition-all duration-500">
+        <div className="relative overflow-hidden rounded-3xl bg-white/80 dark:bg-dark-surface shadow-xl p-6 border border-white/50 dark:border-gray-700 group hover:shadow-2xl transition-all duration-500 backdrop-blur-sm">
           <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-blue-200 via-purple-100 to-transparent dark:from-blue-900 dark:via-purple-900 dark:to-transparent rounded-bl-full opacity-60 transition-transform duration-700 group-hover:scale-110"></div>
           <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-pink-100 dark:bg-pink-900 rounded-full mix-blend-multiply filter blur-xl opacity-50 animate-blob"></div>
           
@@ -82,7 +82,7 @@ export const HomeScreen: React.FC = () => {
                 href={shortcut.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group relative flex flex-col p-4 rounded-2xl bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm shadow-sm hover:shadow-lg border border-white dark:border-gray-700 transition-all duration-300 hover:-translate-y-1"
+                className="group relative flex flex-col p-4 rounded-2xl bg-white/60 dark:bg-dark-surface/80 backdrop-blur-md shadow-sm hover:shadow-lg border border-white dark:border-gray-700 transition-all duration-300 hover:-translate-y-1"
               >
                 <div className="flex justify-between items-start mb-3">
                   <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform duration-300">

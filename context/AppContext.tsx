@@ -30,8 +30,6 @@ const STORAGE_KEYS = {
   CURRENT_USER_ID: 'fh_current_user_id_v1'
 };
 
-const NOTIFICATION_SOUND_URL = "https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3";
-
 // -- Helpers --
 
 // Robust UUID generator that works in all environments
@@ -145,41 +143,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     localStorage.setItem(STORAGE_KEYS.THEME, theme);
   }, [theme]);
 
-  // Sound and Notification Helper
+  // Notification Helper (Sound Removed)
   const triggerNotification = (title: string, body: string, icon?: string) => {
     const isHidden = document.hidden;
     const hasPermission = "Notification" in window && Notification.permission === "granted";
 
-    if (isHidden) {
-      if (hasPermission) {
-        // Background: Use system notification logic
-        // Setting silent: false requests the system default notification sound
-        try {
-          new Notification(title, {
-            body,
-            icon: icon || '/favicon.ico',
-            badge: '/favicon.ico',
-            silent: false 
-          });
-        } catch (e) {
-          console.error("System notification error:", e);
-        }
-      } else {
-        // Fallback: Try playing audio even if permission missing (best effort for background)
-        try {
-           const audio = new Audio(NOTIFICATION_SOUND_URL);
-           audio.volume = 0.6;
-           audio.play().catch(() => {}); // Ignore errors in background
-        } catch (e) {}
-      }
-    } else {
-      // Foreground: Play custom sound
+    if (isHidden && hasPermission) {
+      // Background: Use system notification logic, but silent
       try {
-        const audio = new Audio(NOTIFICATION_SOUND_URL);
-        audio.volume = 0.6;
-        audio.play().catch(e => console.warn("Audio autoplay blocked until user interaction:", e));
+        new Notification(title, {
+          body,
+          icon: icon || '/favicon.ico',
+          badge: '/favicon.ico',
+          silent: true 
+        });
       } catch (e) {
-        console.error("Audio play error:", e);
+        console.error("System notification error:", e);
       }
     }
   };
@@ -259,7 +238,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           };
           setNotifications(prev => [notif, ...prev]);
 
-          // Trigger Sound and System Notification
+          // Trigger System Notification (Silent)
           triggerNotification(`Message from ${senderName}`, newMsg.content, sender?.avatar);
         }
       })

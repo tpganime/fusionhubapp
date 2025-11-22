@@ -4,9 +4,20 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, ArrowRight, AlertCircle, Mail, Loader2 } from 'lucide-react';
 import { User } from '../types';
 
+// Simple UUID generator for browser environments
+const generateUUID = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
+
 export const AuthScreen: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const { login, signup, users, isLoading, currentUser } = useApp();
+  const { loginWithCredentials, signup, users, isLoading, currentUser } = useApp();
   const navigate = useNavigate();
 
   // Form States
@@ -42,18 +53,10 @@ export const AuthScreen: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-        // In a real Supabase Auth app, we would use supabase.auth.signInWithPassword
-        // Here we manually check against our users table for continuity with previous code
-        const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
-        
-        if (user) {
-            await login(user);
-            navigate('/home');
-        } else {
-            setError('Invalid email or password');
-        }
-    } catch (err) {
-        setError('An error occurred during login');
+        await loginWithCredentials(email, password);
+        navigate('/home');
+    } catch (err: any) {
+        setError(err.message || 'Invalid email or password');
         console.error(err);
     } finally {
         setIsSubmitting(false);
@@ -78,7 +81,7 @@ export const AuthScreen: React.FC = () => {
 
     try {
         const newUser: User = {
-          id: Date.now().toString(), // Ideally use UUID from Supabase, but timestamp works for demo
+          id: generateUUID(), // Use standard UUID for DB compatibility
           username,
           password,
           email,
@@ -91,8 +94,8 @@ export const AuthScreen: React.FC = () => {
         };
         await signup(newUser);
         navigate('/home');
-    } catch (err) {
-        setError('Failed to create account. Please try again.');
+    } catch (err: any) {
+        setError(err.message || 'Failed to create account. Please try again.');
         console.error(err);
     } finally {
         setIsSubmitting(false);

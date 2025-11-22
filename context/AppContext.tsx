@@ -10,6 +10,7 @@ interface AppContextType {
   theme: 'light' | 'dark';
   isLoading: boolean;
   login: (user: User) => Promise<void>;
+  loginWithCredentials: (email: string, password: string) => Promise<void>;
   logout: () => void;
   signup: (user: User) => Promise<void>;
   updateProfile: (updatedUser: User) => Promise<void>;
@@ -127,10 +128,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       // Auto Login Check (User Persistence)
       const storedId = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
-      if (storedId && initialUsers.length > 0) {
+      if (storedId) {
+        // Try to find in loaded users, or fetch specific if not found
         const found = initialUsers.find(u => u.id === storedId);
         if (found) {
             setCurrentUser(found);
+        } else {
+            // Fallback: try fetching specific user
+            const { data: singleUser } = await supabase.from('users').select('*').eq('id', storedId).single();
+            if (singleUser) {
+                const mapped = mapUserFromDB(singleUser);
+                setCurrentUser(mapped);
+                setUsers(prev => [...prev, mapped]);
+            }
         }
       }
 
@@ -146,7 +156,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         { event: '*', schema: 'public', table: 'users' }, 
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            setUsers(prev => [...prev, mapUserFromDB(payload.new)]);
+            setUsers(prev => {
+                if (prev.some(u => u.id === payload.new.id)) return prev;
+                return [...prev, mapUserFromDB(payload.new)];
+            });
           } else if (payload.eventType === 'UPDATE') {
             setUsers(prev => prev.map(u => u.id === payload.new.id ? mapUserFromDB(payload.new) : u));
             // If the updated user is the current user, update that state too
@@ -226,20 +239,44 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setCurrentUser(user);
   };
 
+  const loginWithCredentials = async (email: string, password: string) => {
+    // Direct DB check
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    if (error || !data) {
+      throw new Error('Invalid email or password');
+    }
+
+    // Check password (simple comparison for this app version)
+    if (data.password !== password) {
+        throw new Error('Invalid email or password');
+    }
+
+    const user = mapUserFromDB(data);
+    await login(user);
+  };
+
   const logout = () => {
     localStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID);
     setCurrentUser(null);
   };
 
   const signup = async (newUser: User) => {
-    // Optimistic update
-    setUsers(prev => [...prev, newUser]);
-    
+    // IMPORTANT: Verify we can save to DB before updating local state
     const dbUser = mapUserToDB(newUser);
     const { error } = await supabase.from('users').insert([dbUser]);
     
-    if (error) console.warn('Signup saved locally (Supabase unavailable):', error.message || error);
+    if (error) {
+        console.error('Supabase signup error:', error);
+        throw new Error(error.message || 'Failed to create account. Please try again.');
+    }
     
+    // Optimistic update after successful API call
+    setUsers(prev => [...prev, newUser]);
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, newUser.id);
     setCurrentUser(newUser);
   };
@@ -413,7 +450,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       notifications, 
       theme,
       isLoading,
-      login, 
+      login,
+      loginWithCredentials,
       logout, 
       signup, 
       updateProfile, 

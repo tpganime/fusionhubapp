@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
@@ -71,7 +70,7 @@ export const ChatScreen: React.FC = () => {
   // -- Chat List View --
   if (!selectedUser) {
     return (
-      <div className="min-h-screen pb-24 transition-colors duration-300">
+      <div className="h-full overflow-y-auto pb-24 transition-colors duration-300 scrollbar-hide">
         <TopBar />
         <main className="px-4 pt-2">
           <h1 className="text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white">Chats</h1>
@@ -119,7 +118,7 @@ export const ChatScreen: React.FC = () => {
 
   // -- Chat Detail View --
   return (
-    <div className="h-screen flex flex-col transition-colors duration-300">
+    <div className="h-full flex flex-col transition-colors duration-300">
       {/* Chat Header */}
       <div className="h-16 glass-panel dark:bg-dark-surface/80 flex items-center px-4 shadow-sm z-20 dark:border-gray-800">
         <button onClick={() => setSelectedUser(null)} className="p-2 -ml-2 mr-2 rounded-full hover:bg-gray-200/50 dark:hover:bg-white/10 text-gray-900 dark:text-white">
@@ -135,7 +134,7 @@ export const ChatScreen: React.FC = () => {
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-24">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-24 scrollbar-hide">
         {conversation.length === 0 ? (
            <div className="text-center mt-10">
              <img src={selectedUser.avatar} className="w-20 h-20 rounded-full mx-auto mb-3 object-cover opacity-50" />
@@ -156,11 +155,7 @@ export const ChatScreen: React.FC = () => {
                      <span>{new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                      {isMe && (
                        <span title={msg.read ? "Read" : "Delivered"}>
-                         {msg.read ? (
-                           <CheckCheck size={14} className="text-white" />
-                         ) : (
-                           <CheckCheck size={14} className="text-blue-200" />
-                         )}
+                           <CheckCheck size={16} className={msg.read ? "text-green-400" : "text-blue-200"} />
                        </span>
                      )}
                    </div>
@@ -174,7 +169,7 @@ export const ChatScreen: React.FC = () => {
 
       {/* Input Area (Sticky above bottom nav) */}
       <div className="fixed bottom-20 left-0 right-0 px-4 z-30 pointer-events-none">
-        <form onSubmit={handleSend} className="pointer-events-auto flex items-center gap-2 bg-white/80 dark:bg-dark-surface/80 backdrop-blur-xl p-2 rounded-full shadow-lg border border-white/50 dark:border-gray-700">
+        <form onSubmit={handleSend} className="pointer-events-auto flex items-center gap-2 bg-white/80 dark:bg-dark-surface/80 backdrop-blur-xl p-2 rounded-full shadow-lg border border-white/50 dark:border-gray-700 sm:max-w-md sm:mx-auto">
           <input
             type="text"
             value={inputText}

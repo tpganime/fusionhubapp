@@ -33,7 +33,7 @@ export const SettingsScreen: React.FC = () => {
 
   if (showPrivacyPolicy) {
     return (
-      <div className="min-h-screen bg-white dark:bg-dark-bg">
+      <div className="h-full overflow-y-auto bg-white dark:bg-dark-bg scrollbar-hide">
         <div className="sticky top-0 bg-white/80 dark:bg-dark-surface/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 p-4 flex items-center z-50">
           <button onClick={() => setShowPrivacyPolicy(false)} className="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 text-gray-900 dark:text-white">
             <ArrowLeft className="w-6 h-6" />
@@ -48,7 +48,7 @@ export const SettingsScreen: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen transition-colors duration-300">
+    <div className="h-full overflow-y-auto transition-colors duration-300 scrollbar-hide">
       <div className="sticky top-0 bg-white/60 dark:bg-dark-surface/80 backdrop-blur-md border-b border-white/50 dark:border-gray-800 p-4 flex items-center z-50">
         <button onClick={() => navigate('/profile')} className="p-2 -ml-2 rounded-full hover:bg-white/40 dark:hover:bg-white/10 text-gray-900 dark:text-white">
           <ArrowLeft className="w-6 h-6" />
@@ -56,7 +56,7 @@ export const SettingsScreen: React.FC = () => {
         <h2 className="text-xl font-bold ml-2 text-gray-900 dark:text-white">Settings</h2>
       </div>
 
-      <main className="p-4 space-y-6 max-w-md mx-auto">
+      <main className="p-4 space-y-6 max-w-md mx-auto pb-24">
         
         {/* Appearance */}
         <section>
@@ -143,7 +143,7 @@ export const SettingsScreen: React.FC = () => {
           </div>
         </section>
 
-        <p className="text-center text-xs text-gray-400 mt-8">FusionHub v1.3.3</p>
+        <p className="text-center text-xs text-gray-400 mt-8">FusionHub v1.3.4</p>
 
       </main>
     </div>

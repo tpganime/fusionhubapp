@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
@@ -16,8 +15,8 @@ const compressImage = (file: File): Promise<string> => {
       img.src = event.target?.result as string;
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 600; // Resize to reasonable max width
-        const MAX_HEIGHT = 600;
+        const MAX_WIDTH = 400; // Resize to smaller width for mobile/db efficiency
+        const MAX_HEIGHT = 400;
         let width = img.width;
         let height = img.height;
 
@@ -37,8 +36,8 @@ const compressImage = (file: File): Promise<string> => {
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         ctx?.drawImage(img, 0, 0, width, height);
-        // Compress to JPEG at 0.7 quality
-        resolve(canvas.toDataURL('image/jpeg', 0.7));
+        // Compress to JPEG at 0.5 quality (good balance for avatars)
+        resolve(canvas.toDataURL('image/jpeg', 0.5));
       };
       img.onerror = (error) => reject(error);
     };
@@ -123,7 +122,7 @@ export const ProfileScreen: React.FC = () => {
   const displayAvatar = isEditing ? avatar : profileUser.avatar;
 
   return (
-    <div className="min-h-screen pb-24 transition-colors duration-300">
+    <div className="h-full overflow-y-auto pb-24 transition-colors duration-300 scrollbar-hide">
       {isOwnProfile ? <TopBar /> : (
         // Custom Header for viewing other users
         <div className="absolute top-0 left-0 z-50 p-4">
@@ -138,14 +137,14 @@ export const ProfileScreen: React.FC = () => {
 
       {/* Profile Banner & Header */}
       <div className="relative">
-         {/* Background Image based on Avatar */}
+         {/* Background Image based on Avatar - NO BLUR as requested */}
          <div className="h-48 w-full overflow-hidden relative bg-gray-200 dark:bg-gray-800">
             <img 
               src={displayAvatar} 
-              className="w-full h-full object-cover opacity-80 blur-md scale-110" 
+              className="w-full h-full object-cover opacity-100" 
               alt="Banner Background"
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/40"></div>
+            <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/50"></div>
          </div>
          
          <div className="px-4">

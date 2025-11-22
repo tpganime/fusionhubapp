@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Message, Notification, Gender } from '../types';
 import { supabase } from '../lib/supabase';
@@ -122,22 +121,25 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       let initialMessages: Message[] = [];
 
       try {
-        // Fetch Users
-        const { data: usersData, error: usersError } = await supabase.from('users').select('*');
+        // Parallel fetch for speed
+        const [usersResponse, messagesResponse] = await Promise.all([
+          supabase.from('users').select('*'),
+          supabase.from('messages').select('*')
+        ]);
         
-        if (usersError) {
-          console.error('Supabase users fetch failed:', usersError.message);
-        } else if (usersData) {
-          initialUsers = usersData.map(mapUserFromDB);
+        // Process Users
+        if (usersResponse.error) {
+          console.error('Supabase users fetch failed:', usersResponse.error.message);
+        } else if (usersResponse.data) {
+          initialUsers = usersResponse.data.map(mapUserFromDB);
         }
         setUsers(initialUsers);
 
-        // Fetch Messages
-        const { data: msgsData, error: msgsError } = await supabase.from('messages').select('*');
-        if (msgsError) {
-          console.error('Supabase messages fetch failed:', msgsError.message);
-        } else if (msgsData) {
-          initialMessages = msgsData.map(mapMessageFromDB);
+        // Process Messages
+        if (messagesResponse.error) {
+          console.error('Supabase messages fetch failed:', messagesResponse.error.message);
+        } else if (messagesResponse.data) {
+          initialMessages = messagesResponse.data.map(mapMessageFromDB);
         }
         setMessages(initialMessages);
 

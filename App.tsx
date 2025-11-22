@@ -17,7 +17,7 @@ const ProtectedLayout: React.FC = () => {
   }
 
   return (
-    <div className="max-w-md mx-auto mesh-bg min-h-screen shadow-2xl relative overflow-hidden transition-colors duration-300">
+    <div className="w-full sm:max-w-md sm:mx-auto mesh-bg h-[100dvh] shadow-2xl relative overflow-hidden transition-colors duration-300 flex flex-col">
       <Outlet />
       <BottomNav />
     </div>
@@ -37,7 +37,7 @@ const MainRouter: React.FC = () => {
            <Route path="/user/:userId" element={<ProfileScreen />} />
          </Route>
          {/* Settings has its own layout/header */}
-         <Route path="/settings" element={<div className="max-w-md mx-auto mesh-bg shadow-2xl transition-colors duration-300"><SettingsScreen /></div>} />
+         <Route path="/settings" element={<div className="w-full sm:max-w-md sm:mx-auto mesh-bg h-[100dvh] shadow-2xl relative overflow-hidden transition-colors duration-300"><SettingsScreen /></div>} />
        </Routes>
     </Router>
   );

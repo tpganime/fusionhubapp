@@ -44,10 +44,10 @@ export const HomeScreen: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen transition-colors duration-300">
+    <div className="h-full overflow-y-auto pb-32 transition-colors duration-300 scrollbar-hide">
       <TopBar />
       
-      <main className="px-4 pt-4 pb-32 space-y-6 animate-fade-in">
+      <main className="px-4 pt-4 space-y-6 animate-fade-in">
         
         {/* Header Card */}
         <div className="relative overflow-hidden rounded-3xl bg-white/80 dark:bg-dark-surface shadow-xl p-6 border border-white/50 dark:border-gray-700 group hover:shadow-2xl transition-all duration-500 backdrop-blur-sm">

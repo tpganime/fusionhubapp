@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
@@ -30,7 +29,7 @@ export const SearchScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen pb-24 transition-colors duration-300">
+    <div className="h-full overflow-y-auto pb-24 transition-colors duration-300 scrollbar-hide">
       <TopBar />
       <main className="px-4 pt-4">
         <h1 className="text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white">Search</h1>

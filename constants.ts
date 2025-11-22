@@ -1,4 +1,4 @@
-import { AppShortcut } from './types';
+import { AppShortcut, User, Message, Gender } from './types';
 
 export const HOME_SHORTCUTS: AppShortcut[] = [
   { name: "Anime", url: "https://www.hindianimezone.in/", icon: "hindianimezone.in", description: "Stream Anime" },
@@ -52,3 +52,84 @@ We may update this privacy policy from time to time. We will notify you of any c
 
 9. Contact Us
 If you have any questions about this Privacy Policy, please contact us through the app or email us at support@fusionhub.com`;
+
+export const MOCK_USERS: User[] = [
+  {
+    id: '1',
+    username: 'DemoUser',
+    email: 'demo@example.com',
+    password: 'password',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
+    description: 'Welcome to FusionHub! I am a demo user.',
+    birthdate: '1995-08-15',
+    gender: Gender.MALE,
+    isPrivateProfile: false,
+    allowPrivateChat: true,
+    friends: ['2', '3'],
+    requests: ['4']
+  },
+  {
+    id: '2',
+    username: 'Sarah_Sky',
+    email: 'sarah@example.com',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
+    description: 'Lover of coffee and code. ☕️💻',
+    birthdate: '1998-03-22',
+    gender: Gender.FEMALE,
+    isPrivateProfile: false,
+    allowPrivateChat: true,
+    friends: ['1'],
+    requests: []
+  },
+  {
+    id: '3',
+    username: 'GamerX',
+    email: 'gamer@example.com',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex',
+    description: 'Competitive gamer. Catch me on Server 1.',
+    gender: Gender.OTHER,
+    isPrivateProfile: true,
+    allowPrivateChat: false,
+    friends: ['1'],
+    requests: []
+  },
+  {
+    id: '4',
+    username: 'MysteryGuest',
+    email: 'guest@example.com',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Zoey',
+    description: 'Just looking around.',
+    gender: Gender.FEMALE,
+    isPrivateProfile: false,
+    allowPrivateChat: true,
+    friends: [],
+    requests: []
+  }
+];
+
+export const MOCK_MESSAGES: Message[] = [
+  {
+    id: 'm1',
+    senderId: '2',
+    receiverId: '1',
+    content: 'Hey! Welcome to the app.',
+    timestamp: Date.now() - 86400000,
+    read: true
+  },
+  {
+    id: 'm2',
+    senderId: '1',
+    receiverId: '2',
+    content: 'Thanks! It looks great so far.',
+    timestamp: Date.now() - 86000000,
+    read: true
+  },
+  {
+    id: 'm3',
+    senderId: '2',
+    receiverId: '1',
+    content: 'Did you check out the music shortcut?',
+    timestamp: Date.now() - 3600000,
+    read: false
+  }
+];

@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, ArrowRight, AlertCircle, Mail } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, AlertCircle, Mail, Loader2 } from 'lucide-react';
 import { User } from '../types';
 
 export const AuthScreen: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const { login, signup, users } = useApp();
+  const { login, signup, users, isLoading, currentUser } = useApp();
   const navigate = useNavigate();
 
   // Form States
@@ -15,11 +15,20 @@ export const AuthScreen: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+
+  // Redirect if logged in
+  useEffect(() => {
+    if (currentUser && !isLoading) {
+      navigate('/home');
+    }
+  }, [currentUser, isLoading, navigate]);
 
   const handleCheckUsername = (val: string) => {
     setUsername(val);
     if (val.length > 2) {
+      // Check against the loaded users from Supabase
       const exists = users.some(u => u.username.toLowerCase() === val.toLowerCase());
       setUsernameAvailable(!exists);
     } else {
@@ -27,49 +36,80 @@ export const AuthScreen: React.FC = () => {
     }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Login with Email and Password
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
-    if (user) {
-      login(user); // This persists the user in AppContext via localStorage
-      navigate('/home');
-    } else {
-      setError('Invalid email or password');
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+        // In a real Supabase Auth app, we would use supabase.auth.signInWithPassword
+        // Here we manually check against our users table for continuity with previous code
+        const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
+        
+        if (user) {
+            await login(user);
+            navigate('/home');
+        } else {
+            setError('Invalid email or password');
+        }
+    } catch (err) {
+        setError('An error occurred during login');
+        console.error(err);
+    } finally {
+        setIsSubmitting(false);
     }
   };
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+
     if (!usernameAvailable) {
         setError('Username is taken or invalid');
         return;
     }
     
-    // Check if email exists
     if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
         setError('Email already registered');
         return;
     }
     
-    const newUser: User = {
-      id: Date.now().toString(),
-      username,
-      password,
-      email,
-      avatar: `https://picsum.photos/200?random=${Date.now()}`, // Random avatar
-      isPrivateProfile: false,
-      allowPrivateChat: true,
-      friends: [],
-      requests: []
-    };
-    signup(newUser);
-    navigate('/home');
+    setIsSubmitting(true);
+
+    try {
+        const newUser: User = {
+          id: Date.now().toString(), // Ideally use UUID from Supabase, but timestamp works for demo
+          username,
+          password,
+          email,
+          avatar: `https://picsum.photos/200?random=${Date.now()}`,
+          isPrivateProfile: false,
+          allowPrivateChat: true,
+          friends: [],
+          requests: []
+        };
+        await signup(newUser);
+        navigate('/home');
+    } catch (err) {
+        setError('Failed to create account. Please try again.');
+        console.error(err);
+    } finally {
+        setIsSubmitting(false);
+    }
   };
+
+  if (isLoading) {
+    return (
+        <div className="min-h-screen flex flex-col items-center justify-center mesh-bg">
+            <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
+            <p className="text-gray-600 font-medium">Connecting to FusionHub...</p>
+        </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden mesh-bg transition-colors duration-300">
-      {/* Background Blobs - Keep these for extra flair on login */}
+      {/* Background Blobs */}
       <div className="absolute top-[-10%] left-[-10%] w-64 h-64 bg-blue-300 rounded-full mix-blend-multiply filter blur-2xl opacity-70 animate-blob dark:opacity-40 dark:mix-blend-normal dark:bg-blue-900"></div>
       <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-purple-300 rounded-full mix-blend-multiply filter blur-2xl opacity-70 animate-blob animation-delay-2000 dark:opacity-40 dark:mix-blend-normal dark:bg-purple-900"></div>
       <div className="absolute -bottom-8 left-20 w-64 h-64 bg-pink-300 rounded-full mix-blend-multiply filter blur-2xl opacity-70 animate-blob animation-delay-4000 dark:opacity-40 dark:mix-blend-normal dark:bg-pink-900"></div>
@@ -82,7 +122,6 @@ export const AuthScreen: React.FC = () => {
 
         <form onSubmit={isLogin ? handleLogin : handleSignup} className="space-y-4">
           
-          {/* Username Field - Only for Signup */}
           {!isLogin && (
             <div className="space-y-1">
               <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 ml-1">Username</label>
@@ -111,7 +150,6 @@ export const AuthScreen: React.FC = () => {
             </div>
           )}
 
-          {/* Email Field - For both Login and Signup */}
           <div className="space-y-1">
             <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 ml-1">Email</label>
             <div className="relative">
@@ -127,7 +165,6 @@ export const AuthScreen: React.FC = () => {
             </div>
           </div>
 
-          {/* Password Field */}
           <div className="space-y-1">
             <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 ml-1">Password</label>
             <div className="relative">
@@ -163,10 +200,17 @@ export const AuthScreen: React.FC = () => {
 
           <button
             type="submit"
-            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white p-3 rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all flex items-center justify-center space-x-2 mt-4"
+            disabled={isSubmitting}
+            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white p-3 rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all flex items-center justify-center space-x-2 mt-4 disabled:opacity-70 disabled:scale-100"
           >
-            <span>{isLogin ? 'Login' : 'Sign Up'}</span>
-            <ArrowRight size={18} />
+            {isSubmitting ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+                <>
+                    <span>{isLogin ? 'Login' : 'Sign Up'}</span>
+                    <ArrowRight size={18} />
+                </>
+            )}
           </button>
         </form>
 

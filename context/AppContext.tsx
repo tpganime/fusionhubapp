@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { User, Message, Notification, Gender } from '../types';
 import { supabase } from '../lib/supabase';
 
@@ -30,6 +30,8 @@ const STORAGE_KEYS = {
   CURRENT_USER_ID: 'fh_current_user_id_v1'
 };
 
+const NOTIFICATION_SOUND_URL = "https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3";
+
 // -- Helpers to map between DB (snake_case) and App (camelCase) --
 
 const mapUserFromDB = (dbUser: any): User => {
@@ -50,7 +52,6 @@ const mapUserFromDB = (dbUser: any): User => {
     };
   } catch (e) {
     console.error("Error mapping user:", e, dbUser);
-    // Fallback safe user to prevent crashes
     return {
       id: dbUser.id || 'unknown',
       username: 'Error User',
@@ -103,118 +104,164 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [messages, setMessages] = useState<Message[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    try {
-      return (localStorage.getItem(STORAGE_KEYS.THEME) as 'light' | 'dark') || 'light';
-    } catch {
-      return 'light';
+  // Refs to access state inside subscription callbacks
+  const currentUserRef = useRef<User | null>(null);
+  const usersRef = useRef<User[]>([]);
+
+  useEffect(() => {
+    currentUserRef.current = currentUser;
+  }, [currentUser]);
+
+  useEffect(() => {
+    usersRef.current = users;
+  }, [users]);
+
+  // Apply Theme
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
     }
-  });
+    localStorage.setItem(STORAGE_KEYS.THEME, theme);
+  }, [theme]);
 
-  // 1. Initial Data Fetch & Auto Login
+  // Sound and Notification Helper
+  const triggerNotification = (title: string, body: string, icon?: string) => {
+    // Play sound
+    try {
+      const audio = new Audio(NOTIFICATION_SOUND_URL);
+      audio.volume = 0.6;
+      audio.play().catch(e => console.warn("Audio autoplay blocked until user interaction:", e));
+    } catch (e) {
+      console.error("Audio play error:", e);
+    }
+
+    // System Notification
+    if ("Notification" in window && Notification.permission === "granted" && document.hidden) {
+      try {
+        new Notification(title, {
+          body,
+          icon: icon || '/favicon.ico',
+          badge: '/favicon.ico',
+          silent: true // We play our own sound
+        });
+      } catch (e) {
+        console.error("Notification error:", e);
+      }
+    }
+  };
+
+  const requestNotificationPermission = async () => {
+    if ("Notification" in window && Notification.permission !== "granted") {
+      await Notification.requestPermission();
+    }
+  };
+
+  // Load Initial Data
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
-      
-      let initialUsers: User[] = [];
-      let initialMessages: Message[] = [];
-
       try {
-        // Parallel fetch for speed
-        const [usersResponse, messagesResponse] = await Promise.all([
-          supabase.from('users').select('*'),
-          supabase.from('messages').select('*')
-        ]);
+        // 1. Fetch Users
+        const { data: usersData, error: userError } = await supabase.from('users').select('*');
+        if (userError) throw userError;
+        const mappedUsers = usersData.map(mapUserFromDB);
+        setUsers(mappedUsers);
         
-        // Process Users
-        if (usersResponse.error) {
-          console.error('Supabase users fetch failed:', usersResponse.error.message);
-        } else if (usersResponse.data) {
-          initialUsers = usersResponse.data.map(mapUserFromDB);
-        }
-        setUsers(initialUsers);
+        // 2. Fetch Messages
+        const { data: msgsData, error: msgError } = await supabase.from('messages').select('*');
+        if (msgError) throw msgError;
+        setMessages(msgsData.map(mapMessageFromDB));
 
-        // Process Messages
-        if (messagesResponse.error) {
-          console.error('Supabase messages fetch failed:', messagesResponse.error.message);
-        } else if (messagesResponse.data) {
-          initialMessages = messagesResponse.data.map(mapMessageFromDB);
-        }
-        setMessages(initialMessages);
-
-        // Auto Login Check (User Persistence)
-        const storedId = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
-        if (storedId) {
-          // Try to find in loaded users, or fetch specific if not found
-          const found = initialUsers.find(u => u.id === storedId);
+        // 3. Auto Login
+        const savedId = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
+        if (savedId) {
+          const found = mappedUsers.find(u => u.id === savedId);
           if (found) {
-              setCurrentUser(found);
-          } else {
-              // Fallback: try fetching specific user
-              const { data: singleUser } = await supabase.from('users').select('*').eq('id', storedId).single();
-              if (singleUser) {
-                  const mapped = mapUserFromDB(singleUser);
-                  setCurrentUser(mapped);
-                  setUsers(prev => {
-                      if (prev.some(p => p.id === mapped.id)) return prev;
-                      return [...prev, mapped];
-                  });
-              }
+            setCurrentUser(found);
+            requestNotificationPermission();
           }
         }
+
+        // 4. Load Theme
+        const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME) as 'light' | 'dark';
+        if (savedTheme) setTheme(savedTheme);
+
       } catch (err) {
-        console.error("Critical error during initial fetch:", err);
+        console.error("Initialization error:", err);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchData();
+  }, []);
 
-    // 2. Realtime Subscriptions
-    const channel = supabase.channel('public-changes')
-      .on(
-        'postgres_changes', 
-        { event: '*', schema: 'public', table: 'users' }, 
-        (payload) => {
-          try {
-            if (payload.eventType === 'INSERT') {
-              setUsers(prev => {
-                  if (prev.some(u => u.id === payload.new.id)) return prev;
-                  return [...prev, mapUserFromDB(payload.new)];
-              });
-            } else if (payload.eventType === 'UPDATE') {
-              setUsers(prev => prev.map(u => u.id === payload.new.id ? mapUserFromDB(payload.new) : u));
-              // If the updated user is the current user, update that state too
-              setCurrentUser(curr => curr?.id === payload.new.id ? mapUserFromDB(payload.new) : curr);
-            } else if (payload.eventType === 'DELETE') {
-               setUsers(prev => prev.filter(u => u.id !== payload.old.id));
+  // Realtime Subscriptions
+  useEffect(() => {
+    const channel = supabase.channel('public:data')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
+        const newMsg = mapMessageFromDB(payload.new);
+        setMessages(prev => [...prev, newMsg]);
+
+        // Handle Notifications for Messages
+        if (currentUserRef.current && newMsg.receiverId === currentUserRef.current.id) {
+          const sender = usersRef.current.find(u => u.id === newMsg.senderId);
+          const senderName = sender ? sender.username : 'Someone';
+
+          // App Internal Notification
+          const notif: Notification = {
+            id: Date.now().toString(),
+            type: 'message',
+            content: `New message from ${senderName}`,
+            read: false,
+            timestamp: Date.now(),
+            data: { targetUser: sender, avatar: sender?.avatar }
+          };
+          setNotifications(prev => [notif, ...prev]);
+
+          // Trigger Sound and System Notification
+          triggerNotification(`Message from ${senderName}`, newMsg.content, sender?.avatar);
+        }
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, (payload) => {
+        if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+          const updatedUser = mapUserFromDB(payload.new);
+          
+          setUsers(prev => {
+             const exists = prev.find(u => u.id === updatedUser.id);
+             if (exists) return prev.map(u => u.id === updatedUser.id ? updatedUser : u);
+             return [...prev, updatedUser];
+          });
+
+          if (currentUserRef.current && updatedUser.id === currentUserRef.current.id) {
+            setCurrentUser(updatedUser);
+            
+            // Check for new friend requests
+            const oldReqs = currentUserRef.current.requests || [];
+            const newReqs = updatedUser.requests || [];
+            if (newReqs.length > oldReqs.length) {
+               const newReqId = newReqs.find(id => !oldReqs.includes(id));
+               const requester = usersRef.current.find(u => u.id === newReqId);
+               if (requester) {
+                 const notif: Notification = {
+                   id: Date.now().toString(),
+                   type: 'friend_request',
+                   content: `${requester.username} sent you a friend request`,
+                   read: false,
+                   timestamp: Date.now(),
+                   data: { requesterId: requester.id, avatar: requester.avatar }
+                 };
+                 setNotifications(prev => [notif, ...prev]);
+                 triggerNotification('New Friend Request', `${requester.username} wants to be friends`, requester.avatar);
+               }
             }
-          } catch (e) {
-            console.error("Realtime user update error:", e);
           }
         }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'messages' },
-        (payload) => {
-          try {
-            if (payload.eventType === 'INSERT') {
-              // Only add if not already present (deduplication for optimistic updates)
-              setMessages(prev => {
-                  if (prev.some(m => m.id === payload.new.id)) return prev;
-                  return [...prev, mapMessageFromDB(payload.new)];
-              });
-            } else if (payload.eventType === 'UPDATE') {
-              setMessages(prev => prev.map(m => m.id === payload.new.id ? mapMessageFromDB(payload.new) : m));
-            }
-          } catch (e) {
-            console.error("Realtime message update error:", e);
-          }
-        }
-      )
+      })
       .subscribe();
 
     return () => {
@@ -222,156 +269,57 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
   }, []);
 
-  // 4. Generate Notifications locally based on data
-  useEffect(() => {
-    if (currentUser) {
-      const newNotifs: Notification[] = [];
-      
-      // Friend Requests
-      currentUser.requests.forEach(reqId => {
-        const requester = users.find(u => u.id === reqId);
-        if (requester) {
-          newNotifs.push({
-            id: `req-${reqId}`,
-            type: 'friend_request',
-            content: `${requester.username} sent you a friend request`,
-            read: false, 
-            timestamp: Date.now(),
-            data: { requesterId: reqId, avatar: requester.avatar }
-          });
-        }
-      });
-
-      // NEW: Message Notifications
-      const unreadBySender: { [key: string]: Message[] } = {};
-      messages.forEach(m => {
-        if (m.receiverId === currentUser.id && !m.read) {
-          if (!unreadBySender[m.senderId]) unreadBySender[m.senderId] = [];
-          unreadBySender[m.senderId].push(m);
-        }
-      });
-
-      Object.keys(unreadBySender).forEach(senderId => {
-        const msgs = unreadBySender[senderId];
-        // Sort latest first
-        msgs.sort((a, b) => b.timestamp - a.timestamp);
-        const latest = msgs[0];
-        const sender = users.find(u => u.id === senderId);
-        
-        if (sender) {
-          newNotifs.push({
-            id: `msg-${senderId}-${latest.timestamp}`, // Unique ID based on timestamp
-            type: 'message',
-            content: msgs.length > 1 
-              ? `${msgs.length} new messages from ${sender.username}` 
-              : `${sender.username}: ${latest.content.length > 40 ? latest.content.substring(0, 40) + '...' : latest.content}`,
-            read: false,
-            timestamp: latest.timestamp,
-            data: { 
-              senderId: sender.id, 
-              avatar: sender.avatar,
-              targetUser: sender 
-            }
-          });
-        }
-      });
-
-      // Sort all notifications by timestamp desc
-      newNotifs.sort((a, b) => b.timestamp - a.timestamp);
-
-      setNotifications(newNotifs);
-    } else {
-      setNotifications([]);
-    }
-  }, [currentUser, users, messages]);
-
-  // Theme Persistence
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.THEME, theme);
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
-  };
-
-  // -- Actions --
 
   const login = async (user: User) => {
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id);
     setCurrentUser(user);
+    localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id);
+    requestNotificationPermission();
   };
 
-  const loginWithCredentials = async (email: string, password: string) => {
-    // Direct DB check
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', email)
-      .single();
+  const loginWithCredentials = async (email: string, pass: string) => {
+     // Simulate auth check against loaded users (Real app would use Supabase Auth)
+     const found = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === pass);
+     if (found) {
+       await login(found);
+     } else {
+       throw new Error("Invalid credentials");
+     }
+  };
 
-    if (error || !data) {
-      throw new Error('Invalid email or password');
-    }
-
-    // Check password (simple comparison for this app version)
-    if (data.password !== password) {
-        throw new Error('Invalid email or password');
-    }
-
-    const user = mapUserFromDB(data);
+  const signup = async (user: User) => {
+    const { error } = await supabase.from('users').insert(mapUserToDB(user));
+    if (error) throw error;
+    // Realtime will update users list, but we can set optimistically
+    setUsers(prev => [...prev, user]);
     await login(user);
   };
 
   const logout = () => {
-    localStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID);
     setCurrentUser(null);
-  };
-
-  const signup = async (newUser: User) => {
-    // IMPORTANT: Verify we can save to DB before updating local state
-    const dbUser = mapUserToDB(newUser);
-    const { error } = await supabase.from('users').insert([dbUser]);
-    
-    if (error) {
-        console.error('Supabase signup error:', error);
-        throw new Error(error.message || 'Failed to create account. Please try again.');
-    }
-    
-    // Optimistic update after successful API call
-    setUsers(prev => [...prev, newUser]);
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, newUser.id);
-    setCurrentUser(newUser);
+    localStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID);
+    setNotifications([]);
   };
 
   const updateProfile = async (updatedUser: User) => {
-    // Optimistic update
-    setCurrentUser(updatedUser); 
-    setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
-
-    const dbUser = mapUserToDB(updatedUser);
-    const { error } = await supabase.from('users').update(dbUser).eq('id', updatedUser.id);
-    if (error) console.warn('Profile update saved locally (Supabase unavailable):', error.message || error);
+    const { error } = await supabase.from('users').update(mapUserToDB(updatedUser)).eq('id', updatedUser.id);
+    if (error) {
+      console.error("Update failed", error);
+      alert("Failed to update profile");
+      return;
+    }
+    // State updates via realtime subscription
   };
 
   const deleteAccount = async () => {
-    if (currentUser) {
-      setUsers(prev => prev.filter(u => u.id !== currentUser.id));
-      const { error } = await supabase.from('users').delete().eq('id', currentUser.id);
-      if (error) console.warn('Account deletion local only (Supabase unavailable):', error.message || error);
-      logout();
-    }
+    if (!currentUser) return;
+    const { error } = await supabase.from('users').delete().eq('id', currentUser.id);
+    if (!error) logout();
   };
 
   const sendMessage = async (receiverId: string, content: string) => {
     if (!currentUser) return;
-    
-    const newMessage: Message = {
-      id: Date.now().toString(),
+    const newMsg: Message = {
+      id: crypto.randomUUID(),
       senderId: currentUser.id,
       receiverId,
       content,
@@ -380,26 +328,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
     
     // Optimistic update
-    setMessages(prev => [...prev, newMessage]);
+    setMessages(prev => [...prev, newMsg]);
 
-    const dbMsg = mapMessageToDB(newMessage);
-    const { error } = await supabase.from('messages').insert([dbMsg]);
-    if (error) console.warn('Message saved locally (Supabase unavailable):', error.message || error);
-  };
-
-  const markConversationAsRead = async (senderId: string) => {
-    if (!currentUser) return;
-    
-    const unreadIds = messages
-      .filter(m => m.senderId === senderId && m.receiverId === currentUser.id && !m.read)
-      .map(m => m.id);
-
-    if (unreadIds.length > 0) {
-      // Optimistic update
-      setMessages(prev => prev.map(m => unreadIds.includes(m.id) ? { ...m, read: true } : m));
-      
-      const { error } = await supabase.from('messages').update({ read: true }).in('id', unreadIds);
-      if (error) console.warn('Read status updated locally (Supabase unavailable)');
+    const { error } = await supabase.from('messages').insert(mapMessageToDB(newMsg));
+    if (error) {
+       console.error("Send message failed", error);
+       // Rollback
+       setMessages(prev => prev.filter(m => m.id !== newMsg.id));
     }
   };
 
@@ -408,62 +343,76 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     
     const targetUser = users.find(u => u.id === targetUserId);
     if (!targetUser) return;
-    
-    if (!targetUser.requests.includes(currentUser.id) && !targetUser.friends.includes(currentUser.id)) {
-      const updatedRequests = [...targetUser.requests, currentUser.id];
-      
-      // Optimistic update for target user
-      setUsers(prev => prev.map(u => u.id === targetUserId ? { ...u, requests: updatedRequests } : u));
+    if (targetUser.requests.includes(currentUser.id)) return;
 
-      const { error } = await supabase.from('users').update({ requests: updatedRequests }).eq('id', targetUserId);
-      if (error) console.warn('Friend request saved locally (Supabase unavailable)');
-    }
+    const newRequests = [...targetUser.requests, currentUser.id];
+    
+    const { error } = await supabase.from('users').update({ requests: newRequests }).eq('id', targetUserId);
+    if (error) console.error("Friend request failed", error);
   };
 
   const acceptFriendRequest = async (requesterId: string) => {
     if (!currentUser) return;
-    
-    // Update Current User: Remove request, add friend
-    const updatedCurrentUser = {
-        ...currentUser,
-        requests: currentUser.requests.filter(id => id !== requesterId),
-        friends: [...currentUser.friends, requesterId]
-    };
-    await updateProfile(updatedCurrentUser);
 
-    // Update Requester: Add current user to their friends
+    // 1. Add requester to my friends
+    const myNewFriends = [...currentUser.friends, requesterId];
+    const myNewRequests = currentUser.requests.filter(r => r !== requesterId);
+
+    // 2. Add me to requester's friends
     const requester = users.find(u => u.id === requesterId);
-    if (requester) {
-        const updatedRequesterFriends = [...requester.friends, currentUser.id];
-        
-        // Optimistic update for requester
-        setUsers(prev => prev.map(u => u.id === requesterId ? { ...u, friends: updatedRequesterFriends } : u));
+    if (!requester) return;
+    const theirNewFriends = [...requester.friends, currentUser.id];
 
-        const { error } = await supabase.from('users').update({ friends: updatedRequesterFriends }).eq('id', requesterId);
-        if (error) console.warn('Friend acceptance saved locally (Supabase unavailable)');
-    }
+    // Perform updates
+    await supabase.from('users').update({ friends: myNewFriends, requests: myNewRequests }).eq('id', currentUser.id);
+    await supabase.from('users').update({ friends: theirNewFriends }).eq('id', requesterId);
   };
 
   const markNotificationRead = (id: string) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   };
 
+  const markConversationAsRead = async (senderId: string) => {
+    if (!currentUser) return;
+    
+    // Optimistic
+    setMessages(prev => prev.map(m => 
+      (m.senderId === senderId && m.receiverId === currentUser.id && !m.read) 
+        ? { ...m, read: true } 
+        : m
+    ));
+
+    // DB Update (Batch update not simple in Supabase JS without stored procedure, doing individual for simplicity or rely on backend trigger in real app)
+    // For this demo, we'll update locally mainly. To persist read status:
+    const unreadIds = messages
+       .filter(m => m.senderId === senderId && m.receiverId === currentUser.id && !m.read)
+       .map(m => m.id);
+    
+    if (unreadIds.length > 0) {
+      await supabase.from('messages').update({ read: true }).in('id', unreadIds);
+    }
+  };
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
+
   return (
-    <AppContext.Provider value={{ 
-      currentUser, 
-      users, 
-      messages, 
-      notifications, 
+    <AppContext.Provider value={{
+      currentUser,
+      users,
+      messages,
+      notifications,
       theme,
       isLoading,
       login,
       loginWithCredentials,
-      logout, 
-      signup, 
-      updateProfile, 
+      logout,
+      signup,
+      updateProfile,
       deleteAccount,
-      sendMessage, 
-      sendFriendRequest, 
+      sendMessage,
+      sendFriendRequest,
       acceptFriendRequest,
       markNotificationRead,
       toggleTheme,

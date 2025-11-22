@@ -130,26 +130,29 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Sound and Notification Helper
   const triggerNotification = (title: string, body: string, icon?: string) => {
-    // Play sound
-    try {
-      const audio = new Audio(NOTIFICATION_SOUND_URL);
-      audio.volume = 0.6;
-      audio.play().catch(e => console.warn("Audio autoplay blocked until user interaction:", e));
-    } catch (e) {
-      console.error("Audio play error:", e);
-    }
+    const isHidden = document.hidden;
+    const hasPermission = "Notification" in window && Notification.permission === "granted";
 
-    // System Notification
-    if ("Notification" in window && Notification.permission === "granted" && document.hidden) {
+    if (isHidden && hasPermission) {
+      // Background: Use system notification with system sound (remove silent: true)
       try {
         new Notification(title, {
           body,
           icon: icon || '/favicon.ico',
           badge: '/favicon.ico',
-          silent: true // We play our own sound
+          silent: false // Ensure system default sound plays
         });
       } catch (e) {
         console.error("Notification error:", e);
+      }
+    } else {
+      // Foreground OR No Permission: Play custom sound
+      try {
+        const audio = new Audio(NOTIFICATION_SOUND_URL);
+        audio.volume = 0.6;
+        audio.play().catch(e => console.warn("Audio autoplay blocked until user interaction:", e));
+      } catch (e) {
+        console.error("Audio play error:", e);
       }
     }
   };

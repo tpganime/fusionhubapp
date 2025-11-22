@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
@@ -90,7 +91,6 @@ export const AuthScreen: React.FC = () => {
           allowPrivateChat: true,
           friends: [],
           requests: [],
-          blocked: []
         };
         await signup(newUser);
         navigate('/home');

@@ -1,12 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
-import { Camera, Save, ArrowLeft, MessageCircle, UserPlus, Check, Lock, Calendar, Mail, Users as UsersIcon, Ban, ShieldAlert } from 'lucide-react';
+import { Camera, Save, ArrowLeft, MessageCircle, UserPlus, Check, Lock, Calendar, Mail, Users as UsersIcon } from 'lucide-react';
 import { Gender } from '../types';
 import { useParams, useNavigate } from 'react-router-dom';
 
 export const ProfileScreen: React.FC = () => {
-  const { currentUser, users, updateProfile, sendFriendRequest, blockUser, unblockUser } = useApp();
+  const { currentUser, users, updateProfile, sendFriendRequest } = useApp();
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   
@@ -69,18 +70,7 @@ export const ProfileScreen: React.FC = () => {
   // Friend Logic for Other Users
   const isFriend = currentUser?.friends.includes(profileUser.id);
   const isRequested = profileUser.requests.includes(currentUser?.id || '');
-  const isBlocked = currentUser?.blocked?.includes(profileUser.id);
-  const canViewDetails = isOwnProfile || (!profileUser.isPrivateProfile && !isBlocked) || isFriend;
-
-  const handleBlockToggle = async () => {
-    if (isBlocked) {
-        await unblockUser(profileUser.id);
-    } else {
-        if (window.confirm(`Are you sure you want to block ${profileUser.username}? They will be removed from your friends and won't be able to message you.`)) {
-            await blockUser(profileUser.id);
-        }
-    }
-  };
+  const canViewDetails = isOwnProfile || !profileUser.isPrivateProfile || isFriend;
 
   return (
     <div className="min-h-screen pb-24 transition-colors duration-300">
@@ -128,13 +118,7 @@ export const ProfileScreen: React.FC = () => {
                      {profileUser.isPrivateProfile && !isOwnProfile && <Lock className="w-4 h-4 text-gray-400" />}
                    </h2>
                    <p className="text-gray-600 dark:text-gray-300 mt-1 max-w-xs mx-auto leading-relaxed">
-                     {isBlocked ? (
-                        <span className="text-red-500 font-medium flex items-center justify-center gap-1">
-                             <Ban className="w-3 h-3" /> Blocked
-                        </span>
-                     ) : (
-                        profileUser.description || "No bio set"
-                     )}
+                     {profileUser.description || "No bio set"}
                    </p>
                    
                    <div className="flex items-center justify-center gap-6 mt-4 text-sm text-gray-500 dark:text-gray-400">
@@ -148,52 +132,32 @@ export const ProfileScreen: React.FC = () => {
                    {!isOwnProfile && (
                      <div className="mt-6 flex flex-col gap-3 items-center w-full max-w-xs mx-auto">
                         <div className="flex gap-3 w-full">
-                            {isBlocked ? (
-                                <button 
-                                    onClick={handleBlockToggle}
-                                    className="flex-1 px-6 py-2 rounded-full bg-gray-500 text-white font-semibold shadow-lg hover:bg-gray-600 transition-all flex items-center justify-center gap-2"
-                                >
-                                    <ShieldAlert className="w-4 h-4" /> Unblock
+                            <button 
+                                onClick={() => navigate('/chat', { state: { targetUser: profileUser } })}
+                                disabled={(!canViewDetails && !profileUser.allowPrivateChat)}
+                                className="flex-1 px-4 py-2 rounded-full bg-blue-500 text-white font-semibold shadow-lg shadow-blue-500/30 hover:bg-blue-600 hover:scale-105 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:hover:scale-100"
+                            >
+                                <MessageCircle className="w-4 h-4" /> Message
+                            </button>
+                            
+                            {isFriend ? (
+                                <button className="flex-1 px-4 py-2 rounded-full bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20 font-semibold flex items-center justify-center gap-2">
+                                    <Check className="w-4 h-4" /> Friends
                                 </button>
                             ) : (
-                                <>
-                                    <button 
-                                        onClick={() => navigate('/chat', { state: { targetUser: profileUser } })}
-                                        disabled={(!canViewDetails && !profileUser.allowPrivateChat)}
-                                        className="flex-1 px-4 py-2 rounded-full bg-blue-500 text-white font-semibold shadow-lg shadow-blue-500/30 hover:bg-blue-600 hover:scale-105 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:hover:scale-100"
-                                    >
-                                        <MessageCircle className="w-4 h-4" /> Message
-                                    </button>
-                                    
-                                    {isFriend ? (
-                                        <button className="flex-1 px-4 py-2 rounded-full bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20 font-semibold flex items-center justify-center gap-2">
-                                            <Check className="w-4 h-4" /> Friends
-                                        </button>
-                                    ) : (
-                                        <button 
-                                            onClick={() => sendFriendRequest(profileUser.id)}
-                                            disabled={isRequested}
-                                            className={`flex-1 px-4 py-2 rounded-full font-semibold flex items-center justify-center gap-2 transition-all ${
-                                                isRequested 
-                                                ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 cursor-default' 
-                                                : 'bg-white/60 dark:bg-dark-surface/60 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-white/5 shadow-sm'
-                                            }`}
-                                        >
-                                            {isRequested ? 'Requested' : <><UserPlus className="w-4 h-4" /> Add Friend</>}
-                                        </button>
-                                    )}
-                                </>
+                                <button 
+                                    onClick={() => sendFriendRequest(profileUser.id)}
+                                    disabled={isRequested}
+                                    className={`flex-1 px-4 py-2 rounded-full font-semibold flex items-center justify-center gap-2 transition-all ${
+                                        isRequested 
+                                        ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 cursor-default' 
+                                        : 'bg-white/60 dark:bg-dark-surface/60 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-white/5 shadow-sm'
+                                    }`}
+                                >
+                                    {isRequested ? 'Requested' : <><UserPlus className="w-4 h-4" /> Add Friend</>}
+                                </button>
                             )}
                         </div>
-                        
-                        {!isBlocked && (
-                             <button 
-                                onClick={handleBlockToggle}
-                                className="text-xs text-red-500 hover:underline flex items-center gap-1 mt-2"
-                             >
-                                <Ban className="w-3 h-3" /> Block User
-                             </button>
-                        )}
                      </div>
                    )}
 
@@ -253,19 +217,9 @@ export const ProfileScreen: React.FC = () => {
             </div>
           ) : (
             <div className="bg-white/50 dark:bg-white/5 backdrop-blur-md rounded-3xl p-10 text-center border border-white/40 dark:border-gray-800 mt-4">
-              {isBlocked ? (
-                <>
-                    <Ban className="w-12 h-12 text-red-300 mx-auto mb-3" />
-                    <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">User Blocked</h3>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">You must unblock this user to see their profile.</p>
-                </>
-              ) : (
-                <>
-                    <Lock className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                    <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Private Profile</h3>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Only friends can see full details.</p>
-                </>
-              )}
+              <Lock className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Private Profile</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Only friends can see full details.</p>
             </div>
           )}
         </div>

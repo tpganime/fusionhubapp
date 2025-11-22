@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
@@ -22,10 +23,9 @@ export const ChatScreen: React.FC = () => {
     }
   }, [location.state]);
 
-  // Get list of friends or people with chat history (excluding blocked users)
+  // Get list of friends or people with chat history
   const chatUsers = users.filter(u => 
     u.id !== currentUser?.id && 
-    !currentUser?.blocked?.includes(u.id) && // Exclude blocked users
     (currentUser?.friends.includes(u.id) || messages.some(m => (m.senderId === u.id && m.receiverId === currentUser?.id) || (m.senderId === currentUser?.id && m.receiverId === u.id)))
   );
 

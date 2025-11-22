@@ -34,21 +34,39 @@ const STORAGE_KEYS = {
 
 // -- Helpers to map between DB (snake_case) and App (camelCase) --
 
-const mapUserFromDB = (dbUser: any): User => ({
-  id: dbUser.id,
-  username: dbUser.username,
-  email: dbUser.email,
-  password: dbUser.password,
-  avatar: dbUser.avatar,
-  description: dbUser.description,
-  birthdate: dbUser.birthdate,
-  gender: dbUser.gender as Gender,
-  isPrivateProfile: dbUser.is_private_profile,
-  allowPrivateChat: dbUser.allow_private_chat,
-  friends: dbUser.friends || [],
-  requests: dbUser.requests || [],
-  blocked: dbUser.blocked || []
-});
+const mapUserFromDB = (dbUser: any): User => {
+  try {
+    return {
+      id: dbUser.id,
+      username: dbUser.username || 'Unknown',
+      email: dbUser.email || '',
+      password: dbUser.password,
+      avatar: dbUser.avatar || 'https://via.placeholder.com/150',
+      description: dbUser.description,
+      birthdate: dbUser.birthdate,
+      gender: dbUser.gender as Gender,
+      isPrivateProfile: !!dbUser.is_private_profile,
+      allowPrivateChat: !!dbUser.allow_private_chat,
+      friends: Array.isArray(dbUser.friends) ? dbUser.friends : [],
+      requests: Array.isArray(dbUser.requests) ? dbUser.requests : [],
+      blocked: Array.isArray(dbUser.blocked) ? dbUser.blocked : []
+    };
+  } catch (e) {
+    console.error("Error mapping user:", e, dbUser);
+    // Fallback safe user to prevent crashes
+    return {
+      id: dbUser.id || 'unknown',
+      username: 'Error User',
+      email: '',
+      avatar: '',
+      isPrivateProfile: false,
+      allowPrivateChat: false,
+      friends: [],
+      requests: [],
+      blocked: []
+    };
+  }
+};
 
 const mapUserToDB = (user: User) => ({
   id: user.id,
@@ -72,7 +90,7 @@ const mapMessageFromDB = (dbMsg: any): Message => ({
   receiverId: dbMsg.receiver_id,
   content: dbMsg.content,
   timestamp: Number(dbMsg.timestamp),
-  read: dbMsg.read
+  read: !!dbMsg.read
 });
 
 const mapMessageToDB = (msg: Message) => ({
@@ -107,44 +125,51 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       let initialUsers: User[] = [];
       let initialMessages: Message[] = [];
 
-      // Fetch Users
-      const { data: usersData, error: usersError } = await supabase.from('users').select('*');
-      
-      if (usersError) {
-        console.error('Supabase users fetch failed:', usersError.message);
-      } else if (usersData) {
-        initialUsers = usersData.map(mapUserFromDB);
-      }
-      setUsers(initialUsers);
-
-      // Fetch Messages
-      const { data: msgsData, error: msgsError } = await supabase.from('messages').select('*');
-      if (msgsError) {
-        console.error('Supabase messages fetch failed:', msgsError.message);
-      } else if (msgsData) {
-        initialMessages = msgsData.map(mapMessageFromDB);
-      }
-      setMessages(initialMessages);
-
-      // Auto Login Check (User Persistence)
-      const storedId = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
-      if (storedId) {
-        // Try to find in loaded users, or fetch specific if not found
-        const found = initialUsers.find(u => u.id === storedId);
-        if (found) {
-            setCurrentUser(found);
-        } else {
-            // Fallback: try fetching specific user
-            const { data: singleUser } = await supabase.from('users').select('*').eq('id', storedId).single();
-            if (singleUser) {
-                const mapped = mapUserFromDB(singleUser);
-                setCurrentUser(mapped);
-                setUsers(prev => [...prev, mapped]);
-            }
+      try {
+        // Fetch Users
+        const { data: usersData, error: usersError } = await supabase.from('users').select('*');
+        
+        if (usersError) {
+          console.error('Supabase users fetch failed:', usersError.message);
+        } else if (usersData) {
+          initialUsers = usersData.map(mapUserFromDB);
         }
-      }
+        setUsers(initialUsers);
 
-      setIsLoading(false);
+        // Fetch Messages
+        const { data: msgsData, error: msgsError } = await supabase.from('messages').select('*');
+        if (msgsError) {
+          console.error('Supabase messages fetch failed:', msgsError.message);
+        } else if (msgsData) {
+          initialMessages = msgsData.map(mapMessageFromDB);
+        }
+        setMessages(initialMessages);
+
+        // Auto Login Check (User Persistence)
+        const storedId = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
+        if (storedId) {
+          // Try to find in loaded users, or fetch specific if not found
+          const found = initialUsers.find(u => u.id === storedId);
+          if (found) {
+              setCurrentUser(found);
+          } else {
+              // Fallback: try fetching specific user
+              const { data: singleUser } = await supabase.from('users').select('*').eq('id', storedId).single();
+              if (singleUser) {
+                  const mapped = mapUserFromDB(singleUser);
+                  setCurrentUser(mapped);
+                  setUsers(prev => {
+                      if (prev.some(p => p.id === mapped.id)) return prev;
+                      return [...prev, mapped];
+                  });
+              }
+          }
+        }
+      } catch (err) {
+        console.error("Critical error during initial fetch:", err);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     fetchData();
@@ -155,17 +180,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         'postgres_changes', 
         { event: '*', schema: 'public', table: 'users' }, 
         (payload) => {
-          if (payload.eventType === 'INSERT') {
-            setUsers(prev => {
-                if (prev.some(u => u.id === payload.new.id)) return prev;
-                return [...prev, mapUserFromDB(payload.new)];
-            });
-          } else if (payload.eventType === 'UPDATE') {
-            setUsers(prev => prev.map(u => u.id === payload.new.id ? mapUserFromDB(payload.new) : u));
-            // If the updated user is the current user, update that state too
-            setCurrentUser(curr => curr?.id === payload.new.id ? mapUserFromDB(payload.new) : curr);
-          } else if (payload.eventType === 'DELETE') {
-             setUsers(prev => prev.filter(u => u.id !== payload.old.id));
+          try {
+            if (payload.eventType === 'INSERT') {
+              setUsers(prev => {
+                  if (prev.some(u => u.id === payload.new.id)) return prev;
+                  return [...prev, mapUserFromDB(payload.new)];
+              });
+            } else if (payload.eventType === 'UPDATE') {
+              setUsers(prev => prev.map(u => u.id === payload.new.id ? mapUserFromDB(payload.new) : u));
+              // If the updated user is the current user, update that state too
+              setCurrentUser(curr => curr?.id === payload.new.id ? mapUserFromDB(payload.new) : curr);
+            } else if (payload.eventType === 'DELETE') {
+               setUsers(prev => prev.filter(u => u.id !== payload.old.id));
+            }
+          } catch (e) {
+            console.error("Realtime user update error:", e);
           }
         }
       )
@@ -173,14 +202,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         'postgres_changes',
         { event: '*', schema: 'public', table: 'messages' },
         (payload) => {
-          if (payload.eventType === 'INSERT') {
-            // Only add if not already present (deduplication for optimistic updates)
-            setMessages(prev => {
-                if (prev.some(m => m.id === payload.new.id)) return prev;
-                return [...prev, mapMessageFromDB(payload.new)];
-            });
-          } else if (payload.eventType === 'UPDATE') {
-            setMessages(prev => prev.map(m => m.id === payload.new.id ? mapMessageFromDB(payload.new) : m));
+          try {
+            if (payload.eventType === 'INSERT') {
+              // Only add if not already present (deduplication for optimistic updates)
+              setMessages(prev => {
+                  if (prev.some(m => m.id === payload.new.id)) return prev;
+                  return [...prev, mapMessageFromDB(payload.new)];
+              });
+            } else if (payload.eventType === 'UPDATE') {
+              setMessages(prev => prev.map(m => m.id === payload.new.id ? mapMessageFromDB(payload.new) : m));
+            }
+          } catch (e) {
+            console.error("Realtime message update error:", e);
           }
         }
       )
@@ -457,7 +490,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       updateProfile, 
       deleteAccount,
       sendMessage, 
-      sendFriendRequest,
+      sendFriendRequest, 
       acceptFriendRequest,
       blockUser,
       unblockUser,

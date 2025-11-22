@@ -18,6 +18,7 @@ export interface User {
   allowPrivateChat: boolean;
   friends: string[]; // list of user IDs
   requests: string[]; // list of user IDs
+  blocked: string[]; // list of blocked user IDs
 }
 
 export interface Message {

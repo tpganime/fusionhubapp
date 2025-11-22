@@ -22,9 +22,11 @@ export const ChatScreen: React.FC = () => {
     }
   }, [location.state]);
 
-  // Get list of friends or people with chat history
+  // Get list of friends or people with chat history (excluding blocked users)
   const chatUsers = users.filter(u => 
-    u.id !== currentUser?.id && (currentUser?.friends.includes(u.id) || messages.some(m => (m.senderId === u.id && m.receiverId === currentUser?.id) || (m.senderId === currentUser?.id && m.receiverId === u.id)))
+    u.id !== currentUser?.id && 
+    !currentUser?.blocked?.includes(u.id) && // Exclude blocked users
+    (currentUser?.friends.includes(u.id) || messages.some(m => (m.senderId === u.id && m.receiverId === currentUser?.id) || (m.senderId === currentUser?.id && m.receiverId === u.id)))
   );
 
   const getConversation = (userId: string) => {

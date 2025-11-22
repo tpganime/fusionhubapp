@@ -86,7 +86,8 @@ export const AuthScreen: React.FC = () => {
           isPrivateProfile: false,
           allowPrivateChat: true,
           friends: [],
-          requests: []
+          requests: [],
+          blocked: []
         };
         await signup(newUser);
         navigate('/home');

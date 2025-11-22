@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
-import { Search as SearchIcon, UserPlus, Check, MessageCircle } from 'lucide-react';
+import { Search as SearchIcon, UserPlus, Check, MessageCircle, Ban } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const SearchScreen: React.FC = () => {
@@ -15,6 +15,7 @@ export const SearchScreen: React.FC = () => {
   );
 
   const isFriend = (userId: string) => currentUser?.friends.includes(userId);
+  const isBlocked = (userId: string) => currentUser?.blocked?.includes(userId);
   const [requested, setRequested] = useState<string[]>([]); 
 
   const handleRequest = (e: React.MouseEvent, id: string) => {
@@ -51,7 +52,8 @@ export const SearchScreen: React.FC = () => {
           )}
           
           {filteredUsers.map(user => {
-            const canMessage = isFriend(user.id) || user.allowPrivateChat;
+            const blocked = isBlocked(user.id);
+            const canMessage = !blocked && (isFriend(user.id) || user.allowPrivateChat);
             
             return (
               <div 
@@ -60,35 +62,46 @@ export const SearchScreen: React.FC = () => {
                 className="bg-white/70 dark:bg-dark-surface/70 backdrop-blur-sm p-4 rounded-2xl shadow-sm border border-white/50 dark:border-gray-700 flex items-center justify-between transition-all hover:bg-white/90 dark:hover:bg-dark-surface/90 cursor-pointer group"
               >
                 <div className="flex items-center space-x-3">
-                  <img src={user.avatar} alt={user.username} className="w-12 h-12 rounded-full object-cover border border-gray-100 dark:border-gray-700" />
+                  <img src={user.avatar} alt={user.username} className={`w-12 h-12 rounded-full object-cover border border-gray-100 dark:border-gray-700 ${blocked ? 'grayscale opacity-50' : ''}`} />
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{user.username}</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1 max-w-[150px]">{user.description || "No bio"}</p>
+                    <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors flex items-center gap-2">
+                      {user.username}
+                      {blocked && <Ban className="w-3 h-3 text-red-500" />}
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1 max-w-[150px]">
+                        {blocked ? "Blocked" : (user.description || "No bio")}
+                    </p>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-2">
-                  {canMessage && (
-                    <button
-                      onClick={(e) => handleMessage(e, user)}
-                      className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
-                      title="Send Message"
-                    >
-                      <MessageCircle className="w-5 h-5" />
-                    </button>
-                  )}
-
-                  {isFriend(user.id) ? (
-                    <span className="px-3 py-1 text-xs bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300 rounded-full font-medium">Friend</span>
+                  {blocked ? (
+                    <span className="px-3 py-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full font-medium">Blocked</span>
                   ) : (
-                    <button 
-                      onClick={(e) => handleRequest(e, user.id)}
-                      disabled={requested.includes(user.id)}
-                      className={`p-2 rounded-full transition-colors ${requested.includes(user.id) ? 'bg-gray-100 dark:bg-gray-800 text-gray-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
-                      title={requested.includes(user.id) ? "Request Sent" : "Add Friend"}
-                    >
-                      {requested.includes(user.id) ? <Check className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
-                    </button>
+                    <>
+                      {canMessage && (
+                        <button
+                          onClick={(e) => handleMessage(e, user)}
+                          className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                          title="Send Message"
+                        >
+                          <MessageCircle className="w-5 h-5" />
+                        </button>
+                      )}
+
+                      {isFriend(user.id) ? (
+                        <span className="px-3 py-1 text-xs bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300 rounded-full font-medium">Friend</span>
+                      ) : (
+                        <button 
+                          onClick={(e) => handleRequest(e, user.id)}
+                          disabled={requested.includes(user.id)}
+                          className={`p-2 rounded-full transition-colors ${requested.includes(user.id) ? 'bg-gray-100 dark:bg-gray-800 text-gray-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+                          title={requested.includes(user.id) ? "Request Sent" : "Add Friend"}
+                        >
+                          {requested.includes(user.id) ? <Check className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

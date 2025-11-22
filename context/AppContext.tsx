@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Message, Notification, Gender } from '../types';
 import { supabase } from '../lib/supabase';
-import { MOCK_USERS, MOCK_MESSAGES } from '../constants';
 
 interface AppContextType {
   currentUser: User | null;
@@ -18,6 +17,8 @@ interface AppContextType {
   sendMessage: (receiverId: string, content: string) => Promise<void>;
   sendFriendRequest: (targetUserId: string) => Promise<void>;
   acceptFriendRequest: (requesterId: string) => Promise<void>;
+  blockUser: (targetUserId: string) => Promise<void>;
+  unblockUser: (targetUserId: string) => Promise<void>;
   markNotificationRead: (id: string) => void;
   toggleTheme: () => void;
   markConversationAsRead: (senderId: string) => void;
@@ -44,7 +45,8 @@ const mapUserFromDB = (dbUser: any): User => ({
   isPrivateProfile: dbUser.is_private_profile,
   allowPrivateChat: dbUser.allow_private_chat,
   friends: dbUser.friends || [],
-  requests: dbUser.requests || []
+  requests: dbUser.requests || [],
+  blocked: dbUser.blocked || []
 });
 
 const mapUserToDB = (user: User) => ({
@@ -59,7 +61,8 @@ const mapUserToDB = (user: User) => ({
   is_private_profile: user.isPrivateProfile,
   allow_private_chat: user.allowPrivateChat,
   friends: user.friends,
-  requests: user.requests
+  requests: user.requests,
+  blocked: user.blocked
 });
 
 const mapMessageFromDB = (dbMsg: any): Message => ({
@@ -106,20 +109,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       // Fetch Users
       const { data: usersData, error: usersError } = await supabase.from('users').select('*');
       
-      if (usersError || !usersData || usersData.length === 0) {
-        console.warn('Supabase fetch failed or empty, falling back to mock data. Details:', usersError?.message || usersError);
-        initialUsers = MOCK_USERS;
-      } else {
+      if (usersError) {
+        console.error('Supabase users fetch failed:', usersError.message);
+      } else if (usersData) {
         initialUsers = usersData.map(mapUserFromDB);
       }
       setUsers(initialUsers);
 
       // Fetch Messages
       const { data: msgsData, error: msgsError } = await supabase.from('messages').select('*');
-      if (msgsError || !msgsData) {
-        if (msgsError) console.warn('Messages fetch error:', msgsError.message || msgsError);
-        initialMessages = MOCK_MESSAGES;
-      } else {
+      if (msgsError) {
+        console.error('Supabase messages fetch failed:', msgsError.message);
+      } else if (msgsData) {
         initialMessages = msgsData.map(mapMessageFromDB);
       }
       setMessages(initialMessages);
@@ -183,6 +184,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const newNotifs: Notification[] = [];
       // Friend Requests
       currentUser.requests.forEach(reqId => {
+        // If user is blocked, don't show their requests
+        if (currentUser.blocked && currentUser.blocked.includes(reqId)) return;
+
         const requester = users.find(u => u.id === reqId);
         if (requester) {
           newNotifs.push({
@@ -261,6 +265,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const sendMessage = async (receiverId: string, content: string) => {
     if (!currentUser) return;
+    
+    // Block check
+    if (currentUser.blocked?.includes(receiverId)) return;
+
     const newMessage: Message = {
       id: Date.now().toString(),
       senderId: currentUser.id,
@@ -296,8 +304,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const sendFriendRequest = async (targetUserId: string) => {
     if (!currentUser) return;
+    
+    // Block check
+    if (currentUser.blocked?.includes(targetUserId)) return;
+
     const targetUser = users.find(u => u.id === targetUserId);
     if (!targetUser) return;
+    
+    // Also check if target has blocked current user (simulated by checking their block list if available in local state)
+    if (targetUser.blocked?.includes(currentUser.id)) return; 
 
     if (!targetUser.requests.includes(currentUser.id) && !targetUser.friends.includes(currentUser.id)) {
       const updatedRequests = [...targetUser.requests, currentUser.id];
@@ -334,6 +349,58 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
+  const blockUser = async (targetUserId: string) => {
+    if (!currentUser) return;
+
+    // 1. Update Current User: Add to blocked, remove from friends/requests
+    const currentBlocked = currentUser.blocked || [];
+    if (currentBlocked.includes(targetUserId)) return;
+
+    const updatedBlocked = [...currentBlocked, targetUserId];
+    const updatedFriends = currentUser.friends.filter(id => id !== targetUserId);
+    const updatedRequests = currentUser.requests.filter(id => id !== targetUserId);
+
+    const updatedCurrentUser = {
+      ...currentUser,
+      blocked: updatedBlocked,
+      friends: updatedFriends,
+      requests: updatedRequests
+    };
+
+    await updateProfile(updatedCurrentUser);
+
+    // 2. Update Target User: Remove current user from their friends/requests
+    const targetUser = users.find(u => u.id === targetUserId);
+    if (targetUser) {
+      const targetFriends = targetUser.friends.filter(id => id !== currentUser.id);
+      const targetRequests = targetUser.requests.filter(id => id !== currentUser.id);
+      
+      // Optimistic
+      setUsers(prev => prev.map(u => u.id === targetUserId ? { ...u, friends: targetFriends, requests: targetRequests } : u));
+      
+      const { error } = await supabase.from('users').update({
+        friends: targetFriends,
+        requests: targetRequests
+      }).eq('id', targetUserId);
+      
+      if (error) console.warn('Block target update failed:', error);
+    }
+  };
+
+  const unblockUser = async (targetUserId: string) => {
+    if (!currentUser) return;
+    
+    const currentBlocked = currentUser.blocked || [];
+    const updatedBlocked = currentBlocked.filter(id => id !== targetUserId);
+    
+    const updatedCurrentUser = {
+      ...currentUser,
+      blocked: updatedBlocked
+    };
+
+    await updateProfile(updatedCurrentUser);
+  };
+
   const markNotificationRead = (id: string) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   };
@@ -354,6 +421,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       sendMessage, 
       sendFriendRequest,
       acceptFriendRequest,
+      blockUser,
+      unblockUser,
       markNotificationRead,
       toggleTheme,
       markConversationAsRead

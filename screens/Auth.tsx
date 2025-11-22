@@ -75,7 +75,7 @@ export const AuthScreen: React.FC = () => {
       <div className="absolute -bottom-8 left-20 w-64 h-64 bg-pink-300 rounded-full mix-blend-multiply filter blur-2xl opacity-70 animate-blob animation-delay-4000 dark:opacity-40 dark:mix-blend-normal dark:bg-pink-900"></div>
 
       <div className="w-full max-w-md glass-panel dark:bg-dark-surface/60 p-8 rounded-3xl shadow-2xl z-10 border border-white/30 dark:border-white/10">
-        <h1 className="text-3xl font-bold text-center mb-2 text-black dark:text-white">
+        <h1 className="text-3xl font-bold text-center mb-2 text-black">
           FusionHub
         </h1>
         <p className="text-center text-gray-500 dark:text-gray-400 mb-8">{isLogin ? 'Welcome Back' : 'Create Account'}</p>

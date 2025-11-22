@@ -21,7 +21,7 @@ export const TopBar: React.FC = () => {
       <div className="fixed top-0 left-0 right-0 h-16 px-4 flex items-center justify-between z-40 glass-panel dark:bg-dark-surface/80 dark:border-dark-border">
         {/* Left Side: Empty or Title */}
         <div className="flex items-center">
-          <h1 className="text-xl font-bold text-black dark:text-white">
+          <h1 className="text-xl font-bold text-black">
             FusionHub
           </h1>
         </div>

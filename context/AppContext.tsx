@@ -226,6 +226,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     if (currentUser) {
       const newNotifs: Notification[] = [];
+      
       // Friend Requests
       currentUser.requests.forEach(reqId => {
         const requester = users.find(u => u.id === reqId);
@@ -234,17 +235,55 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             id: `req-${reqId}`,
             type: 'friend_request',
             content: `${requester.username} sent you a friend request`,
-            read: false, // In a real app, track read state in DB
+            read: false, 
             timestamp: Date.now(),
             data: { requesterId: reqId, avatar: requester.avatar }
           });
         }
       });
+
+      // NEW: Message Notifications
+      const unreadBySender: { [key: string]: Message[] } = {};
+      messages.forEach(m => {
+        if (m.receiverId === currentUser.id && !m.read) {
+          if (!unreadBySender[m.senderId]) unreadBySender[m.senderId] = [];
+          unreadBySender[m.senderId].push(m);
+        }
+      });
+
+      Object.keys(unreadBySender).forEach(senderId => {
+        const msgs = unreadBySender[senderId];
+        // Sort latest first
+        msgs.sort((a, b) => b.timestamp - a.timestamp);
+        const latest = msgs[0];
+        const sender = users.find(u => u.id === senderId);
+        
+        if (sender) {
+          newNotifs.push({
+            id: `msg-${senderId}-${latest.timestamp}`, // Unique ID based on timestamp
+            type: 'message',
+            content: msgs.length > 1 
+              ? `${msgs.length} new messages from ${sender.username}` 
+              : `${sender.username}: ${latest.content.length > 40 ? latest.content.substring(0, 40) + '...' : latest.content}`,
+            read: false,
+            timestamp: latest.timestamp,
+            data: { 
+              senderId: sender.id, 
+              avatar: sender.avatar,
+              targetUser: sender 
+            }
+          });
+        }
+      });
+
+      // Sort all notifications by timestamp desc
+      newNotifs.sort((a, b) => b.timestamp - a.timestamp);
+
       setNotifications(newNotifs);
     } else {
       setNotifications([]);
     }
-  }, [currentUser, users]);
+  }, [currentUser, users, messages]);
 
   // Theme Persistence
   useEffect(() => {

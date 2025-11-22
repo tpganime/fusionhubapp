@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Bell, User as UserIcon, Settings, ArrowLeft } from 'lucide-react';
+import { Bell, User as UserIcon, Settings, ArrowLeft, MessageCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { Notification } from '../types';
 
 export const TopBar: React.FC = () => {
   const { currentUser, notifications, acceptFriendRequest, markNotificationRead } = useApp();
@@ -14,6 +15,14 @@ export const TopBar: React.FC = () => {
   const handleAccept = (requesterId: string, notifId: string) => {
     acceptFriendRequest(requesterId);
     markNotificationRead(notifId);
+  };
+
+  const handleNotificationClick = (n: Notification) => {
+    if (n.type === 'message' && n.data?.targetUser) {
+      navigate('/chat', { state: { targetUser: n.data.targetUser } });
+      setShowNotifs(false);
+      markNotificationRead(n.id);
+    }
   };
 
   return (
@@ -49,13 +58,17 @@ export const TopBar: React.FC = () => {
                      <p className="p-6 text-sm text-gray-400 text-center">No notifications yet</p>
                    ) : (
                      notifications.map(n => (
-                       <div key={n.id} className={`p-3 mb-1 rounded-xl transition-colors ${n.read ? 'opacity-60' : 'bg-white/40 dark:bg-white/5'}`}>
+                       <div 
+                         key={n.id} 
+                         onClick={() => n.type === 'message' ? handleNotificationClick(n) : undefined}
+                         className={`p-3 mb-1 rounded-xl transition-colors ${n.read ? 'opacity-60' : 'bg-white/40 dark:bg-white/5'} ${n.type === 'message' ? 'cursor-pointer hover:bg-white/60 dark:hover:bg-white/10' : ''}`}
+                       >
                          <div className="flex items-start gap-3">
                             {n.data?.avatar ? (
                                 <img src={n.data.avatar} className="w-8 h-8 rounded-full object-cover border border-white dark:border-gray-700" alt="avatar" />
                             ) : (
                                 <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-500 dark:text-blue-300">
-                                    <Bell className="w-4 h-4" />
+                                    {n.type === 'message' ? <MessageCircle className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
                                 </div>
                             )}
                             <div className="flex-1">
@@ -65,12 +78,15 @@ export const TopBar: React.FC = () => {
                                 {n.type === 'friend_request' && n.data?.requesterId && !n.read && (
                                     <div className="flex gap-2 mt-2">
                                         <button 
-                                            onClick={() => handleAccept(n.data.requesterId, n.id)}
+                                            onClick={(e) => { e.stopPropagation(); handleAccept(n.data.requesterId, n.id); }}
                                             className="flex-1 bg-blue-500 hover:bg-blue-600 text-white text-xs py-1.5 rounded-lg font-medium transition-colors"
                                         >
                                             Confirm
                                         </button>
-                                        <button className="flex-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-xs py-1.5 rounded-lg font-medium transition-colors">
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); markNotificationRead(n.id); }}
+                                            className="flex-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-xs py-1.5 rounded-lg font-medium transition-colors"
+                                        >
                                             Delete
                                         </button>
                                     </div>

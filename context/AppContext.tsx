@@ -24,7 +24,7 @@ interface AppContextType {
   loginWithCredentials: (email: string, password: string) => Promise<void>;
   logout: () => void;
   signup: (user: User) => Promise<void>;
-  updateProfile: (updatedUser: User) => Promise<void>;
+  updateProfile: (updatedUser: User) => Promise<boolean>;
   deleteAccount: () => Promise<void>;
   deactivateAccount: () => Promise<void>;
   sendMessage: (receiverId: string, content: string) => Promise<void>;
@@ -113,8 +113,8 @@ const mapUserToDB = (user: User) => ({
   gender: user.gender,
   is_private_profile: user.isPrivateProfile,
   allow_private_chat: user.allowPrivateChat,
-  friends: user.friends,
-  requests: user.requests,
+  friends: user.friends || [],
+  requests: user.requests || [],
   last_seen: user.lastSeen,
 });
 
@@ -650,20 +650,25 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setOnlineUsers([]);
   };
   
-  const updateProfile = async (updatedUser: User) => {
+  const updateProfile = async (updatedUser: User): Promise<boolean> => {
     // Optimistic update
     setCurrentUser(updatedUser);
     setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
     
     try {
-      const { error } = await supabase.from('users').update(mapUserToDB(updatedUser)).eq('id', updatedUser.id);
+      const dbUser = mapUserToDB(updatedUser);
+      const { error } = await supabase.from('users').update(dbUser).eq('id', updatedUser.id);
+      
       if (error) {
         console.error("Profile update failed", error);
-        alert("Update failed. Please try again.");
+        alert(`Update failed: ${error.message}`);
+        return false;
       }
-    } catch(e) {
+      return true;
+    } catch(e: any) {
       console.error(e);
-      alert("Update failed.");
+      alert(`Update failed: ${e.message || 'Unknown error'}`);
+      return false;
     }
   };
   

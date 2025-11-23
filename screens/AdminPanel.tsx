@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Volume2, Send } from 'lucide-react';
+import { ArrowLeft, Save, Volume2, Send, Database, Copy } from 'lucide-react';
 import { HOME_SHORTCUTS } from '../constants';
 
 export const AdminPanelScreen: React.FC = () => {
@@ -53,6 +53,53 @@ export const AdminPanelScreen: React.FC = () => {
     setBroadcastText('');
     setSending(false);
     alert('Message sent to all users.');
+  };
+
+  const sqlCode = `-- Run this in your Supabase SQL Editor to fix missing columns
+
+-- 1. Create Tables
+create table if not exists users (
+  id uuid primary key,
+  username text,
+  name text,
+  email text,
+  password text,
+  avatar text,
+  description text,
+  birthdate text,
+  gender text,
+  is_private_profile boolean default false,
+  allow_private_chat boolean default true,
+  friends text[] default '{}',
+  requests text[] default '{}',
+  last_seen timestamptz default now()
+);
+
+create table if not exists messages (
+  id uuid primary key,
+  sender_id text,
+  receiver_id text,
+  content text,
+  timestamp text,
+  read boolean default false
+);
+
+-- 2. Add Missing Columns (Safe to run even if they exist)
+alter table users add column if not exists name text;
+alter table users add column if not exists birthdate text;
+alter table users add column if not exists gender text;
+
+-- 3. Enable Public Access (For this specific app architecture)
+alter table users enable row level security;
+create policy "Allow all operations" on users for all using (true) with check (true);
+
+alter table messages enable row level security;
+create policy "Allow all operations" on messages for all using (true) with check (true);
+`;
+
+  const copySql = () => {
+      navigator.clipboard.writeText(sqlCode);
+      alert("SQL Code Copied! Paste it in Supabase SQL Editor.");
   };
 
   return (
@@ -127,6 +174,26 @@ export const AdminPanelScreen: React.FC = () => {
                 </div>
              ))}
           </div>
+        </div>
+        
+        {/* Database Schema Generator */}
+        <div className="bg-white/70 dark:bg-dark-surface rounded-3xl p-6 shadow-sm border border-white/50 dark:border-gray-800">
+           <div className="flex items-center gap-3 mb-4 text-purple-600 dark:text-purple-400">
+              <Database className="w-6 h-6" />
+              <h3 className="font-bold text-lg">Database Schema</h3>
+           </div>
+           <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">If you see "Update Failed", run this in Supabase SQL Editor.</p>
+           <div className="relative">
+             <pre className="w-full p-3 bg-gray-900 rounded-xl text-green-400 text-[10px] overflow-x-auto font-mono h-32 border border-gray-700">
+                {sqlCode}
+             </pre>
+             <button 
+                onClick={copySql}
+                className="absolute top-2 right-2 p-2 bg-white/20 hover:bg-white/30 rounded-lg text-white transition-colors"
+             >
+                <Copy className="w-4 h-4" />
+             </button>
+           </div>
         </div>
 
         <button 

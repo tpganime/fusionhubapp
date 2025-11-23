@@ -20,60 +20,53 @@
               }
             },
             animation: {
-              blob: "blob 10s infinite",
-              "fade-in": "fadeIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both",
-              "slide-up": "slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both",
-              "slide-down": "slideDown 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both",
-              "slide-in-right": "slideInRight 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both",
-              "pop-in": "popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both",
-              "zoom-in": "zoomIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both",
-              "pulse-slow": "pulse 3s ease-in-out infinite",
+              blob: "blob 15s infinite alternate cubic-bezier(0.4, 0, 0.2, 1)",
+              "fade-in": "fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) both",
+              // Heavy fluid animations
+              "slide-up-heavy": "slideUpHeavy 1.2s cubic-bezier(0.22, 1, 0.36, 1) both",
+              "slide-down-heavy": "slideDownHeavy 1.2s cubic-bezier(0.22, 1, 0.36, 1) both",
+              "pop-in-elastic": "popInElastic 1s cubic-bezier(0.34, 1.56, 0.64, 1) both",
+              "zoom-pan": "zoomPan 20s ease-in-out infinite alternate",
+              "pulse-slow": "pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
               "float": "float 6s ease-in-out infinite",
               "bounce-soft": "bounceSoft 2s infinite",
-              "scale-pulse": "scalePulse 2s infinite",
             },
             keyframes: {
               blob: {
                 "0%": { transform: "translate(0px, 0px) scale(1)" },
-                "33%": { transform: "translate(30px, -50px) scale(1.1)" },
-                "66%": { transform: "translate(-20px, 20px) scale(0.9)" },
+                "33%": { transform: "translate(30px, -50px) scale(1.15)" },
+                "66%": { transform: "translate(-20px, 20px) scale(0.95)" },
                 "100%": { transform: "translate(0px, 0px) scale(1)" },
               },
               float: {
                 "0%, 100%": { transform: "translateY(0)" },
-                "50%": { transform: "translateY(-10px)" },
+                "50%": { transform: "translateY(-15px)" },
               },
               fadeIn: {
                 "0%": { opacity: "0" },
                 "100%": { opacity: "1" },
               },
-              slideUp: {
-                "0%": { opacity: "0", transform: "translate3d(0, 20px, 0)" },
-                "100%": { opacity: "1", transform: "translate3d(0, 0, 0)" },
+              // Deeper translation for heavier feel
+              slideUpHeavy: {
+                "0%": { opacity: "0", transform: "translate3d(0, 60px, 0) scale(0.96)" },
+                "100%": { opacity: "1", transform: "translate3d(0, 0, 0) scale(1)" },
               },
-              slideDown: {
-                 "0%": { opacity: "0", transform: "translate3d(0, -20px, 0)" },
-                 "100%": { opacity: "1", transform: "translate3d(0, 0, 0)" },
+              slideDownHeavy: {
+                 "0%": { opacity: "0", transform: "translate3d(0, -60px, 0) scale(0.96)" },
+                 "100%": { opacity: "1", transform: "translate3d(0, 0, 0) scale(1)" },
               },
-              slideInRight: {
-                 "0%": { opacity: "0", transform: "translate3d(20px, 0, 0)" },
-                 "100%": { opacity: "1", transform: "translate3d(0, 0, 0)" },
+              popInElastic: {
+                 "0%": { opacity: "0", transform: "scale(0.8) translateY(20px)" },
+                 "60%": { opacity: "1", transform: "scale(1.05) translateY(-5px)" },
+                 "100%": { opacity: "1", transform: "scale(1) translateY(0)" },
                },
-               popIn: {
-                 "0%": { opacity: "0", transform: "scale(0.9)" },
-                 "100%": { opacity: "1", transform: "scale(1)" },
-               },
-               zoomIn: {
-                "0%": { opacity: "0", transform: "scale(0.8)" },
-                "100%": { opacity: "1", transform: "scale(1)" },
+               zoomPan: {
+                "0%": { transform: "scale(1.2) translate(0, 0)" },
+                "100%": { transform: "scale(1.4) translate(-2%, -2%)" },
                },
                bounceSoft: {
                 "0%, 100%": { transform: "translateY(0)" },
-                "50%": { transform: "translateY(-5px)" },
-               },
-               scalePulse: {
-                "0%, 100%": { transform: "scale(1)" },
-                "50%": { transform: "scale(1.05)" },
+                "50%": { transform: "translateY(-8px)" },
                }
             },
           }
@@ -86,7 +79,7 @@
         background-color: #F2F2F7;
         color: #1C1C1E;
         -webkit-tap-highlight-color: transparent;
-        transition: background-color 0.3s ease, color 0.3s ease;
+        transition: background-color 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), color 0.4s ease;
         overscroll-behavior-y: none;
       }
       .dark body {
@@ -102,29 +95,31 @@
         scrollbar-width: none;
       }
 
-      /* LIQUID GLASS ESSENTIALS */
+      /* LIQUID GLASS ESSENTIALS - HIGH QUALITY */
       
-      /* Base Mesh Gradient - More Vibrant */
       .mesh-bg {
         background-color: #f0f4f8;
         background-image: 
-            radial-gradient(at 0% 0%, rgba(100, 200, 255, 0.5) 0px, transparent 50%),
-            radial-gradient(at 100% 0%, rgba(200, 150, 255, 0.5) 0px, transparent 50%),
-            radial-gradient(at 100% 100%, rgba(100, 255, 180, 0.4) 0px, transparent 50%),
-            radial-gradient(at 0% 100%, rgba(255, 200, 100, 0.4) 0px, transparent 50%),
-            radial-gradient(at 50% 50%, rgba(255, 255, 255, 0.6) 0px, transparent 50%);
-        background-size: 150% 150%;
-        animation: gradient-move 20s ease infinite;
+            radial-gradient(at 0% 0%, rgba(100, 200, 255, 0.6) 0px, transparent 60%),
+            radial-gradient(at 100% 0%, rgba(200, 150, 255, 0.6) 0px, transparent 60%),
+            radial-gradient(at 100% 100%, rgba(100, 255, 180, 0.5) 0px, transparent 60%),
+            radial-gradient(at 0% 100%, rgba(255, 200, 100, 0.5) 0px, transparent 60%),
+            radial-gradient(at 50% 50%, rgba(255, 255, 255, 0.8) 0px, transparent 60%);
+        background-size: 160% 160%;
+        animation: gradient-move 25s ease infinite;
         background-attachment: fixed;
+        /* Force Hardware Acceleration */
+        will-change: transform, opacity; 
+        transform: translateZ(0);
       }
       
       .dark .mesh-bg {
         background-color: #050505;
         background-image: 
-            radial-gradient(at 0% 0%, rgba(40, 60, 180, 0.4) 0px, transparent 50%),
-            radial-gradient(at 100% 0%, rgba(100, 40, 160, 0.4) 0px, transparent 50%),
-            radial-gradient(at 100% 100%, rgba(40, 120, 80, 0.3) 0px, transparent 50%),
-            radial-gradient(at 0% 100%, rgba(140, 60, 40, 0.3) 0px, transparent 50%);
+            radial-gradient(at 0% 0%, rgba(40, 60, 180, 0.5) 0px, transparent 60%),
+            radial-gradient(at 100% 0%, rgba(100, 40, 160, 0.5) 0px, transparent 60%),
+            radial-gradient(at 100% 100%, rgba(40, 120, 80, 0.4) 0px, transparent 60%),
+            radial-gradient(at 0% 100%, rgba(140, 60, 40, 0.4) 0px, transparent 60%);
       }
 
       @keyframes gradient-move {
@@ -133,70 +128,73 @@
         100% { background-position: 0% 50%; }
       }
 
-      /* Main Liquid Glass Class */
       .glass-panel {
-        background: rgba(255, 255, 255, 0.25);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
+        background: rgba(255, 255, 255, 0.35);
+        backdrop-filter: blur(25px) saturate(180%);
+        -webkit-backdrop-filter: blur(25px) saturate(180%);
         border: 1.5px solid rgba(255, 255, 255, 0.4);
         box-shadow: 
-          0 8px 32px 0 rgba(31, 38, 135, 0.1),
+          0 10px 40px -10px rgba(31, 38, 135, 0.15),
           inset 0 0 0 1px rgba(255, 255, 255, 0.2);
         border-radius: 24px;
-        transition: background 0.3s ease, backdrop-filter 0.3s ease;
+        transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        will-change: transform, backdrop-filter;
       }
       
       .dark .glass-panel {
-        background: rgba(20, 20, 20, 0.4);
+        background: rgba(20, 20, 20, 0.5);
         border: 1.5px solid rgba(255, 255, 255, 0.08);
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+        box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
       }
 
-      /* Heavier "Liquid" Element (for cards/bubbles) */
       .liquid-card {
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 100%);
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.2) 100%);
+        backdrop-filter: blur(30px) saturate(150%);
+        -webkit-backdrop-filter: blur(30px) saturate(150%);
         border: 1px solid rgba(255, 255, 255, 0.6);
         box-shadow: 
-           0 10px 40px -10px rgba(0,0,0,0.1),
-           inset 0 0 20px rgba(255,255,255,0.2);
-        border-radius: 32px; /* Super rounded */
-        transition: background 0.3s ease, backdrop-filter 0.3s ease;
+           0 15px 45px -10px rgba(0,0,0,0.12),
+           inset 0 0 25px rgba(255,255,255,0.3);
+        border-radius: 32px;
+        transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1); /* Heavy spring */
+        will-change: transform, box-shadow;
+      }
+      
+      .liquid-card:active {
+        transform: scale(0.96);
       }
       
       .dark .liquid-card {
-        background: linear-gradient(135deg, rgba(40, 40, 40, 0.6) 0%, rgba(20, 20, 20, 0.2) 100%);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: linear-gradient(145deg, rgba(40, 40, 40, 0.7) 0%, rgba(20, 20, 20, 0.3) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.12);
         box-shadow: 
-           0 10px 40px -10px rgba(0,0,0,0.5),
-           inset 0 0 20px rgba(255,255,255,0.05);
+           0 15px 45px -10px rgba(0,0,0,0.6),
+           inset 0 0 25px rgba(255,255,255,0.05);
       }
 
-      /* Liquid Input Fields */
       .liquid-input {
-        background: rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.4);
         border: 1px solid rgba(255, 255, 255, 0.5);
         border-radius: 20px;
-        backdrop-filter: blur(10px);
+        backdrop-filter: blur(15px);
         transition: all 0.3s ease;
       }
       .liquid-input:focus {
-        background: rgba(255, 255, 255, 0.5);
-        box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        background: rgba(255, 255, 255, 0.6);
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
         outline: none;
       }
       .dark .liquid-input {
-        background: rgba(0, 0, 0, 0.3);
+        background: rgba(0, 0, 0, 0.4);
         border: 1px solid rgba(255, 255, 255, 0.1);
         color: white;
       }
       .dark .liquid-input:focus {
-        background: rgba(0, 0, 0, 0.5);
-        box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+        background: rgba(0, 0, 0, 0.6);
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
       }
 
-      /* NO LIQUID MODE (Solid Colors) */
+      /* NO LIQUID MODE */
       body.no-liquid .glass-panel {
         background: rgba(255, 255, 255, 0.98);
         backdrop-filter: none;
@@ -223,20 +221,10 @@
         box-shadow: 0 2px 8px rgba(0,0,0,0.3);
       }
 
-      body.no-liquid .liquid-input {
-        background: #f2f2f7;
-        backdrop-filter: none;
-        border: 1px solid transparent;
-      }
-      body.no-liquid.dark .liquid-input {
-        background: #2c2c2e;
-        border: 1px solid transparent;
-      }
-
-      /* Utility to force GPU for smoothness */
       .gpu-accelerated {
-        transform: translateZ(0);
-        will-change: transform, opacity;
+        transform: translate3d(0, 0, 0);
+        backface-visibility: hidden;
+        perspective: 1000px;
       }
     </style>
 <script type="importmap">

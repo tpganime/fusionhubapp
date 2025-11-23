@@ -114,7 +114,13 @@ export const AuthScreen: React.FC = () => {
 
       {/* Liquid Glass Card */}
       <div className={`w-full max-w-md liquid-card p-10 z-10 ${enableAnimations ? 'animate-fade-in' : ''}`}>
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 flex flex-col items-center">
+            <img 
+              src="https://img.icons8.com/3d-fluency/188/atom.png" 
+              alt="Logo" 
+              className="w-24 h-24 mb-4 animate-float drop-shadow-lg"
+              style={{ animationDuration: '6s' }}
+            />
             <h1 className="text-4xl font-black bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent drop-shadow-sm">
             FusionHub
             </h1>

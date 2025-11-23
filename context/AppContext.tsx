@@ -77,6 +77,7 @@ const mapUserFromDB = (dbUser: any): User => {
       allowPrivateChat: !!dbUser.allow_private_chat,
       friends: Array.isArray(dbUser.friends) ? dbUser.friends : [],
       requests: Array.isArray(dbUser.requests) ? dbUser.requests : [],
+      lastSeen: dbUser.last_seen,
     };
   } catch (e) {
     console.error("Error mapping user:", e, dbUser);
@@ -106,6 +107,7 @@ const mapUserToDB = (user: User) => ({
   allow_private_chat: user.allowPrivateChat,
   friends: user.friends,
   requests: user.requests,
+  last_seen: user.lastSeen,
 });
 
 const mapMessageFromDB = (dbMsg: any): Message => {
@@ -195,11 +197,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => { currentUserRef.current = currentUser; }, [currentUser]);
   useEffect(() => { usersRef.current = users; }, [users]);
 
-  // Presence Tracking
+  // Presence Tracking & Last Seen Heartbeat
   useEffect(() => {
     if (!currentUser) return;
 
-    // Use a fixed channel name so everyone connects to the same presence room
+    // 1. Setup Presence Channel
     const presenceChannel = supabase.channel('global_presence');
     
     presenceChannel
@@ -209,7 +211,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         
         Object.values(state).forEach((presences: any) => {
            presences.forEach((p: any) => {
-             // 'user_id' matches the key we send in .track()
              if (p.user_id) activeIds.add(p.user_id);
            });
         });
@@ -224,8 +225,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
       });
 
+    // 2. Heartbeat for Persistent Last Seen
+    const updateLastSeen = async () => {
+      // We only update last_seen, not the whole profile
+      try {
+        await supabase.from('users').update({ last_seen: new Date().toISOString() }).eq('id', currentUser.id);
+      } catch (e) {
+        // Silent fail
+      }
+    };
+
+    updateLastSeen(); // Initial update
+    const heartbeat = setInterval(updateLastSeen, 60000); // Every minute
+
     return () => {
       supabase.removeChannel(presenceChannel);
+      clearInterval(heartbeat);
     };
   }, [currentUser?.id]);
 
@@ -459,6 +474,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           const updatedUser = mapUserFromDB(payload.new);
           setUsers(prev => {
              const exists = prev.find(u => u.id === updatedUser.id);
+             // Special case for config sync if needed
              if (checkIsAdmin(updatedUser.email)) {
                 const newList = exists ? prev.map(u => u.id === updatedUser.id ? updatedUser : u) : [...prev, updatedUser];
                 syncConfigFromUsers(newList);
@@ -469,7 +485,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           });
 
           if (currentUserRef.current && updatedUser.id === currentUserRef.current.id) {
+            // Keep local overrides if any, but update fields
             setCurrentUser(updatedUser);
+            
             const oldReqs = currentUserRef.current.requests || [];
             const newReqs = updatedUser.requests || [];
             if (newReqs.length > oldReqs.length) {
@@ -521,6 +539,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setCurrentUser(user);
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id);
     checkPermissionStatus();
+    // Immediate heartbeat on login
+    await supabase.from('users').update({ last_seen: new Date().toISOString() }).eq('id', user.id);
   };
   
   const loginWithCredentials = async (email: string, pass: string) => {
@@ -600,13 +620,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
              requests: [...currentRequests, currentUser.id] 
            }).eq('id', targetUserId);
         }
-      } else {
-        // Fallback if select fails but user exists (unlikely in this flow but safe)
-        // Just append blindly if we couldn't fetch (not recommended but better than nothing)
       }
     } catch (err) {
       console.error("Failed to send request", err);
-      // Optional: Revert optimistic update on failure, but for now we keep it to prevent UI flickering
     }
   };
   

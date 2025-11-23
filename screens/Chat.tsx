@@ -8,6 +8,19 @@ import { Send, ArrowLeft, CheckCheck, ShieldCheck, Crown } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { BROADCAST_ID } from '../constants';
 
+const formatLastSeen = (dateString?: string) => {
+  if (!dateString) return 'Offline';
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (diffInSeconds < 60) return 'Last seen just now';
+  if (diffInSeconds < 3600) return `Last seen ${Math.floor(diffInSeconds / 60)}m ago`;
+  if (diffInSeconds < 86400) return `Last seen ${Math.floor(diffInSeconds / 3600)}h ago`;
+  if (diffInSeconds < 604800) return `Last seen ${Math.floor(diffInSeconds / 86400)}d ago`;
+  return `Last seen ${date.toLocaleDateString()}`;
+};
+
 export const ChatScreen: React.FC = () => {
   const { currentUser, users, messages, sendMessage, markConversationAsRead, enableAnimations, checkIsAdmin, checkIsOwner, checkIsOnline, appConfig } = useApp();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -151,7 +164,7 @@ export const ChatScreen: React.FC = () => {
                     {isOwnerUser ? <Crown className="w-3 h-3 text-yellow-500 fill-yellow-500" /> : isAdminUser ? <ShieldCheck className="w-3 h-3 text-blue-500" /> : null}
                 </span>
                 <span className={`text-[10px] font-bold ${isSelectedUserOnline ? 'text-green-500' : 'text-gray-400'}`}>
-                    {isSelectedUserOnline ? 'Online' : 'Offline'}
+                    {isSelectedUserOnline ? 'Online' : formatLastSeen(selectedUser.lastSeen)}
                 </span>
             </div>
             </button>

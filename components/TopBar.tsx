@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Bell, User as UserIcon, Settings, MessageCircle, Shield, Crown } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -31,11 +32,14 @@ export const TopBar: React.FC = () => {
   return (
     <>
       <div className="fixed top-4 left-4 right-4 h-16 px-5 flex items-center justify-between z-40 glass-panel shadow-lg">
-        {/* Left Side: Brand */}
-        <div className="flex items-center gap-2">
-           <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-md">
-             F
-           </div>
+        {/* Left Side: Brand with New 3D Logo */}
+        <div className="flex items-center gap-3">
+           <img 
+             src="https://img.icons8.com/3d-fluency/94/atom.png" 
+             alt="Logo" 
+             className="w-9 h-9 drop-shadow-md animate-float"
+             style={{ animationDuration: '8s' }}
+           />
            <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-gray-600 dark:from-white dark:to-gray-300">
              FusionHub
            </h1>

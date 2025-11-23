@@ -19,6 +19,7 @@ export interface User {
   allowPrivateChat: boolean;
   friends: string[]; // list of user IDs
   requests: string[]; // list of user IDs
+  lastSeen?: string;
 }
 
 export interface Message {

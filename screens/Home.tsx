@@ -76,8 +76,8 @@ export const HomeScreen: React.FC = () => {
             </div>
         )}
 
-        {/* Greeting Liquid Card */}
-        <div className={`relative overflow-hidden liquid-card p-8 mb-8 transform-gpu hover:scale-[1.02] transition-transform duration-500 ${enableAnimations ? 'animate-slide-down' : ''}`}>
+        {/* Greeting Liquid Card - COMPACT VERSION */}
+        <div className={`relative overflow-hidden liquid-card p-6 mb-6 transform-gpu hover:scale-[1.02] transition-transform duration-500 ${enableAnimations ? 'animate-slide-down' : ''}`}>
            {/* Fluid background effect */}
            <div className="absolute -top-20 -right-20 w-64 h-64 bg-gradient-to-br from-purple-200 to-blue-200 dark:from-purple-900/40 dark:to-blue-900/40 rounded-full blur-3xl opacity-60 pointer-events-none animate-blob"></div>
            <div 
@@ -86,18 +86,18 @@ export const HomeScreen: React.FC = () => {
            ></div>
 
            <div className="relative z-10">
-             <h2 className="text-lg font-medium text-gray-600 dark:text-gray-300">
+             <h2 className="text-sm font-medium text-gray-600 dark:text-gray-300">
                {timeData.greeting},
              </h2>
-             <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-6 tracking-tight drop-shadow-sm">
+             <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-3 tracking-tight drop-shadow-sm">
                {currentUser?.username}
              </h1>
              
-             <div className="mt-4 flex flex-col items-start">
-                <span className="text-6xl font-thin text-gray-800 dark:text-white tracking-tighter mix-blend-overlay">
+             <div className="mt-2 flex flex-col items-start">
+                <span className="text-4xl font-thin text-gray-800 dark:text-white tracking-tighter mix-blend-overlay">
                   {timeData.time}
                 </span>
-                <span className="px-3 py-1 mt-2 rounded-full bg-white/30 dark:bg-white/10 text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-widest backdrop-blur-md border border-white/20">
+                <span className="px-3 py-1 mt-2 rounded-full bg-white/30 dark:bg-white/10 text-[10px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-widest backdrop-blur-md border border-white/20">
                   {timeData.date}
                 </span>
              </div>

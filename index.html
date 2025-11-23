@@ -21,12 +21,10 @@
             },
             animation: {
               blob: "blob 15s infinite alternate cubic-bezier(0.4, 0, 0.2, 1)",
-              "fade-in": "fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) both",
-              // Heavy fluid animations
-              "slide-up-heavy": "slideUpHeavy 1.0s cubic-bezier(0.2, 1, 0.2, 1) both",
-              "slide-down-heavy": "slideDownHeavy 1.0s cubic-bezier(0.2, 1, 0.2, 1) both",
-              "pop-in-elastic": "popInElastic 1s cubic-bezier(0.34, 1.56, 0.64, 1) both",
-              "zoom-pan": "zoomPan 20s ease-in-out infinite alternate",
+              "fade-in": "fadeIn 0.6s ease-out both",
+              "slide-up-heavy": "slideUpHeavy 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both",
+              "slide-down-heavy": "slideDownHeavy 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both",
+              "pop-in-elastic": "popInElastic 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both",
               "pulse-slow": "pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
               "float": "float 6s ease-in-out infinite",
               "bounce-soft": "bounceSoft 2s infinite",
@@ -34,39 +32,34 @@
             keyframes: {
               blob: {
                 "0%": { transform: "translate(0px, 0px) scale(1)" },
-                "33%": { transform: "translate(30px, -50px) scale(1.15)" },
-                "66%": { transform: "translate(-20px, 20px) scale(0.95)" },
+                "33%": { transform: "translate(20px, -30px) scale(1.05)" },
+                "66%": { transform: "translate(-10px, 10px) scale(0.95)" },
                 "100%": { transform: "translate(0px, 0px) scale(1)" },
               },
               float: {
                 "0%, 100%": { transform: "translateY(0)" },
-                "50%": { transform: "translateY(-15px)" },
+                "50%": { transform: "translateY(-10px)" },
               },
               fadeIn: {
                 "0%": { opacity: "0" },
                 "100%": { opacity: "1" },
               },
-              // Deeper translation for heavier feel
               slideUpHeavy: {
-                "0%": { opacity: "0", transform: "translate3d(0, 40px, 0) scale(0.98)" },
-                "100%": { opacity: "1", transform: "translate3d(0, 0, 0) scale(1)" },
+                "0%": { opacity: "0", transform: "translate3d(0, 30px, 0)" },
+                "100%": { opacity: "1", transform: "translate3d(0, 0, 0)" },
               },
               slideDownHeavy: {
-                 "0%": { opacity: "0", transform: "translate3d(0, -40px, 0) scale(0.98)" },
-                 "100%": { opacity: "1", transform: "translate3d(0, 0, 0) scale(1)" },
+                 "0%": { opacity: "0", transform: "translate3d(0, -30px, 0)" },
+                 "100%": { opacity: "1", transform: "translate3d(0, 0, 0)" },
               },
               popInElastic: {
-                 "0%": { opacity: "0", transform: "scale(0.8) translateY(20px)" },
-                 "60%": { opacity: "1", transform: "scale(1.05) translateY(-5px)" },
+                 "0%": { opacity: "0", transform: "scale(0.9) translateY(10px)" },
+                 "70%": { opacity: "1", transform: "scale(1.02) translateY(-2px)" },
                  "100%": { opacity: "1", transform: "scale(1) translateY(0)" },
-               },
-               zoomPan: {
-                "0%": { transform: "scale(1.2) translate(0, 0)" },
-                "100%": { transform: "scale(1.4) translate(-2%, -2%)" },
                },
                bounceSoft: {
                 "0%, 100%": { transform: "translateY(0)" },
-                "50%": { transform: "translateY(-8px)" },
+                "50%": { transform: "translateY(-5px)" },
                }
             },
           }
@@ -76,6 +69,7 @@
     <style>
       :root {
         --glass-opacity: 0.35;
+        --glass-blur: 20px;
       }
       
       body {
@@ -83,7 +77,7 @@
         background-color: #F2F2F7;
         color: #1C1C1E;
         -webkit-tap-highlight-color: transparent;
-        transition: background-color 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), color 0.4s ease;
+        transition: background-color 0.3s ease, color 0.3s ease;
         overscroll-behavior-y: none;
       }
       .dark body {
@@ -99,31 +93,28 @@
         scrollbar-width: none;
       }
 
-      /* LIQUID GLASS ESSENTIALS - HIGH QUALITY */
+      /* LIQUID GLASS ESSENTIALS - OPTIMIZED */
       
       .mesh-bg {
         background-color: #f0f4f8;
+        /* Reduced complexity for performance */
         background-image: 
-            radial-gradient(at 0% 0%, rgba(100, 200, 255, 0.6) 0px, transparent 60%),
-            radial-gradient(at 100% 0%, rgba(200, 150, 255, 0.6) 0px, transparent 60%),
-            radial-gradient(at 100% 100%, rgba(100, 255, 180, 0.5) 0px, transparent 60%),
-            radial-gradient(at 0% 100%, rgba(255, 200, 100, 0.5) 0px, transparent 60%),
-            radial-gradient(at 50% 50%, rgba(255, 255, 255, 0.8) 0px, transparent 60%);
-        background-size: 160% 160%;
-        animation: gradient-move 25s ease infinite;
-        background-attachment: fixed;
-        /* Force Hardware Acceleration */
-        will-change: transform, opacity; 
+            radial-gradient(at 0% 0%, rgba(100, 200, 255, 0.4) 0px, transparent 50%),
+            radial-gradient(at 100% 100%, rgba(200, 100, 255, 0.4) 0px, transparent 50%),
+            radial-gradient(at 50% 50%, rgba(255, 255, 255, 0.5) 0px, transparent 50%);
+        background-size: 140% 140%;
+        animation: gradient-move 20s ease infinite;
+        background-attachment: scroll; /* Changed from fixed for mobile performance */
+        will-change: transform; 
         transform: translateZ(0);
       }
       
       .dark .mesh-bg {
         background-color: #050505;
+        /* Reduced complexity for performance */
         background-image: 
-            radial-gradient(at 0% 0%, rgba(40, 60, 180, 0.5) 0px, transparent 60%),
-            radial-gradient(at 100% 0%, rgba(100, 40, 160, 0.5) 0px, transparent 60%),
-            radial-gradient(at 100% 100%, rgba(40, 120, 80, 0.4) 0px, transparent 60%),
-            radial-gradient(at 0% 100%, rgba(140, 60, 40, 0.4) 0px, transparent 60%);
+            radial-gradient(at 0% 0%, rgba(40, 60, 180, 0.3) 0px, transparent 50%),
+            radial-gradient(at 100% 100%, rgba(100, 40, 160, 0.3) 0px, transparent 50%);
       }
 
       @keyframes gradient-move {
@@ -134,34 +125,32 @@
 
       .glass-panel {
         background: rgba(255, 255, 255, var(--glass-opacity));
-        backdrop-filter: blur(25px) saturate(180%);
-        -webkit-backdrop-filter: blur(25px) saturate(180%);
-        border: 1.5px solid rgba(255, 255, 255, 0.4);
+        backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+        -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.3);
         box-shadow: 
-          0 10px 40px -10px rgba(31, 38, 135, 0.15),
-          inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+          0 8px 32px 0 rgba(31, 38, 135, 0.1);
         border-radius: 24px;
-        transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-        will-change: transform, backdrop-filter;
+        transition: background 0.3s ease, backdrop-filter 0.3s ease;
+        will-change: backdrop-filter;
       }
       
       .dark .glass-panel {
         background: rgba(20, 20, 20, var(--glass-opacity));
-        border: 1.5px solid rgba(255, 255, 255, 0.08);
-        box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
       }
 
       .liquid-card {
-        background: linear-gradient(145deg, rgba(255, 255, 255, calc(var(--glass-opacity) + 0.15)) 0%, rgba(255, 255, 255, calc(var(--glass-opacity) - 0.15)) 100%);
-        backdrop-filter: blur(30px) saturate(150%);
-        -webkit-backdrop-filter: blur(30px) saturate(150%);
-        border: 1px solid rgba(255, 255, 255, 0.6);
+        background: linear-gradient(145deg, rgba(255, 255, 255, calc(var(--glass-opacity) + 0.1)) 0%, rgba(255, 255, 255, calc(var(--glass-opacity) - 0.1)) 100%);
+        backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+        -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+        border: 1px solid rgba(255, 255, 255, 0.4);
         box-shadow: 
-           0 15px 45px -10px rgba(0,0,0,0.12),
-           inset 0 0 25px rgba(255,255,255,0.3);
+           0 10px 30px -10px rgba(0,0,0,0.1);
         border-radius: 32px;
-        transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1); /* Heavy spring */
-        will-change: transform, box-shadow;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        will-change: transform;
       }
       
       .liquid-card:active {
@@ -169,23 +158,22 @@
       }
       
       .dark .liquid-card {
-        background: linear-gradient(145deg, rgba(40, 40, 40, calc(var(--glass-opacity) + 0.35)) 0%, rgba(20, 20, 20, var(--glass-opacity)) 100%);
-        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: linear-gradient(145deg, rgba(40, 40, 40, calc(var(--glass-opacity) + 0.2)) 0%, rgba(20, 20, 20, var(--glass-opacity)) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: 
-           0 15px 45px -10px rgba(0,0,0,0.6),
-           inset 0 0 25px rgba(255,255,255,0.05);
+           0 10px 30px -10px rgba(0,0,0,0.5);
       }
 
       .liquid-input {
         background: rgba(255, 255, 255, 0.4);
         border: 1px solid rgba(255, 255, 255, 0.5);
         border-radius: 20px;
-        backdrop-filter: blur(15px);
+        backdrop-filter: blur(10px);
         transition: all 0.3s ease;
       }
       .liquid-input:focus {
         background: rgba(255, 255, 255, 0.6);
-        box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
         outline: none;
       }
       .dark .liquid-input {
@@ -195,7 +183,7 @@
       }
       .dark .liquid-input:focus {
         background: rgba(0, 0, 0, 0.6);
-        box-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
       }
 
       /* NO LIQUID MODE */
@@ -203,14 +191,13 @@
         background: rgba(255, 255, 255, 0.98);
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
-        border: 1px solid rgba(0,0,0,0.08);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        border: 1px solid rgba(0,0,0,0.05);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
       }
-      /* Dark mode no-liquid visibility fix */
       body.no-liquid.dark .glass-panel {
         background: #121212;
         border: 1px solid #2c2c2e;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
         color: #ffffff;
       }
 
@@ -218,38 +205,16 @@
         background: #ffffff;
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
-        border: 1px solid rgba(0,0,0,0.08);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        border: 1px solid rgba(0,0,0,0.05);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
       }
-      /* Dark mode no-liquid visibility fix */
       body.no-liquid.dark .liquid-card {
         background: #1c1c1e;
         border: 1px solid #2c2c2e;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
         color: #ffffff;
       }
       
-      body.no-liquid.dark .liquid-input {
-         background: #2c2c2e;
-         color: #ffffff;
-         border-color: #3a3a3c;
-      }
-      
-      /* Ensure text visibility in No-Liquid Dark Mode */
-      body.no-liquid.dark h1,
-      body.no-liquid.dark h2,
-      body.no-liquid.dark h3,
-      body.no-liquid.dark p,
-      body.no-liquid.dark span,
-      body.no-liquid.dark div {
-        color: #ffffff;
-      }
-      /* But allow specific text colors if they are explicitly set to something else (e.g., blue links) */
-      body.no-liquid.dark .text-blue-500 { color: #3b82f6 !important; }
-      body.no-liquid.dark .text-red-500 { color: #ef4444 !important; }
-      body.no-liquid.dark .text-green-500 { color: #22c55e !important; }
-      body.no-liquid.dark .text-gray-500 { color: #9ca3af !important; }
-
       .gpu-accelerated {
         transform: translate3d(0, 0, 0);
         backface-visibility: hidden;

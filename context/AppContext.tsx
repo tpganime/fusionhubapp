@@ -42,6 +42,7 @@ interface AppContextType {
   enableNotifications: () => Promise<void>;
   closePermissionPrompt: () => void;
   updateAppConfig: (newConfig: AppConfig) => Promise<void>;
+  getTimeSpent: () => string;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -147,6 +148,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
+  const sessionStartRef = useRef(Date.now());
+
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     let initial: 'light' | 'dark' = 'light';
     if (typeof window !== 'undefined') {
@@ -213,11 +216,48 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => { currentUserRef.current = currentUser; }, [currentUser]);
   useEffect(() => { usersRef.current = users; }, [users]);
 
+  // Time Tracking
+  useEffect(() => {
+    if (!currentUser) return;
+    sessionStartRef.current = Date.now();
+    const key = `fh_time_spent_${currentUser.id}`;
+
+    const saveTime = () => {
+       const stored = parseInt(localStorage.getItem(key) || '0', 10);
+       const currentSession = Date.now() - sessionStartRef.current;
+       localStorage.setItem(key, (stored + currentSession).toString());
+       sessionStartRef.current = Date.now(); 
+    };
+
+    const interval = setInterval(saveTime, 30000); // Save every 30s
+    window.addEventListener('beforeunload', saveTime);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('beforeunload', saveTime);
+      saveTime();
+    }
+  }, [currentUser?.id]);
+
+  const getTimeSpent = () => {
+    if (!currentUser) return "0m";
+    const key = `fh_time_spent_${currentUser.id}`;
+    const stored = parseInt(localStorage.getItem(key) || '0', 10);
+    const currentSession = Date.now() - sessionStartRef.current;
+    const totalMs = stored + currentSession;
+    
+    const totalMinutes = Math.floor(totalMs / 60000);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+  };
+
   // Presence Tracking & Last Seen Heartbeat
   useEffect(() => {
     if (!currentUser) return;
 
-    // 1. Setup Presence Channel
     const presenceChannel = supabase.channel('global_presence');
     
     presenceChannel
@@ -241,7 +281,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
       });
 
-    // 2. Heartbeat for Persistent Last Seen
     const updateLastSeen = async () => {
       try {
         await supabase.from('users').update({ last_seen: new Date().toISOString() }).eq('id', currentUser.id);
@@ -278,7 +317,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [enableLiquid]);
 
   useEffect(() => {
+    // Apply opacity
     document.documentElement.style.setProperty('--glass-opacity', glassOpacity.toString());
+    
+    // Apply dynamic blur: if opacity is 0 (fully clear), remove blur completely
+    const blurValue = glassOpacity <= 0.02 ? '0px' : '20px';
+    document.documentElement.style.setProperty('--glass-blur', blurValue);
+
     localStorage.setItem(STORAGE_KEYS.GLASS_OPACITY, glassOpacity.toString());
   }, [glassOpacity]);
 
@@ -611,8 +656,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const deactivateAccount = async () => {
-    // For now, functionally similar to delete or logout, 
-    // but in a real app this would toggle a status flag.
     if (!currentUser) return;
     alert("Account deactivated. You can reactivate by logging in again (Beta feature).");
     logout();
@@ -642,20 +685,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const sendFriendRequest = async (targetUserId: string) => {
     if (!currentUser) return;
     
-    // 1. Aggressive Optimistic Update for UI responsiveness
     setUsers(prev => prev.map(u => {
       if (u.id === targetUserId) {
         const currentReqs = u.requests || [];
         if (currentReqs.includes(currentUser.id)) return u;
-        // Explicitly add current user ID to requests
         return { ...u, requests: [...currentReqs, currentUser.id] };
       }
       return u;
     }));
 
-    // 2. Reliable DB Update
     try {
-      // Fetch latest state first to avoid race conditions, but we already updated UI so user is happy
       const { data: targetUserRemote } = await supabase.from('users').select('requests').eq('id', targetUserId).single();
       
       if (targetUserRemote) {
@@ -678,7 +717,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const acceptFriendRequest = async (requesterId: string) => {
     if (!currentUser) return;
 
-    // 1. Optimistic Update
     const updatedCurrentUser = {
         ...currentUser,
         friends: [...currentUser.friends, requesterId],
@@ -694,13 +732,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         return u;
     }));
 
-    // 2. DB Update
     const myNewFriends = updatedCurrentUser.friends;
     const myNewRequests = updatedCurrentUser.requests;
     
     await supabase.from('users').update({ friends: myNewFriends, requests: myNewRequests }).eq('id', currentUser.id);
     
-    // Update the other user's friend list
     const { data: requesterRemote } = await supabase.from('users').select('friends').eq('id', requesterId).single();
     if (requesterRemote) {
        const theirFriends = requesterRemote.friends || [];
@@ -731,7 +767,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       appConfig, isAdmin, isOwner, onlineUsers,
       login, loginWithCredentials, logout, signup, updateProfile, deleteAccount, deactivateAccount,
       sendMessage, broadcastMessage, sendFriendRequest, acceptFriendRequest, markNotificationRead,
-      toggleTheme, toggleAnimations, toggleLiquid, setGlassOpacity, markConversationAsRead, checkIsAdmin, checkIsOwner, checkIsOnline, enableNotifications, closePermissionPrompt, updateAppConfig
+      toggleTheme, toggleAnimations, toggleLiquid, setGlassOpacity, markConversationAsRead, checkIsAdmin, checkIsOwner, checkIsOnline, enableNotifications, closePermissionPrompt, updateAppConfig, getTimeSpent
     }}>
       {children}
     </AppContext.Provider>

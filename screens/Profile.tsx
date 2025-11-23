@@ -46,7 +46,7 @@ const compressImage = (file: File): Promise<string> => {
 };
 
 export const ProfileScreen: React.FC = () => {
-  const { currentUser, users, updateProfile, sendFriendRequest, checkIsAdmin, checkIsOwner, checkIsOnline, enableAnimations, appConfig } = useApp();
+  const { currentUser, users, updateProfile, sendFriendRequest, checkIsAdmin, checkIsOwner, checkIsOnline, enableAnimations, appConfig, getTimeSpent } = useApp();
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   
@@ -155,8 +155,8 @@ export const ProfileScreen: React.FC = () => {
   };
 
   const handleTimeSpent = () => {
-      // Feature implementation as requested
-      alert(`Online: 12h 43m\n(Session tracked)`);
+      // Use real tracking
+      alert(`Total Active Time: ${getTimeSpent()}\n(Tracked locally across sessions)`);
   };
 
   const isFriend = currentUser?.friends.includes(profileUser.id);

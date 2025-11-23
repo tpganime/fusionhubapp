@@ -41,6 +41,21 @@ export const SettingsScreen: React.FC = () => {
       }
   };
 
+  // Inverted Logic for Slider
+  // Glass Opacity: 0.0 (Transparent) to 1.0 (Opaque)
+  // Slider UI: Transparency 0% (Opaque) to 100% (Transparent)
+  // Mapping: Opacity = 1.0 - (Slider / 100)
+  // Slider = (1.0 - Opacity) * 100
+  const transparencyValue = Math.round((1.0 - glassOpacity) * 100);
+
+  const handleTransparencyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const val = parseInt(e.target.value, 10);
+      // If 100% transparent, opacity is 0. If 0% transparent, opacity is 1.
+      // Limit opacity to max 1.0
+      const newOpacity = 1.0 - (val / 100.0);
+      setGlassOpacity(Math.max(0, Math.min(1, newOpacity)));
+  };
+
   if (showPrivacyPolicy) {
     return (
       <div className="h-full overflow-y-auto no-scrollbar">
@@ -122,16 +137,16 @@ export const SettingsScreen: React.FC = () => {
                        <div className="p-2.5 bg-gray-100 dark:bg-gray-800 rounded-xl text-gray-600 dark:text-gray-300 shadow-md"><Sliders className="w-5 h-5" /></div>
                        <div className="flex flex-col flex-1">
                           <span className="font-bold text-gray-900 dark:text-white text-sm">Transparency</span>
-                          <span className="text-[10px] text-gray-500 dark:text-gray-400">{(glassOpacity * 100).toFixed(0)}% (Lower is clearer)</span>
+                          <span className="text-[10px] text-gray-500 dark:text-gray-400">{transparencyValue}% {transparencyValue === 100 ? '(Clear)' : ''}</span>
                        </div>
                    </div>
                    <input 
                        type="range" 
-                       min="0.0" 
-                       max="1.0" 
-                       step="0.05"
-                       value={glassOpacity} 
-                       onChange={(e) => setGlassOpacity(parseFloat(e.target.value))}
+                       min="0" 
+                       max="100" 
+                       step="1"
+                       value={transparencyValue} 
+                       onChange={handleTransparencyChange}
                        className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
                    />
                </div>

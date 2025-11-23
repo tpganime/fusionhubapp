@@ -72,4 +72,4 @@ Our service is not intended for users under the age of 13. We do not knowingly c
 We may update this privacy policy from time to time. We will notify you of any changes by posting the new policy on this page and updating the "Last updated" date.
 
 9. Contact Us
-If you have any questions about this Privacy Policy, please contact us through the app or email us at fusionhub122@gmail.com`;
+If you have any questions about this Privacy Policy, please contact us through the app or email us at fusionhub122@gmail.com (Support Mail).`;

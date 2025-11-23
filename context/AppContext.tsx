@@ -29,7 +29,7 @@ interface AppContextType {
   toggleTheme: () => void;
   toggleAnimations: () => void;
   markConversationAsRead: (senderId: string) => void;
-  isOwner: (email: string) => boolean;
+  checkIsAdmin: (email: string) => boolean;
   enableNotifications: () => Promise<void>;
   closePermissionPrompt: () => void;
   updateAppConfig: (newConfig: AppConfig) => Promise<void>;
@@ -173,7 +173,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // -- Config Management --
   // We use the Admin User's description field to store the global app config JSON.
-  // This is a workaround to enable remote configuration without creating new DB tables.
   const syncConfigFromUsers = (userList: User[]) => {
     const adminUser = userList.find(u => u.email.toLowerCase() === ADMIN_EMAIL.toLowerCase());
     if (adminUser && adminUser.description && adminUser.description.startsWith('{')) {
@@ -197,6 +196,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const configString = JSON.stringify(newConfig);
     const updatedUser = { ...currentUser, description: configString };
+    
+    // We update local state immediately so UI reflects change
+    setCurrentUser(updatedUser);
+    setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
     
     await updateProfile(updatedUser);
   };
@@ -331,8 +334,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           triggerNotification(`Message from ${senderName}`, newMsg.content, sender?.avatar);
         }
 
-        // Handle Broadcast Messages
-        if (newMsg.receiverId === BROADCAST_ID && (!currentUserRef.current || newMsg.senderId !== currentUserRef.current.id)) {
+        // Handle Broadcast Messages (Triggered by insertion of a message to BROADCAST_ID)
+        if (newMsg.receiverId === BROADCAST_ID) {
+           // Don't notify the sender (the admin who sent it)
+           if (currentUserRef.current && newMsg.senderId === currentUserRef.current.id) return;
+
            const sender = usersRef.current.find(u => u.id === newMsg.senderId);
            const senderName = sender?.username || "Admin";
            const notif: AppNotification = {
@@ -359,7 +365,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
              const exists = prev.find(u => u.id === updatedUser.id);
              // Update config if Admin user updated
              if (updatedUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-                syncConfigFromUsers(exists ? prev.map(u => u.id === updatedUser.id ? updatedUser : u) : [...prev, updatedUser]);
+                const newList = exists ? prev.map(u => u.id === updatedUser.id ? updatedUser : u) : [...prev, updatedUser];
+                syncConfigFromUsers(newList);
+                return newList;
              }
              if (exists) return prev.map(u => u.id === updatedUser.id ? updatedUser : u);
              return [...prev, updatedUser];
@@ -469,6 +477,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       read: false
     };
     
+    // We update local state for messages sent by us immediately
     setMessages(prev => [...prev, newMsg]);
 
     const { error } = await supabase.from('messages').insert(mapMessageToDB(newMsg));
@@ -480,6 +489,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const broadcastMessage = async (content: string) => {
     if (!isAdmin || !currentUser) return;
+    // Broadcast message is just a message to a specific ID
     await sendMessage(BROADCAST_ID, content);
   };
 
@@ -539,7 +549,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   };
 
-  const isOwner = (email: string) => email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+  const checkIsAdmin = (email: string) => email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
 
   return (
     <AppContext.Provider value={{
@@ -567,7 +577,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       toggleTheme,
       toggleAnimations,
       markConversationAsRead,
-      isOwner,
+      checkIsAdmin,
       enableNotifications,
       closePermissionPrompt,
       updateAppConfig

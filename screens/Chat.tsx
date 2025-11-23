@@ -4,12 +4,12 @@ import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
 import { ComingSoon } from '../components/ComingSoon';
 import { User, Message } from '../types';
-import { Send, ArrowLeft, CheckCheck, Sparkles, AlertTriangle } from 'lucide-react';
+import { Send, ArrowLeft, CheckCheck, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { BROADCAST_ID } from '../constants';
 
 export const ChatScreen: React.FC = () => {
-  const { currentUser, users, messages, sendMessage, markConversationAsRead, enableAnimations, isOwner, appConfig } = useApp();
+  const { currentUser, users, messages, sendMessage, markConversationAsRead, enableAnimations, checkIsAdmin, appConfig } = useApp();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -80,8 +80,6 @@ export const ChatScreen: React.FC = () => {
         <main className="px-4 pt-2">
           <h1 className={`text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white ${enableAnimations ? 'animate-slide-in-right' : ''}`}>Chats</h1>
           
-          {/* System Broadcast Preview (Fake entry if there are broadcasts? No, notifications handle that) */}
-          
           <div className="space-y-2">
             {chatUsers.length === 0 ? (
               <div className="text-center py-10 text-gray-400 dark:text-gray-600">
@@ -93,7 +91,7 @@ export const ChatScreen: React.FC = () => {
                 const userMsgs = getConversation(user.id);
                 const lastMsg = userMsgs[userMsgs.length - 1];
                 const hasUnread = lastMsg && lastMsg.senderId === user.id && !lastMsg.read;
-                const isUserOwner = isOwner(user.email);
+                const isAdminUser = checkIsAdmin(user.email);
 
                 return (
                   <button
@@ -103,15 +101,15 @@ export const ChatScreen: React.FC = () => {
                     style={{ animationDelay: `${index * 0.05}s`, animationFillMode: 'both' }}
                   >
                     <div className="relative">
-                      <img src={user.avatar} alt={user.username} className={`w-12 h-12 rounded-full object-cover border ${isUserOwner ? 'border-yellow-400' : 'border-gray-200 dark:border-gray-700'}`} />
+                      <img src={user.avatar} alt={user.username} className={`w-12 h-12 rounded-full object-cover border ${isAdminUser ? 'border-blue-500' : 'border-gray-200 dark:border-gray-700'}`} />
                       {hasUnread && <span className="absolute top-0 right-0 w-3 h-3 bg-blue-500 rounded-full border-2 border-white dark:border-dark-surface animate-pulse"></span>}
-                      {isUserOwner && <div className="absolute -bottom-1 -right-1 bg-yellow-400 rounded-full p-[2px]"><Sparkles className="w-3 h-3 text-white" /></div>}
+                      {isAdminUser && <div className="absolute -bottom-1 -right-1 bg-blue-500 rounded-full p-[2px]"><ShieldCheck className="w-3 h-3 text-white" /></div>}
                     </div>
                     <div className="ml-3 text-left flex-1 min-w-0">
                       <div className="flex justify-between items-center">
                         <h3 className={`font-semibold truncate flex items-center gap-1 ${hasUnread ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>
                             {user.username}
-                            {isUserOwner && <span className="text-[10px] text-yellow-500">👑</span>}
+                            {isAdminUser && <span className="text-[10px] text-blue-500">🛡️</span>}
                         </h3>
                         {lastMsg && <span className="text-[10px] text-gray-400">{new Date(lastMsg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>}
                       </div>
@@ -139,10 +137,10 @@ export const ChatScreen: React.FC = () => {
           onClick={() => navigate(`/user/${selectedUser.id}`)}
           className="flex items-center flex-1 hover:opacity-80 transition-opacity"
         >
-          <img src={selectedUser.avatar} alt="avatar" className={`w-8 h-8 rounded-full object-cover ${isOwner(selectedUser.email) ? 'border-2 border-yellow-400' : ''}`} />
+          <img src={selectedUser.avatar} alt="avatar" className={`w-8 h-8 rounded-full object-cover ${checkIsAdmin(selectedUser.email) ? 'border-2 border-blue-500' : ''}`} />
           <span className="ml-3 font-semibold text-gray-900 dark:text-white flex items-center gap-1">
               {selectedUser.username}
-              {isOwner(selectedUser.email) && <Sparkles className="w-3 h-3 text-yellow-500" />}
+              {checkIsAdmin(selectedUser.email) && <ShieldCheck className="w-3 h-3 text-blue-500" />}
           </span>
         </button>
       </div>

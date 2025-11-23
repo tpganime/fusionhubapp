@@ -108,7 +108,7 @@ export const ChatScreen: React.FC = () => {
                   <button
                     key={user.id}
                     onClick={() => setSelectedUser(user)}
-                    className={`w-full flex items-center p-4 liquid-card hover:bg-white/40 dark:hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-95 transform-gpu will-change-transform ${enableAnimations ? 'animate-slide-up-heavy' : ''}`}
+                    className={`w-full flex items-center p-4 liquid-card hover:bg-white/40 dark:hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-95 transform-gpu will-change-transform ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`}
                     style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'both' }}
                   >
                     <div className="relative">
@@ -154,11 +154,11 @@ export const ChatScreen: React.FC = () => {
             onClick={() => navigate(`/user/${selectedUser.id}`)}
             className="flex items-center gap-3 hover:opacity-80 transition-opacity"
             >
-            <div className={`relative ${enableAnimations ? 'animate-scale-up' : ''}`}>
+            <div className={`relative ${enableAnimations ? 'animate-pop-in-elastic' : ''}`}>
                 <img src={selectedUser.avatar} alt="avatar" className={`w-10 h-10 rounded-full object-cover border ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-white/50'}`} />
                 {isSelectedUserOnline && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border border-white dark:border-gray-800 shadow-sm animate-pulse"></span>}
             </div>
-            <div className={`flex flex-col items-start ${enableAnimations ? 'animate-fade-in-up' : ''}`}>
+            <div className={`flex flex-col items-start ${enableAnimations ? 'animate-slide-in-right' : ''}`}>
                 <span className="font-bold text-gray-900 dark:text-white text-sm flex items-center gap-1">
                     {selectedUser.name || selectedUser.username}
                     {isOwnerUser ? <Crown className="w-3 h-3 text-yellow-500 fill-yellow-500" /> : isAdminUser ? <ShieldCheck className="w-3 h-3 text-blue-500" /> : null}
@@ -181,14 +181,14 @@ export const ChatScreen: React.FC = () => {
         ) : (
            conversation.map((msg, idx) => {
              const isMe = msg.senderId === currentUser?.id;
-             // Animate only the last few messages or all if initial load
-             const shouldAnimate = enableAnimations && idx >= conversation.length - 15;
+             // Animate only the last few messages to preserve performance on long lists
+             const shouldAnimate = enableAnimations && idx >= conversation.length - 10;
              
              return (
                <div 
                   key={msg.id} 
                   className={`flex ${isMe ? 'justify-end' : 'justify-start'} transform-gpu will-change-transform ${shouldAnimate ? 'animate-slide-up-heavy opacity-0' : ''}`} 
-                  style={{ animationDelay: shouldAnimate ? `${(idx - (conversation.length - 15)) * 30}ms` : '0s', animationFillMode: 'both' }}
+                  style={{ animationDelay: shouldAnimate ? `${(idx - (conversation.length - 10)) * 50}ms` : '0s', animationFillMode: 'both' }}
                 >
                  <div className={`max-w-[80%] px-5 py-3 text-sm backdrop-blur-md shadow-sm border ${
                    isMe 

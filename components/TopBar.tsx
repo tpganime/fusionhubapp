@@ -136,7 +136,7 @@ export const TopBar: React.FC = () => {
              </button>
           ) : (
              <button onClick={() => navigate('/profile')} className="relative group">
-                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white/80 dark:border-white/20 shadow-lg group-hover:scale-105 transition-transform">
+                <div className={`w-10 h-10 rounded-full overflow-hidden border-2 border-white/80 dark:border-white/20 shadow-lg group-hover:scale-105 transition-transform ${enableAnimations ? 'animate-pop-in-elastic' : ''}`}>
                   {currentUser?.avatar ? (
                     <img src={currentUser.avatar} alt="Profile" className="w-full h-full object-cover" />
                   ) : (

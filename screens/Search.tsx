@@ -40,9 +40,9 @@ export const SearchScreen: React.FC = () => {
     <div className="h-full overflow-y-auto pb-32 no-scrollbar gpu-accelerated">
       <TopBar />
       <main className="px-5 pt-2">
-        <h1 className={`text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white ${enableAnimations ? 'animate-fade-in-up' : ''}`}>Discover</h1>
+        <h1 className={`text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`} style={{ animationFillMode: 'both' }}>Discover</h1>
         
-        <div className={`relative mb-6 transform-gpu ${enableAnimations ? 'animate-fade-in-up' : ''}`} style={{ animationDelay: '100ms' }}>
+        <div className={`relative mb-6 transform-gpu ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`} style={{ animationDelay: '100ms', animationFillMode: 'both' }}>
           <SearchIcon className="absolute left-5 top-4 text-gray-500 w-5 h-5 z-10" />
           <input
             type="text"

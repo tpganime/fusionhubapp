@@ -93,7 +93,7 @@ export const SettingsScreen: React.FC = () => {
         
         {/* Admin Section */}
         {isAdmin && (
-          <section className={`${enableAnimations ? 'animate-slide-up-heavy' : ''}`} style={getAnimStyle(0)}>
+          <section className={`${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`} style={getAnimStyle(0)}>
             <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 ml-2 tracking-wider">Admin</h3>
             <div className="liquid-card overflow-hidden">
                <button onClick={() => navigate('/admin')} className="w-full p-5 flex items-center justify-between hover:bg-white/20 transition-colors group">
@@ -108,7 +108,7 @@ export const SettingsScreen: React.FC = () => {
         )}
 
         {/* Appearance */}
-        <section className={`${enableAnimations ? 'animate-slide-up-heavy' : ''}`} style={getAnimStyle(1)}>
+        <section className={`${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`} style={getAnimStyle(1)}>
           <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 ml-2 tracking-wider">Appearance</h3>
           <div className="liquid-card overflow-hidden divide-y divide-gray-200/30 dark:divide-white/10">
              
@@ -193,7 +193,7 @@ export const SettingsScreen: React.FC = () => {
         </section>
 
         {/* Privacy */}
-        <section className={`${enableAnimations ? 'animate-slide-up-heavy' : ''}`} style={getAnimStyle(2)}>
+        <section className={`${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`} style={getAnimStyle(2)}>
           <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 ml-2 tracking-wider">Privacy</h3>
           <div className="liquid-card overflow-hidden divide-y divide-gray-200/30 dark:divide-white/10">
             <div className="p-5 flex items-center justify-between">
@@ -220,7 +220,7 @@ export const SettingsScreen: React.FC = () => {
         </section>
 
         {/* Legal */}
-        <section className={`${enableAnimations ? 'animate-slide-up-heavy' : ''}`} style={getAnimStyle(3)}>
+        <section className={`${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`} style={getAnimStyle(3)}>
           <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 ml-2 tracking-wider">Legal</h3>
           <div className="liquid-card overflow-hidden">
             <button onClick={() => setShowPrivacyPolicy(true)} className="w-full p-5 flex items-center justify-between hover:bg-white/20 transition-colors">
@@ -234,7 +234,7 @@ export const SettingsScreen: React.FC = () => {
         </section>
 
         {/* Danger Zone */}
-        <section className={`${enableAnimations ? 'animate-slide-up-heavy' : ''}`} style={getAnimStyle(4)}>
+        <section className={`${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`} style={getAnimStyle(4)}>
           <h3 className="text-xs font-bold text-red-500/70 uppercase mb-3 ml-2 tracking-wider">Danger Zone</h3>
           <div className="liquid-card overflow-hidden divide-y divide-gray-200/30 dark:divide-white/10">
             <button onClick={handleLogout} className="w-full p-5 flex items-center justify-between text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors">

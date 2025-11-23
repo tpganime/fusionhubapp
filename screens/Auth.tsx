@@ -105,7 +105,8 @@ export const AuthScreen: React.FC = () => {
     );
   }
 
-  const animClass = enableAnimations ? 'animate-fade-in-up' : '';
+  const animClass = enableAnimations ? 'animate-slide-up-heavy opacity-0' : '';
+  const getDelay = (ms: number) => enableAnimations ? { animationDelay: `${ms}ms`, animationFillMode: 'both' as const } : {};
 
   return (
     <div className="h-full flex flex-col items-center justify-center p-6 relative overflow-hidden">
@@ -135,10 +136,10 @@ export const AuthScreen: React.FC = () => {
               <ellipse cx="50" cy="50" rx="40" ry="12" stroke="url(#logo_grad_auth)" strokeWidth="6" transform="rotate(60 50 50)" />
               <ellipse cx="50" cy="50" rx="40" ry="12" stroke="url(#logo_grad_auth)" strokeWidth="6" transform="rotate(120 50 50)" />
             </svg>
-            <h1 className={`text-4xl font-black bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent drop-shadow-sm ${animClass}`}>
+            <h1 className={`text-4xl font-black bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent drop-shadow-sm ${animClass}`} style={getDelay(100)}>
             FusionHub
             </h1>
-            <h2 className={`text-lg font-bold text-gray-800 dark:text-gray-100 mt-2 ${animClass}`} style={{ animationDelay: '100ms' }}>
+            <h2 className={`text-lg font-bold text-gray-800 dark:text-gray-100 mt-2 ${animClass}`} style={getDelay(200)}>
                 {isLogin ? 'Welcome Back!' : 'Join the Future'}
             </h2>
         </div>
@@ -146,7 +147,7 @@ export const AuthScreen: React.FC = () => {
         <form onSubmit={isLogin ? handleLogin : handleSignup} className="space-y-5">
           
           {!isLogin && (
-            <div className={`space-y-1 ${animClass}`} style={{ animationDelay: '150ms' }}>
+            <div className={`space-y-1 ${animClass}`} style={getDelay(300)}>
               <label className="text-xs font-bold text-gray-600 dark:text-gray-300 ml-2 uppercase tracking-wide">Username</label>
               <div className="relative">
                 <input
@@ -170,7 +171,7 @@ export const AuthScreen: React.FC = () => {
             </div>
           )}
 
-          <div className={`space-y-1 ${animClass}`} style={{ animationDelay: '200ms' }}>
+          <div className={`space-y-1 ${animClass}`} style={getDelay(400)}>
             <label className="text-xs font-bold text-gray-600 dark:text-gray-300 ml-2 uppercase tracking-wide">Email</label>
             <div className="relative">
                <input
@@ -185,7 +186,7 @@ export const AuthScreen: React.FC = () => {
             </div>
           </div>
 
-          <div className={`space-y-1 ${animClass}`} style={{ animationDelay: '250ms' }}>
+          <div className={`space-y-1 ${animClass}`} style={getDelay(500)}>
             <label className="text-xs font-bold text-gray-600 dark:text-gray-300 ml-2 uppercase tracking-wide">Password</label>
             <div className="relative">
               <input
@@ -212,14 +213,14 @@ export const AuthScreen: React.FC = () => {
             type="submit"
             disabled={isSubmitting}
             className={`w-full py-4 mt-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl font-bold text-lg shadow-xl shadow-blue-500/20 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center space-x-2 disabled:opacity-70 disabled:scale-100 ${animClass}`}
-            style={{ animationDelay: '300ms' }}
+            style={getDelay(600)}
           >
             {isSubmitting ? <Loader2 className="animate-spin" /> : <span>{isLogin ? 'Login' : 'Create Account'}</span>}
             {!isSubmitting && <ArrowRight size={20} />}
           </button>
         </form>
 
-        <div className={`mt-8 text-center ${animClass}`} style={{ animationDelay: '350ms' }}>
+        <div className={`mt-8 text-center ${animClass}`} style={getDelay(700)}>
           <p className="text-sm text-gray-600 dark:text-gray-300">
             {isLogin ? "New here?" : "Have an account?"}
             <button

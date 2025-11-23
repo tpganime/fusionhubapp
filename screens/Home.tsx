@@ -52,7 +52,7 @@ export const HomeScreen: React.FC = () => {
 
   // Animation Calculation
   const getDelay = (index: number) => {
-    return enableAnimations ? { animationDelay: `${250 + (index * 80)}ms`, animationFillMode: 'both' } : {};
+    return enableAnimations ? { animationDelay: `${250 + (index * 80)}ms`, animationFillMode: 'both' as const } : {};
   };
 
   return (
@@ -91,18 +91,18 @@ export const HomeScreen: React.FC = () => {
            ></div>
 
            <div className="relative z-10">
-             <h2 className={`text-sm font-medium text-gray-600 dark:text-gray-300 ${enableAnimations ? 'animate-fade-in-up' : ''}`} style={{ animationDelay: '100ms' }}>
+             <h2 className={`text-sm font-medium text-gray-600 dark:text-gray-300 ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`} style={{ animationDelay: '100ms', animationFillMode: 'both' }}>
                {timeData.greeting},
              </h2>
-             <h1 className={`text-2xl font-extrabold text-gray-900 dark:text-white mb-3 tracking-tight drop-shadow-sm ${enableAnimations ? 'animate-fade-in-up' : ''}`} style={{ animationDelay: '200ms' }}>
+             <h1 className={`text-2xl font-extrabold text-gray-900 dark:text-white mb-3 tracking-tight drop-shadow-sm ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`} style={{ animationDelay: '200ms', animationFillMode: 'both' }}>
                {currentUser?.username}
              </h1>
              
              <div className="mt-2 flex flex-col items-start">
-                <span className={`text-4xl font-thin text-gray-800 dark:text-white tracking-tighter mix-blend-overlay ${enableAnimations ? 'animate-fade-in-up' : ''}`} style={{ animationDelay: '300ms' }}>
+                <span className={`text-4xl font-thin text-gray-800 dark:text-white tracking-tighter mix-blend-overlay ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`} style={{ animationDelay: '300ms', animationFillMode: 'both' }}>
                   {timeData.time}
                 </span>
-                <span className={`px-3 py-1 mt-2 rounded-full bg-white/40 dark:bg-white/10 text-[10px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-widest backdrop-blur-md border border-white/30 ${enableAnimations ? 'animate-pop-in-elastic' : ''}`} style={{ animationDelay: '400ms' }}>
+                <span className={`px-3 py-1 mt-2 rounded-full bg-white/40 dark:bg-white/10 text-[10px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-widest backdrop-blur-md border border-white/30 ${enableAnimations ? 'animate-pop-in-elastic' : ''}`} style={{ animationDelay: '500ms' }}>
                   {timeData.date}
                 </span>
              </div>

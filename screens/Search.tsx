@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
@@ -39,7 +40,7 @@ export const SearchScreen: React.FC = () => {
       <main className="px-5 pt-2">
         <h1 className="text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white">Discover</h1>
         
-        <div className={`relative mb-6 transform-gpu ${enableAnimations ? 'animate-elastic-up' : ''}`}>
+        <div className={`relative mb-6 transform-gpu ${enableAnimations ? 'animate-pop-in' : ''}`}>
           <SearchIcon className="absolute left-5 top-4 text-gray-500 w-5 h-5 z-10" />
           <input
             type="text"

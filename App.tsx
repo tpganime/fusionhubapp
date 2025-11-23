@@ -19,7 +19,7 @@ const NotificationModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white/95 dark:bg-dark-surface/95 backdrop-blur-xl p-6 rounded-3xl shadow-2xl max-w-sm w-full border border-white/50 dark:border-gray-700 transform transition-all scale-100 animate-elastic-up">
+      <div className="bg-white/95 dark:bg-dark-surface/95 backdrop-blur-xl p-6 rounded-3xl shadow-2xl max-w-sm w-full border border-white/50 dark:border-gray-700 transform transition-all scale-100 animate-pop-in">
         <div className="flex justify-center mb-5">
            <div className="p-4 bg-gradient-to-tr from-blue-400 to-blue-600 rounded-2xl shadow-lg shadow-blue-500/40 animate-pulse-slow">
               <Bell className="w-8 h-8 text-white fill-white" />

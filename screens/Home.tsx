@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { HOME_SHORTCUTS } from '../constants';
@@ -76,7 +77,7 @@ export const HomeScreen: React.FC = () => {
         )}
 
         {/* Greeting Liquid Card */}
-        <div className={`relative overflow-hidden liquid-card p-8 mb-8 transform-gpu ${enableAnimations ? 'animate-elastic-up opacity-0' : ''}`} style={{ animationDelay: '0ms' }}>
+        <div className={`relative overflow-hidden liquid-card p-8 mb-8 transform-gpu ${enableAnimations ? 'animate-pop-in opacity-0' : ''}`} style={{ animationDelay: '0ms' }}>
            {/* Fluid background effect */}
            <div className="absolute -top-20 -right-20 w-64 h-64 bg-gradient-to-br from-purple-200 to-blue-200 dark:from-purple-900/40 dark:to-blue-900/40 rounded-full blur-3xl opacity-60 pointer-events-none animate-blob"></div>
            <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-gradient-to-tr from-pink-200 to-yellow-100 dark:from-pink-900/40 dark:to-yellow-900/20 rounded-full blur-3xl opacity-60 pointer-events-none animate-blob" style={{ animationDelay: '2s'}}></div>

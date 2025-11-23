@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { HOME_SHORTCUTS } from '../constants';
@@ -57,7 +56,7 @@ export const HomeScreen: React.FC = () => {
         
         {/* Notification Permission Liquid Banner */}
         {showNotifBanner && (
-            <div className={`mb-6 p-5 liquid-card flex items-center justify-between transform-gpu ${enableAnimations ? 'animate-pop-in' : ''}`}>
+            <div className={`mb-6 p-5 liquid-card flex items-center justify-between transform-gpu ${enableAnimations ? 'animate-fade-in' : ''}`}>
                 <div className="flex items-center gap-4">
                     <div className="p-3 bg-blue-500/20 rounded-full text-blue-600 dark:text-blue-300 shadow-inner">
                         <Bell className="w-6 h-6" />
@@ -77,7 +76,7 @@ export const HomeScreen: React.FC = () => {
         )}
 
         {/* Greeting Liquid Card */}
-        <div className={`relative overflow-hidden liquid-card p-8 mb-8 transform-gpu ${enableAnimations ? 'animate-pop-in' : ''}`}>
+        <div className={`relative overflow-hidden liquid-card p-8 mb-8 transform-gpu ${enableAnimations ? 'animate-fade-in' : ''}`}>
            {/* Fluid background effect */}
            <div className="absolute -top-20 -right-20 w-64 h-64 bg-gradient-to-br from-purple-200 to-blue-200 dark:from-purple-900/40 dark:to-blue-900/40 rounded-full blur-3xl opacity-60 pointer-events-none animate-blob"></div>
            <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-gradient-to-tr from-pink-200 to-yellow-100 dark:from-pink-900/40 dark:to-yellow-900/20 rounded-full blur-3xl opacity-60 pointer-events-none animate-blob" style={{ animationDelay: '2s'}}></div>
@@ -114,7 +113,7 @@ export const HomeScreen: React.FC = () => {
                        href={shortcut.url}
                        target="_blank"
                        rel="noopener noreferrer"
-                       className={`group relative overflow-hidden liquid-card p-5 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 transform-gpu ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`}
+                       className={`group relative overflow-hidden liquid-card p-5 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 transform-gpu ${enableAnimations ? 'animate-fade-in' : ''}`}
                        style={{ animationDelay: `${100 + (index * 50)}ms`, animationFillMode: 'both' }}
                      >
                         <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0 duration-300">
@@ -137,7 +136,7 @@ export const HomeScreen: React.FC = () => {
                  return (
                      <div 
                        key={shortcut.name}
-                       className={`group relative overflow-hidden liquid-card p-5 opacity-60 cursor-not-allowed transform-gpu ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`}
+                       className={`group relative overflow-hidden liquid-card p-5 opacity-60 cursor-not-allowed transform-gpu ${enableAnimations ? 'animate-fade-in' : ''}`}
                        style={{ animationDelay: `${100 + (index * 50)}ms`, animationFillMode: 'both' }}
                      >
                         <div className="absolute top-3 right-3">

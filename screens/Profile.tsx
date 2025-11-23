@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
 import { ComingSoon } from '../components/ComingSoon';
-import { Camera, Save, ArrowLeft, MessageCircle, UserPlus, Check, Lock, Calendar, Mail, Users as UsersIcon, ShieldCheck, Crown } from 'lucide-react';
+import { Camera, Save, ArrowLeft, MessageCircle, UserPlus, Check, Lock, Calendar, Mail, Users as UsersIcon, ShieldCheck, Crown, X } from 'lucide-react';
 import { Gender } from '../types';
 import { useParams, useNavigate } from 'react-router-dom';
 
@@ -58,6 +57,7 @@ export const ProfileScreen: React.FC = () => {
 
   const profileUser = isOwnProfile ? currentUser : users.find(u => u.id === userId);
   const [isEditing, setIsEditing] = useState(false);
+  const [showFullAvatar, setShowFullAvatar] = useState(false);
 
   const [username, setUsername] = useState('');
   const [description, setDescription] = useState('');
@@ -125,6 +125,27 @@ export const ProfileScreen: React.FC = () => {
 
   return (
     <div className="h-full overflow-y-auto pb-32 no-scrollbar">
+      {/* Full Screen Avatar Modal */}
+      {showFullAvatar && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setShowFullAvatar(false)}
+        >
+          <button 
+            className="absolute top-6 right-6 p-2 bg-white/20 rounded-full text-white hover:bg-white/30 transition-colors"
+            onClick={() => setShowFullAvatar(false)}
+          >
+            <X className="w-6 h-6" />
+          </button>
+          <img 
+            src={displayAvatar} 
+            alt="Full Profile" 
+            className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl animate-pop-in" 
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
       {isOwnProfile ? <TopBar /> : (
         <div className="fixed top-4 left-4 z-50">
            <button 
@@ -139,7 +160,10 @@ export const ProfileScreen: React.FC = () => {
       <div className="relative pt-20 px-5">
          <div className="flex flex-col items-center">
             {/* Liquid Profile Picture Container */}
-            <div className={`relative w-36 h-36 mb-4 transform-gpu ${enableAnimations ? 'animate-fade-in' : ''}`}>
+            <div 
+              className={`relative w-36 h-36 mb-4 transform-gpu cursor-pointer group ${enableAnimations ? 'animate-fade-in' : ''}`}
+              onClick={() => !isEditing && setShowFullAvatar(true)}
+            >
                <div className="absolute inset-0 bg-gradient-to-tr from-blue-300 to-purple-300 dark:from-blue-600 dark:to-purple-600 rounded-full blur-xl opacity-50 animate-pulse-slow"></div>
                
                {isOwnerUser ? (
@@ -155,7 +179,7 @@ export const ProfileScreen: React.FC = () => {
                <img 
                  src={displayAvatar} 
                  alt="Profile" 
-                 className={`w-full h-full rounded-full object-cover border-4 ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-white dark:border-white/20'} shadow-2xl relative z-10 bg-gray-100`} 
+                 className={`w-full h-full rounded-full object-cover border-4 ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-white dark:border-white/20'} shadow-2xl relative z-10 bg-gray-100 transition-transform group-hover:scale-[1.02]`} 
                />
                
                {isEditing && (

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
 import { ComingSoon } from '../components/ComingSoon';
-import { Camera, Save, ArrowLeft, MessageCircle, UserPlus, Check, Lock, Calendar, Mail, Users as UsersIcon, ShieldCheck, Sparkles } from 'lucide-react';
+import { Camera, Save, ArrowLeft, MessageCircle, UserPlus, Check, Lock, Calendar, Mail, Users as UsersIcon, ShieldCheck, Sparkles, Crown } from 'lucide-react';
 import { Gender } from '../types';
 import { useParams, useNavigate } from 'react-router-dom';
 
@@ -46,7 +46,7 @@ const compressImage = (file: File): Promise<string> => {
 };
 
 export const ProfileScreen: React.FC = () => {
-  const { currentUser, users, updateProfile, sendFriendRequest, checkIsAdmin, enableAnimations, appConfig } = useApp();
+  const { currentUser, users, updateProfile, sendFriendRequest, checkIsAdmin, checkIsOwner, enableAnimations, appConfig } = useApp();
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   
@@ -117,7 +117,8 @@ export const ProfileScreen: React.FC = () => {
   const isFriend = currentUser?.friends.includes(profileUser.id);
   const isRequested = profileUser.requests.includes(currentUser?.id || '');
   const canViewDetails = isOwnProfile || !profileUser.isPrivateProfile || isFriend;
-  const isProfileAdmin = checkIsAdmin(profileUser.email);
+  const isAdminUser = checkIsAdmin(profileUser.email);
+  const isOwnerUser = checkIsOwner(profileUser.email);
   const displayAvatar = isEditing ? avatar : profileUser.avatar;
 
   // Mask description if it's the config JSON
@@ -140,7 +141,7 @@ export const ProfileScreen: React.FC = () => {
          <div className="h-48 w-full overflow-hidden relative bg-gray-200 dark:bg-gray-800">
             <img 
               src={displayAvatar} 
-              className={`w-full h-full object-cover opacity-100 ${enableAnimations && isProfileAdmin ? 'animate-pulse-fast' : ''}`}
+              className={`w-full h-full object-cover opacity-100 ${enableAnimations && isAdminUser ? 'animate-pulse-fast' : ''}`}
               alt="Banner"
               style={{ animationDuration: '10s' }}
             />
@@ -149,17 +150,21 @@ export const ProfileScreen: React.FC = () => {
          
          <div className="px-4">
             <div className={`relative -mt-20 mb-4 flex flex-col items-center ${enableAnimations ? 'animate-elastic-up' : ''}`}>
-               <div className={`relative w-32 h-32 group ${isProfileAdmin && enableAnimations ? 'animate-bounce' : ''}`} style={{ animationDuration: '3s' }}>
+               <div className={`relative w-32 h-32 group ${isAdminUser && enableAnimations ? 'animate-bounce' : ''}`} style={{ animationDuration: '3s' }}>
                   <div className={`absolute inset-0 rounded-full bg-black/20 blur-md transform translate-y-2 ${enableAnimations ? 'animate-blob' : ''}`}></div>
-                  {isProfileAdmin && (
+                  {isOwnerUser ? (
+                      <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-30">
+                          <Crown className={`w-10 h-10 text-yellow-500 drop-shadow-lg fill-yellow-200 ${enableAnimations ? 'animate-pulse-fast' : ''}`} />
+                      </div>
+                  ) : isAdminUser ? (
                       <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-30">
                           <ShieldCheck className={`w-10 h-10 text-blue-500 drop-shadow-lg fill-blue-100 dark:fill-blue-900 ${enableAnimations ? 'animate-pulse-fast' : ''}`} />
                       </div>
-                  )}
+                  ) : null}
                   <img 
                     src={displayAvatar} 
                     alt="Profile" 
-                    className={`w-full h-full rounded-full object-cover border-[6px] ${isProfileAdmin ? 'border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.5)]' : 'border-white dark:border-dark-bg'} shadow-xl relative z-10 bg-white dark:bg-gray-800 transition-transform duration-500 hover:scale-105`} 
+                    className={`w-full h-full rounded-full object-cover border-[6px] ${isOwnerUser ? 'border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.5)]' : isAdminUser ? 'border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.5)]' : 'border-white dark:border-dark-bg'} shadow-xl relative z-10 bg-white dark:bg-gray-800 transition-transform duration-500 hover:scale-105`} 
                   />
                   {isEditing && (
                     <label className="absolute bottom-2 right-2 z-20 bg-blue-500 p-2 rounded-full text-white shadow-lg cursor-pointer hover:bg-blue-600 transition-transform hover:scale-110">
@@ -173,11 +178,15 @@ export const ProfileScreen: React.FC = () => {
                  <div className={`text-center mt-3 ${enableAnimations ? 'animate-slide-up' : ''}`}>
                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 justify-center flex-wrap">
                      {profileUser.username}
-                     {isProfileAdmin && (
+                     {isOwnerUser ? (
+                         <span className={`px-2 py-0.5 rounded-full bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 text-white text-[10px] font-bold uppercase tracking-wider shadow-md flex items-center gap-1 ${enableAnimations ? 'animate-pulse' : ''}`}>
+                             Owner <Crown className="w-3 h-3 fill-white" />
+                         </span>
+                     ) : isAdminUser ? (
                          <span className={`px-2 py-0.5 rounded-full bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-500 text-white text-[10px] font-bold uppercase tracking-wider shadow-md flex items-center gap-1 ${enableAnimations ? 'animate-pulse' : ''}`}>
                              Admin <ShieldCheck className="w-3 h-3" />
                          </span>
-                     )}
+                     ) : null}
                      {profileUser.isPrivateProfile && !isOwnProfile && <Lock className="w-4 h-4 text-gray-400" />}
                    </h2>
                    <p className="text-gray-600 dark:text-gray-300 mt-1 max-w-xs mx-auto leading-relaxed">
@@ -299,15 +308,15 @@ export const ProfileScreen: React.FC = () => {
               </div>
               
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase ml-1">Bio {isProfileAdmin && "(Overwritten by Config)"}</label>
+                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase ml-1">Bio {isAdminUser && "(Overwritten by Config)"}</label>
                 <textarea 
                     value={description} 
                     onChange={e => setDescription(e.target.value)} 
                     className="w-full p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 mt-1 h-24 resize-none text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                     placeholder="Tell us about yourself..."
-                    disabled={isProfileAdmin} 
+                    disabled={isAdminUser} 
                 />
-                 {isProfileAdmin && <p className="text-[10px] text-red-500">Bio editing disabled for Admin to protect config storage.</p>}
+                 {isAdminUser && <p className="text-[10px] text-red-500">Bio editing disabled for Admin/Owner to protect config storage.</p>}
               </div>
 
               <div className="grid grid-cols-2 gap-4">

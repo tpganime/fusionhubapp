@@ -4,12 +4,12 @@ import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
 import { ComingSoon } from '../components/ComingSoon';
 import { User, Message } from '../types';
-import { Send, ArrowLeft, CheckCheck, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { Send, ArrowLeft, CheckCheck, ShieldCheck, AlertTriangle, Crown } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { BROADCAST_ID } from '../constants';
 
 export const ChatScreen: React.FC = () => {
-  const { currentUser, users, messages, sendMessage, markConversationAsRead, enableAnimations, checkIsAdmin, appConfig } = useApp();
+  const { currentUser, users, messages, sendMessage, markConversationAsRead, enableAnimations, checkIsAdmin, checkIsOwner, appConfig } = useApp();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -27,13 +27,10 @@ export const ChatScreen: React.FC = () => {
     return <ComingSoon title="Chat" />;
   }
 
-  // Get list of friends or people with chat history, EXCLUDING System Broadcasts from the list logic usually, but here we might want to see them?
-  // Actually, let's filter system messages separately or just show them in notifications.
-  // We'll stick to user-to-user for the list, but maybe show a "System" entry if we wanted. For now, system msgs are notifications only.
   const chatUsers = users.filter(u => 
     u.id !== currentUser?.id && 
     (currentUser?.friends.includes(u.id) || messages.some(m => 
-        m.receiverId !== BROADCAST_ID && // Exclude broadcast msgs from determining chat list
+        m.receiverId !== BROADCAST_ID && 
         ((m.senderId === u.id && m.receiverId === currentUser?.id) || (m.senderId === currentUser?.id && m.receiverId === u.id))
     ))
   );
@@ -92,6 +89,7 @@ export const ChatScreen: React.FC = () => {
                 const lastMsg = userMsgs[userMsgs.length - 1];
                 const hasUnread = lastMsg && lastMsg.senderId === user.id && !lastMsg.read;
                 const isAdminUser = checkIsAdmin(user.email);
+                const isOwnerUser = checkIsOwner(user.email);
 
                 return (
                   <button
@@ -101,15 +99,19 @@ export const ChatScreen: React.FC = () => {
                     style={{ animationDelay: `${index * 0.05}s`, animationFillMode: 'both' }}
                   >
                     <div className="relative">
-                      <img src={user.avatar} alt={user.username} className={`w-12 h-12 rounded-full object-cover border ${isAdminUser ? 'border-blue-500' : 'border-gray-200 dark:border-gray-700'}`} />
+                      <img src={user.avatar} alt={user.username} className={`w-12 h-12 rounded-full object-cover border ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-gray-200 dark:border-gray-700'}`} />
                       {hasUnread && <span className="absolute top-0 right-0 w-3 h-3 bg-blue-500 rounded-full border-2 border-white dark:border-dark-surface animate-pulse"></span>}
-                      {isAdminUser && <div className="absolute -bottom-1 -right-1 bg-blue-500 rounded-full p-[2px]"><ShieldCheck className="w-3 h-3 text-white" /></div>}
+                      {isOwnerUser ? (
+                         <div className="absolute -bottom-1 -right-1 bg-yellow-400 rounded-full p-[2px] shadow-sm"><Crown className="w-3 h-3 text-white fill-white" /></div>
+                      ) : isAdminUser ? (
+                         <div className="absolute -bottom-1 -right-1 bg-blue-500 rounded-full p-[2px] shadow-sm"><ShieldCheck className="w-3 h-3 text-white" /></div>
+                      ) : null}
                     </div>
                     <div className="ml-3 text-left flex-1 min-w-0">
                       <div className="flex justify-between items-center">
                         <h3 className={`font-semibold truncate flex items-center gap-1 ${hasUnread ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>
                             {user.username}
-                            {isAdminUser && <span className="text-[10px] text-blue-500">🛡️</span>}
+                            {isOwnerUser ? <span className="text-[10px] text-yellow-500">👑</span> : isAdminUser ? <span className="text-[10px] text-blue-500">🛡️</span> : null}
                         </h3>
                         {lastMsg && <span className="text-[10px] text-gray-400">{new Date(lastMsg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>}
                       </div>
@@ -127,6 +129,9 @@ export const ChatScreen: React.FC = () => {
     );
   }
 
+  const isOwnerUser = checkIsOwner(selectedUser.email);
+  const isAdminUser = checkIsAdmin(selectedUser.email);
+
   return (
     <div className={`h-full flex flex-col transition-colors duration-300 ${enableAnimations ? 'animate-fade-in' : ''}`}>
       <div className="h-16 glass-panel dark:bg-dark-surface/80 flex items-center px-4 shadow-sm z-20 dark:border-gray-800">
@@ -137,10 +142,10 @@ export const ChatScreen: React.FC = () => {
           onClick={() => navigate(`/user/${selectedUser.id}`)}
           className="flex items-center flex-1 hover:opacity-80 transition-opacity"
         >
-          <img src={selectedUser.avatar} alt="avatar" className={`w-8 h-8 rounded-full object-cover ${checkIsAdmin(selectedUser.email) ? 'border-2 border-blue-500' : ''}`} />
+          <img src={selectedUser.avatar} alt="avatar" className={`w-8 h-8 rounded-full object-cover ${isOwnerUser ? 'border-2 border-yellow-400' : isAdminUser ? 'border-2 border-blue-500' : ''}`} />
           <span className="ml-3 font-semibold text-gray-900 dark:text-white flex items-center gap-1">
               {selectedUser.username}
-              {checkIsAdmin(selectedUser.email) && <ShieldCheck className="w-3 h-3 text-blue-500" />}
+              {isOwnerUser ? <Crown className="w-3 h-3 text-yellow-500 fill-yellow-500" /> : isAdminUser ? <ShieldCheck className="w-3 h-3 text-blue-500" /> : null}
           </span>
         </button>
       </div>

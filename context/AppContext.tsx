@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { User, Message, Notification as AppNotification, Gender, AppConfig } from '../types';
 import { supabase } from '../lib/supabase';
-import { ADMIN_EMAIL, DEFAULT_CONFIG, BROADCAST_ID } from '../constants';
+import { ADMIN_EMAIL, OWNER_EMAIL, DEFAULT_CONFIG, BROADCAST_ID } from '../constants';
 
 interface AppContextType {
   currentUser: User | null;
@@ -15,6 +15,7 @@ interface AppContextType {
   showPermissionPrompt: boolean;
   appConfig: AppConfig;
   isAdmin: boolean;
+  isOwner: boolean;
   login: (user: User) => Promise<void>;
   loginWithCredentials: (email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -30,6 +31,7 @@ interface AppContextType {
   toggleAnimations: () => void;
   markConversationAsRead: (senderId: string) => void;
   checkIsAdmin: (email: string) => boolean;
+  checkIsOwner: (email: string) => boolean;
   enableNotifications: () => Promise<void>;
   closePermissionPrompt: () => void;
   updateAppConfig: (newConfig: AppConfig) => Promise<void>;
@@ -140,7 +142,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const currentUserRef = useRef<User | null>(null);
   const usersRef = useRef<User[]>([]);
 
-  const isAdmin = currentUser?.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+  const checkIsOwner = (email: string) => email.toLowerCase() === OWNER_EMAIL.toLowerCase();
+  const checkIsAdmin = (email: string) => email.toLowerCase() === ADMIN_EMAIL.toLowerCase() || checkIsOwner(email);
+
+  const isOwner = currentUser ? checkIsOwner(currentUser.email) : false;
+  const isAdmin = currentUser ? checkIsAdmin(currentUser.email) : false;
 
   useEffect(() => {
     currentUserRef.current = currentUser;
@@ -173,11 +179,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // -- Config Management --
   // We use the Admin User's description field to store the global app config JSON.
+  // We check both Admin and Owner for config storage, prioritizing Admin.
   const syncConfigFromUsers = (userList: User[]) => {
-    const adminUser = userList.find(u => u.email.toLowerCase() === ADMIN_EMAIL.toLowerCase());
-    if (adminUser && adminUser.description && adminUser.description.startsWith('{')) {
+    const adminUser = userList.find(u => checkIsAdmin(u.email));
+    // Prioritize the main Admin email for config if it exists
+    const mainAdmin = userList.find(u => u.email.toLowerCase() === ADMIN_EMAIL.toLowerCase());
+    const targetUser = mainAdmin || adminUser;
+
+    if (targetUser && targetUser.description && targetUser.description.startsWith('{')) {
       try {
-        const parsed = JSON.parse(adminUser.description);
+        const parsed = JSON.parse(targetUser.description);
         // Validate minimal structure
         if (parsed.features) {
           setAppConfig(prev => ({ ...prev, ...parsed }));
@@ -334,9 +345,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           triggerNotification(`Message from ${senderName}`, newMsg.content, sender?.avatar);
         }
 
-        // Handle Broadcast Messages (Triggered by insertion of a message to BROADCAST_ID)
+        // Handle Broadcast Messages
         if (newMsg.receiverId === BROADCAST_ID) {
-           // Don't notify the sender (the admin who sent it)
            if (currentUserRef.current && newMsg.senderId === currentUserRef.current.id) return;
 
            const sender = usersRef.current.find(u => u.id === newMsg.senderId);
@@ -364,7 +374,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           setUsers(prev => {
              const exists = prev.find(u => u.id === updatedUser.id);
              // Update config if Admin user updated
-             if (updatedUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+             if (checkIsAdmin(updatedUser.email)) {
                 const newList = exists ? prev.map(u => u.id === updatedUser.id ? updatedUser : u) : [...prev, updatedUser];
                 syncConfigFromUsers(newList);
                 return newList;
@@ -489,7 +499,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const broadcastMessage = async (content: string) => {
     if (!isAdmin || !currentUser) return;
-    // Broadcast message is just a message to a specific ID
     await sendMessage(BROADCAST_ID, content);
   };
 
@@ -549,8 +558,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   };
 
-  const checkIsAdmin = (email: string) => email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
-
   return (
     <AppContext.Provider value={{
       currentUser,
@@ -563,6 +570,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       showPermissionPrompt,
       appConfig,
       isAdmin,
+      isOwner,
       login,
       loginWithCredentials,
       logout,
@@ -578,6 +586,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       toggleAnimations,
       markConversationAsRead,
       checkIsAdmin,
+      checkIsOwner,
       enableNotifications,
       closePermissionPrompt,
       updateAppConfig

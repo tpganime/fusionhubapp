@@ -2,6 +2,7 @@
 import { AppShortcut, AppConfig } from './types';
 
 export const ADMIN_EMAIL = 'fusionhub122@gmail.com';
+export const OWNER_EMAIL = 'chaudharytanmay664@gmail.com';
 export const BROADCAST_ID = '00000000-0000-0000-0000-000000000000';
 
 export const DEFAULT_CONFIG: AppConfig = {

@@ -57,7 +57,7 @@ export const TopBar: React.FC = () => {
 
             {/* Notifications Dropdown - Liquid Style */}
             {showNotifs && (
-              <div className="absolute right-0 top-16 w-80 glass-panel p-2 z-50 overflow-hidden animate-pop-in">
+              <div className="absolute right-0 top-16 w-80 glass-panel p-2 z-50 overflow-hidden animate-fade-in">
                  <div className="px-3 py-2 border-b border-gray-200/50 dark:border-gray-700/50 flex justify-between items-center">
                     <h3 className="text-sm font-bold text-gray-800 dark:text-white">Notifications</h3>
                     <span className="text-[10px] bg-white/50 dark:bg-white/10 px-2 py-0.5 rounded-full">{unreadCount} New</span>

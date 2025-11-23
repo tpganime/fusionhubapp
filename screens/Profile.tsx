@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
@@ -138,7 +139,7 @@ export const ProfileScreen: React.FC = () => {
       <div className="relative pt-20 px-5">
          <div className="flex flex-col items-center">
             {/* Liquid Profile Picture Container */}
-            <div className={`relative w-36 h-36 mb-4 transform-gpu ${enableAnimations ? 'animate-pop-in' : ''}`}>
+            <div className={`relative w-36 h-36 mb-4 transform-gpu ${enableAnimations ? 'animate-fade-in' : ''}`}>
                <div className="absolute inset-0 bg-gradient-to-tr from-blue-300 to-purple-300 dark:from-blue-600 dark:to-purple-600 rounded-full blur-xl opacity-50 animate-pulse-slow"></div>
                
                {isOwnerUser ? (
@@ -166,7 +167,7 @@ export const ProfileScreen: React.FC = () => {
             </div>
             
             {!isEditing ? (
-              <div className={`text-center w-full transform-gpu ${enableAnimations ? 'animate-slide-up' : ''}`} style={{ animationDelay: '100ms', animationFillMode: 'both' }}>
+              <div className={`text-center w-full transform-gpu ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`} style={{ animationDelay: '100ms', animationFillMode: 'both' }}>
                 <h2 className="text-3xl font-black text-gray-900 dark:text-white flex items-center justify-center gap-2 flex-wrap mb-1">
                   {profileUser.username}
                   {profileUser.isPrivateProfile && !isOwnProfile && <Lock className="w-5 h-5 text-gray-400" />}

@@ -31,7 +31,7 @@ export const TopBar: React.FC = () => {
 
   return (
     <>
-      <div className={`fixed top-4 left-4 right-4 h-16 px-5 flex items-center justify-between z-40 glass-panel shadow-lg ${enableAnimations ? 'animate-fade-in-up' : ''}`}>
+      <div className={`fixed top-4 left-4 right-4 h-16 px-5 flex items-center justify-between z-40 glass-panel shadow-lg ${enableAnimations ? 'animate-slide-down' : ''}`}>
         {/* Left Side: Brand with New SVG Logo */}
         <div className="flex items-center gap-3">
            <svg 
@@ -73,7 +73,7 @@ export const TopBar: React.FC = () => {
 
             {/* Notifications Dropdown - Liquid Style */}
             {showNotifs && (
-              <div className={`absolute right-0 top-16 w-80 glass-panel p-2 z-50 overflow-hidden ${enableAnimations ? 'animate-pop-in-elastic' : ''}`}>
+              <div className={`absolute right-0 top-16 w-80 glass-panel p-2 z-50 overflow-hidden ${enableAnimations ? 'animate-pop-in' : ''}`}>
                  <div className="px-3 py-2 border-b border-gray-200/50 dark:border-gray-700/50 flex justify-between items-center">
                     <h3 className="text-sm font-bold text-gray-800 dark:text-white">Notifications</h3>
                     <span className="text-[10px] bg-white/50 dark:bg-white/10 px-2 py-0.5 rounded-full">{unreadCount} New</span>
@@ -136,7 +136,7 @@ export const TopBar: React.FC = () => {
              </button>
           ) : (
              <button onClick={() => navigate('/profile')} className="relative group">
-                <div className={`w-10 h-10 rounded-full overflow-hidden border-2 border-white/80 dark:border-white/20 shadow-lg group-hover:scale-105 transition-transform ${enableAnimations ? 'animate-pop-in-elastic' : ''}`}>
+                <div className={`w-10 h-10 rounded-full overflow-hidden border-2 border-white/80 dark:border-white/20 shadow-lg group-hover:scale-105 transition-transform ${enableAnimations ? 'animate-pop-in' : ''}`}>
                   {currentUser?.avatar ? (
                     <img src={currentUser.avatar} alt="Profile" className="w-full h-full object-cover" />
                   ) : (

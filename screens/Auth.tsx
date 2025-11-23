@@ -105,7 +105,7 @@ export const AuthScreen: React.FC = () => {
     );
   }
 
-  const animClass = enableAnimations ? 'animate-slide-up-heavy opacity-0' : '';
+  const animClass = enableAnimations ? 'animate-slide-up opacity-0' : '';
   const getDelay = (ms: number) => enableAnimations ? { animationDelay: `${ms}ms`, animationFillMode: 'both' as const } : {};
 
   return (
@@ -116,7 +116,7 @@ export const AuthScreen: React.FC = () => {
       <div className="absolute -bottom-20 left-20 w-96 h-96 bg-pink-400 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-4000"></div>
 
       {/* Liquid Glass Card */}
-      <div className={`w-full max-w-md liquid-card p-10 z-10 ${enableAnimations ? 'animate-pop-in-elastic' : ''}`}>
+      <div className={`w-full max-w-md liquid-card p-10 z-10 ${enableAnimations ? 'animate-scale-in' : ''}`}>
         <div className="text-center mb-8 flex flex-col items-center">
             <svg 
               viewBox="0 0 100 100" 
@@ -159,7 +159,7 @@ export const AuthScreen: React.FC = () => {
                   required={!isLogin}
                 />
                 {username.length > 2 && (
-                  <div className={`absolute right-4 top-4 ${enableAnimations ? 'animate-pop-in-elastic' : ''}`}>
+                  <div className={`absolute right-4 top-4 ${enableAnimations ? 'animate-pop-in' : ''}`}>
                       {usernameAvailable ? (
                           <div className="w-3 h-3 bg-green-500 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.6)]"></div>
                       ) : (

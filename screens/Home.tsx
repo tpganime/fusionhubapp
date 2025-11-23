@@ -51,8 +51,8 @@ export const HomeScreen: React.FC = () => {
   }
 
   // Animation Calculation
-  const getDelay = (index: number) => {
-    return enableAnimations ? { animationDelay: `${250 + (index * 80)}ms`, animationFillMode: 'both' as const } : {};
+  const getDelay = (index: number, base: number = 200) => {
+    return enableAnimations ? { animationDelay: `${base + (index * 60)}ms`, animationFillMode: 'both' as const } : {};
   };
 
   return (
@@ -62,7 +62,7 @@ export const HomeScreen: React.FC = () => {
         
         {/* Notification Permission Liquid Banner - Heavy pop in */}
         {showNotifBanner && (
-            <div className={`mb-6 p-5 liquid-card flex items-center justify-between transform-gpu ${enableAnimations ? 'animate-pop-in-elastic' : ''}`} style={{ animationDelay: '100ms' }}>
+            <div className={`mb-6 p-5 liquid-card flex items-center justify-between transform-gpu ${enableAnimations ? 'animate-pop-in' : ''}`} style={{ animationDelay: '100ms' }}>
                 <div className="flex items-center gap-4">
                     <div className="p-3 bg-blue-500/20 rounded-full text-blue-600 dark:text-blue-300 shadow-inner">
                         <Bell className="w-6 h-6 animate-bounce-soft" />
@@ -82,7 +82,7 @@ export const HomeScreen: React.FC = () => {
         )}
 
         {/* Greeting Liquid Card - Refined Motion */}
-        <div className={`relative overflow-hidden liquid-card p-6 mb-6 transform-gpu hover:scale-[1.02] hover:shadow-2xl transition-all duration-700 ${enableAnimations ? 'animate-scale-up' : ''}`}>
+        <div className={`relative overflow-hidden liquid-card p-6 mb-6 transform-gpu hover:scale-[1.02] hover:shadow-2xl transition-all duration-700 ${enableAnimations ? 'animate-scale-in' : ''}`}>
            {/* Fluid background effect */}
            <div className="absolute -top-20 -right-20 w-64 h-64 bg-gradient-to-br from-purple-300 to-blue-300 dark:from-purple-900/60 dark:to-blue-900/60 rounded-full blur-[80px] opacity-70 pointer-events-none animate-blob"></div>
            <div 
@@ -91,18 +91,18 @@ export const HomeScreen: React.FC = () => {
            ></div>
 
            <div className="relative z-10">
-             <h2 className={`text-sm font-medium text-gray-600 dark:text-gray-300 ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`} style={{ animationDelay: '100ms', animationFillMode: 'both' }}>
+             <h2 className={`text-sm font-medium text-gray-600 dark:text-gray-300 ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`} style={getDelay(0, 100)}>
                {timeData.greeting},
              </h2>
-             <h1 className={`text-2xl font-extrabold text-gray-900 dark:text-white mb-3 tracking-tight drop-shadow-sm ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`} style={{ animationDelay: '200ms', animationFillMode: 'both' }}>
+             <h1 className={`text-2xl font-extrabold text-gray-900 dark:text-white mb-3 tracking-tight drop-shadow-sm ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`} style={getDelay(1, 100)}>
                {currentUser?.username}
              </h1>
              
              <div className="mt-2 flex flex-col items-start">
-                <span className={`text-4xl font-thin text-gray-800 dark:text-white tracking-tighter mix-blend-overlay ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`} style={{ animationDelay: '300ms', animationFillMode: 'both' }}>
+                <span className={`text-4xl font-thin text-gray-800 dark:text-white tracking-tighter mix-blend-overlay ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`} style={getDelay(2, 100)}>
                   {timeData.time}
                 </span>
-                <span className={`px-3 py-1 mt-2 rounded-full bg-white/40 dark:bg-white/10 text-[10px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-widest backdrop-blur-md border border-white/30 ${enableAnimations ? 'animate-pop-in-elastic' : ''}`} style={{ animationDelay: '500ms' }}>
+                <span className={`px-3 py-1 mt-2 rounded-full bg-white/40 dark:bg-white/10 text-[10px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-widest backdrop-blur-md border border-white/30 ${enableAnimations ? 'animate-pop-in' : ''}`} style={getDelay(3, 100)}>
                   {timeData.date}
                 </span>
              </div>
@@ -122,8 +122,8 @@ export const HomeScreen: React.FC = () => {
                        href={shortcut.url}
                        target="_blank"
                        rel="noopener noreferrer"
-                       className={`group relative overflow-hidden liquid-card p-5 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] hover:-translate-y-2 transition-all duration-500 transform-gpu ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`}
-                       style={getDelay(index)}
+                       className={`group relative overflow-hidden liquid-card p-5 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] hover:-translate-y-2 transition-all duration-500 transform-gpu ${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`}
+                       style={getDelay(index, 300)}
                      >
                         <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-4 group-hover:translate-x-0 duration-500 ease-out">
                            <ArrowRight className="w-4 h-4 text-gray-500" />
@@ -145,8 +145,8 @@ export const HomeScreen: React.FC = () => {
                  return (
                      <div 
                        key={shortcut.name}
-                       className={`group relative overflow-hidden liquid-card p-5 opacity-60 cursor-not-allowed transform-gpu grayscale hover:grayscale-0 transition-all duration-500 ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`}
-                       style={getDelay(index)}
+                       className={`group relative overflow-hidden liquid-card p-5 opacity-60 cursor-not-allowed transform-gpu grayscale hover:grayscale-0 transition-all duration-500 ${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`}
+                       style={getDelay(index, 300)}
                      >
                         <div className="absolute top-3 right-3">
                            <Lock className="w-4 h-4 text-gray-400" />

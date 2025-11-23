@@ -65,7 +65,7 @@ export const SettingsScreen: React.FC = () => {
           </button>
           <h2 className="text-lg font-bold ml-2 text-gray-900 dark:text-white">Privacy Policy</h2>
         </div>
-        <div className={`p-6 liquid-card mx-4 mb-20 whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300 leading-relaxed ${enableAnimations ? 'animate-slide-up-heavy' : ''}`}>
+        <div className={`p-6 liquid-card mx-4 mb-20 whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300 leading-relaxed ${enableAnimations ? 'animate-slide-up-fade' : ''}`}>
           {PRIVACY_POLICY_TEXT}
         </div>
       </div>
@@ -75,7 +75,7 @@ export const SettingsScreen: React.FC = () => {
   // Animation stagger logic
   const getAnimStyle = (index: number) => {
       return enableAnimations ? {
-          animationDelay: `${index * 100}ms`,
+          animationDelay: `${index * 80}ms`,
           animationFillMode: 'both' as const
       } : {};
   };
@@ -93,7 +93,7 @@ export const SettingsScreen: React.FC = () => {
         
         {/* Admin Section */}
         {isAdmin && (
-          <section className={`${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`} style={getAnimStyle(0)}>
+          <section className={`${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`} style={getAnimStyle(0)}>
             <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 ml-2 tracking-wider">Admin</h3>
             <div className="liquid-card overflow-hidden">
                <button onClick={() => navigate('/admin')} className="w-full p-5 flex items-center justify-between hover:bg-white/20 transition-colors group">
@@ -108,7 +108,7 @@ export const SettingsScreen: React.FC = () => {
         )}
 
         {/* Appearance */}
-        <section className={`${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`} style={getAnimStyle(1)}>
+        <section className={`${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`} style={getAnimStyle(1)}>
           <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 ml-2 tracking-wider">Appearance</h3>
           <div className="liquid-card overflow-hidden divide-y divide-gray-200/30 dark:divide-white/10">
              
@@ -140,7 +140,7 @@ export const SettingsScreen: React.FC = () => {
             
             {/* Transparency Slider (Only when Liquid is enabled) */}
             {enableLiquid && (
-               <div className="p-5 animate-fade-in-up">
+               <div className="p-5 animate-slide-up">
                    <div className="flex items-center gap-4 mb-3">
                        <div className="p-2.5 bg-gray-100 dark:bg-gray-800 rounded-xl text-gray-600 dark:text-gray-300 shadow-md"><Sliders className="w-5 h-5" /></div>
                        <div className="flex flex-col flex-1">
@@ -193,7 +193,7 @@ export const SettingsScreen: React.FC = () => {
         </section>
 
         {/* Privacy */}
-        <section className={`${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`} style={getAnimStyle(2)}>
+        <section className={`${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`} style={getAnimStyle(2)}>
           <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 ml-2 tracking-wider">Privacy</h3>
           <div className="liquid-card overflow-hidden divide-y divide-gray-200/30 dark:divide-white/10">
             <div className="p-5 flex items-center justify-between">
@@ -220,7 +220,7 @@ export const SettingsScreen: React.FC = () => {
         </section>
 
         {/* Legal */}
-        <section className={`${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`} style={getAnimStyle(3)}>
+        <section className={`${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`} style={getAnimStyle(3)}>
           <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 ml-2 tracking-wider">Legal</h3>
           <div className="liquid-card overflow-hidden">
             <button onClick={() => setShowPrivacyPolicy(true)} className="w-full p-5 flex items-center justify-between hover:bg-white/20 transition-colors">
@@ -234,7 +234,7 @@ export const SettingsScreen: React.FC = () => {
         </section>
 
         {/* Danger Zone */}
-        <section className={`${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`} style={getAnimStyle(4)}>
+        <section className={`${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`} style={getAnimStyle(4)}>
           <h3 className="text-xs font-bold text-red-500/70 uppercase mb-3 ml-2 tracking-wider">Danger Zone</h3>
           <div className="liquid-card overflow-hidden divide-y divide-gray-200/30 dark:divide-white/10">
             <button onClick={handleLogout} className="w-full p-5 flex items-center justify-between text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors">

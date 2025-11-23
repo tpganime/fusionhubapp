@@ -215,7 +215,7 @@ export const ProfileScreen: React.FC = () => {
               className={`transition-all duration-500 cubic-bezier(0.34, 1.56, 0.64, 1) select-none rounded-3xl shadow-2xl ${
                 isZoomed 
                   ? 'min-w-[100vw] w-auto h-auto max-w-none' 
-                  : 'max-w-[95%] max-h-[85vh] object-contain animate-pop-in-elastic'
+                  : 'max-w-[95%] max-h-[85vh] object-contain animate-pop-in'
               }`} 
             />
           </div>
@@ -266,7 +266,7 @@ export const ProfileScreen: React.FC = () => {
             {/* Avatar - Left Side */}
             <div className="relative mr-6">
                 <div 
-                  className={`relative w-24 h-24 transform-gpu cursor-pointer ${enableAnimations ? 'animate-pop-in-elastic' : ''}`}
+                  className={`relative w-24 h-24 transform-gpu cursor-pointer ${enableAnimations ? 'animate-pop-in' : ''}`}
                   onClick={() => !isEditing && setShowFullAvatar(true)}
                 >
                    {/* Clean avatar without extra rings */}
@@ -288,7 +288,7 @@ export const ProfileScreen: React.FC = () => {
 
             {/* Time Spent - Right Side of Avatar (Only Own Profile) */}
             {isOwnProfile && !isEditing && (
-                <div className={`flex flex-col justify-center pl-2 border-l border-gray-200 dark:border-gray-800 h-16 ${enableAnimations ? 'animate-slide-in-right opacity-0' : ''}`} style={{ animationDelay: '200ms', animationFillMode: 'both' }}>
+                <div className={`flex flex-col justify-center pl-2 border-l border-gray-200 dark:border-gray-800 h-16 ${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`} style={{ animationDelay: '200ms', animationFillMode: 'both' }}>
                     <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wide mb-1">Total Active Time</span>
                     <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
                         <Activity className="w-4 h-4" />
@@ -299,7 +299,7 @@ export const ProfileScreen: React.FC = () => {
          </div>
 
          {/* Bio Section - Below Avatar */}
-         <div className={`mb-4 ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`} style={{ animationDelay: '300ms', animationFillMode: 'both' }}>
+         <div className={`mb-4 ${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`} style={{ animationDelay: '300ms', animationFillMode: 'both' }}>
             <div className="flex flex-col items-start">
                <div className="flex items-center gap-1">
                   <span className="font-bold text-sm text-gray-900 dark:text-white italic">{profileUser.name || profileUser.username}</span>
@@ -327,7 +327,7 @@ export const ProfileScreen: React.FC = () => {
 
          {/* Action Buttons */}
          {!isEditing && (
-            <div className={`flex gap-2 mb-6 ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`} style={{ animationDelay: '400ms', animationFillMode: 'both' }}>
+            <div className={`flex gap-2 mb-6 ${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`} style={{ animationDelay: '400ms', animationFillMode: 'both' }}>
                 {isOwnProfile ? (
                     <>
                       <button 
@@ -366,7 +366,7 @@ export const ProfileScreen: React.FC = () => {
 
          {/* Editing Form */}
          {isEditing && (
-            <div className={`p-4 rounded-xl bg-gray-50 dark:bg-gray-900 mb-6 border border-gray-100 dark:border-gray-800 ${enableAnimations ? 'animate-slide-up-heavy' : ''}`}>
+            <div className={`p-4 rounded-xl bg-gray-50 dark:bg-gray-900 mb-6 border border-gray-100 dark:border-gray-800 ${enableAnimations ? 'animate-slide-up' : ''}`}>
                 <div className="space-y-4">
                   <div>
                     <label className="text-xs font-bold text-gray-500 uppercase ml-1">Name</label>
@@ -405,7 +405,7 @@ export const ProfileScreen: React.FC = () => {
          
          {/* Private Account Lock */}
          {!canViewDetails && !isEditing && (
-             <div className={`mt-12 text-center p-10 border-t border-gray-100 dark:border-gray-800 ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`} style={{ animationDelay: '500ms', animationFillMode: 'both' }}>
+             <div className={`mt-12 text-center p-10 border-t border-gray-100 dark:border-gray-800 ${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`} style={{ animationDelay: '500ms', animationFillMode: 'both' }}>
                  <div className="w-16 h-16 rounded-full border-2 border-gray-800 dark:border-gray-200 flex items-center justify-center mx-auto mb-4 animate-bounce-soft">
                      <Lock className="w-8 h-8 text-gray-800 dark:text-gray-200" />
                  </div>

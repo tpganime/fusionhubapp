@@ -21,7 +21,7 @@ export const BottomNav: React.FC = () => {
   const currentIndex = activeIndex === -1 ? 0 : activeIndex;
 
   return (
-    <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center pointer-events-none px-4 animate-fade-in-up">
+    <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center pointer-events-none px-4 animate-slide-up">
       {/* Liquid Glass Capsule */}
       <div className="pointer-events-auto relative glass-panel flex items-center p-1.5 shadow-2xl backdrop-blur-2xl rounded-[3rem]">
         
@@ -46,7 +46,7 @@ export const BottomNav: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => navigate(tab.path)}
-                className="w-14 h-12 flex items-center justify-center rounded-full transition-all duration-300 group focus:outline-none active:scale-90"
+                className="w-14 h-12 flex items-center justify-center rounded-full transition-all duration-300 group focus:outline-none active:scale-75"
               >
                 <Icon 
                   className={`w-6 h-6 transition-all duration-500 cubic-bezier(0.34, 1.56, 0.64, 1) ${

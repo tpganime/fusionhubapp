@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
 import { ComingSoon } from '../components/ComingSoon';
-import { Camera, Save, ArrowLeft, MessageCircle, UserPlus, Check, Lock, Calendar, Mail, Users as UsersIcon, ShieldCheck, Crown, X } from 'lucide-react';
+import { Camera, Save, ArrowLeft, MessageCircle, UserPlus, Check, Lock, Calendar, Mail, Users as UsersIcon, ShieldCheck, Crown, X, ZoomIn, ZoomOut } from 'lucide-react';
 import { Gender } from '../types';
 import { useParams, useNavigate } from 'react-router-dom';
 
@@ -59,6 +59,7 @@ export const ProfileScreen: React.FC = () => {
   const profileUser = isOwnProfile ? currentUser : users.find(u => u.id === userId);
   const [isEditing, setIsEditing] = useState(false);
   const [showFullAvatar, setShowFullAvatar] = useState(false);
+  const [isZoomed, setIsZoomed] = useState(false);
 
   const [username, setUsername] = useState('');
   const [description, setDescription] = useState('');
@@ -75,6 +76,12 @@ export const ProfileScreen: React.FC = () => {
       setGender(profileUser.gender || Gender.PREFER_NOT_TO_SAY);
     }
   }, [isOwnProfile, profileUser]);
+
+  useEffect(() => {
+    if (showFullAvatar) {
+      setIsZoomed(false);
+    }
+  }, [showFullAvatar]);
 
   if (!profileUser) {
     return (
@@ -115,6 +122,11 @@ export const ProfileScreen: React.FC = () => {
      }
   };
 
+  const toggleZoom = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsZoomed(!isZoomed);
+  };
+
   const isFriend = currentUser?.friends.includes(profileUser.id);
   const isRequested = profileUser.requests.includes(currentUser?.id || '');
   const canViewDetails = isOwnProfile || !profileUser.isPrivateProfile || isFriend;
@@ -127,44 +139,55 @@ export const ProfileScreen: React.FC = () => {
   return (
     <div className="h-full overflow-y-auto pb-32 no-scrollbar relative">
       
-      {/* Dynamic Background */}
-      <div className="absolute top-0 left-0 right-0 h-[60vh] z-0 overflow-hidden pointer-events-none">
+      {/* Dynamic Background - Full Screen Immersive */}
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
           <div 
-             className="w-full h-full bg-cover bg-center opacity-60 dark:opacity-30 blur-2xl scale-110 transition-all duration-700 ease-in-out"
+             className="absolute inset-0 bg-cover bg-center opacity-40 dark:opacity-20 blur-xl scale-110 transition-all duration-700 ease-in-out"
              style={{ backgroundImage: `url("${displayAvatar}")` }}
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-[#F2F2F7]/70 to-[#F2F2F7] dark:from-black/10 dark:via-[#000000]/70 dark:to-[#000000]"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-[#F2F2F7]/80 to-[#F2F2F7] dark:from-black/30 dark:via-[#000000]/80 dark:to-[#000000]"></div>
       </div>
 
       {/* Full Screen Avatar Modal */}
       {showFullAvatar && (
         <div 
-          className="fixed inset-0 z-[200] flex items-center justify-center p-4 animate-fade-in overflow-hidden"
-          onClick={() => setShowFullAvatar(false)}
+          className="fixed inset-0 z-[200] flex items-center justify-center animate-fade-in overflow-hidden"
         >
           {/* Modal Background Effect */}
-          <div className="absolute inset-0 bg-black/90 backdrop-blur-md"></div>
-          <div 
-            className="absolute inset-0 bg-cover bg-center opacity-30 blur-3xl scale-125 pointer-events-none"
-            style={{ backgroundImage: `url("${displayAvatar}")` }}
-          ></div>
-
+          <div className="absolute inset-0 bg-black/90 backdrop-blur-xl transition-opacity duration-300" onClick={() => setShowFullAvatar(false)}></div>
+          
           <button 
-            className="absolute top-6 right-6 p-2 bg-white/20 rounded-full text-white hover:bg-white/30 transition-colors z-[201]"
+            className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors z-[202] backdrop-blur-md"
             onClick={() => setShowFullAvatar(false)}
           >
             <X className="w-6 h-6" />
           </button>
+
+          {/* Zoom Hint/Icon */}
+          <div className="absolute bottom-10 left-0 right-0 z-[202] flex justify-center pointer-events-none">
+             <div className="bg-black/50 backdrop-blur-md text-white text-xs px-4 py-2 rounded-full flex items-center gap-2">
+                {isZoomed ? <ZoomOut className="w-4 h-4" /> : <ZoomIn className="w-4 h-4" />}
+                {isZoomed ? "Click to zoom out" : "Click to zoom in"}
+             </div>
+          </div>
           
-          <img 
-            src={displayAvatar} 
-            onError={(e) => {
-               (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400?text=Error';
-            }}
-            alt="Full Profile" 
-            className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl animate-pop-in cursor-zoom-out relative z-[201]" 
-            onClick={(e) => e.stopPropagation()}
-          />
+          <div 
+            className={`relative z-[201] w-full h-full overflow-auto no-scrollbar flex items-center justify-center transition-all duration-300 ${isZoomed ? 'cursor-zoom-out items-start' : 'cursor-zoom-in'}`}
+            onClick={toggleZoom}
+          >
+            <img 
+              src={displayAvatar} 
+              onError={(e) => {
+                 (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400?text=Error';
+              }}
+              alt="Full Profile" 
+              className={`transition-all duration-300 ease-out select-none rounded-lg shadow-2xl ${
+                isZoomed 
+                  ? 'min-w-[100vw] w-auto h-auto max-w-none' 
+                  : 'max-w-[95%] max-h-[85vh] object-contain'
+              }`} 
+            />
+          </div>
         </div>
       )}
 
@@ -176,29 +199,29 @@ export const ProfileScreen: React.FC = () => {
         <div className="fixed top-4 left-4 z-50">
            <button 
              onClick={() => navigate(-1)} 
-             className="p-2.5 rounded-full glass-panel text-gray-900 dark:text-white hover:bg-white/20 transition-all"
+             className="p-2.5 rounded-full glass-panel text-gray-900 dark:text-white hover:bg-white/20 transition-all shadow-lg"
            >
              <ArrowLeft className="w-6 h-6" />
            </button>
         </div>
       )}
 
-      <div className="relative pt-20 px-5 z-10">
+      <div className="relative pt-24 px-5 z-10">
          <div className="flex flex-col items-center">
             {/* Liquid Profile Picture Container */}
             <div 
-              className={`relative w-36 h-36 mb-4 transform-gpu cursor-pointer group ${enableAnimations ? 'animate-fade-in' : ''}`}
+              className={`relative w-40 h-40 mb-4 transform-gpu cursor-pointer group ${enableAnimations ? 'animate-fade-in' : ''}`}
               onClick={() => !isEditing && setShowFullAvatar(true)}
             >
                <div className="absolute inset-0 bg-gradient-to-tr from-blue-300 to-purple-300 dark:from-blue-600 dark:to-purple-600 rounded-full blur-xl opacity-50 animate-pulse-slow"></div>
                
                {isOwnerUser ? (
-                   <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-30 animate-float pointer-events-none">
-                       <Crown className={`w-10 h-10 text-yellow-500 fill-yellow-200 drop-shadow-lg`} />
+                   <div className="absolute -top-7 left-1/2 -translate-x-1/2 z-30 animate-float pointer-events-none">
+                       <Crown className={`w-12 h-12 text-yellow-500 fill-yellow-200 drop-shadow-lg`} />
                    </div>
                ) : isAdminUser ? (
-                   <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-30 animate-float pointer-events-none">
-                       <ShieldCheck className={`w-10 h-10 text-blue-500 fill-blue-100 drop-shadow-lg`} />
+                   <div className="absolute -top-7 left-1/2 -translate-x-1/2 z-30 animate-float pointer-events-none">
+                       <ShieldCheck className={`w-12 h-12 text-blue-500 fill-blue-100 drop-shadow-lg`} />
                    </div>
                ) : null}
 
@@ -208,11 +231,11 @@ export const ProfileScreen: React.FC = () => {
                     (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150';
                  }}
                  alt="Profile" 
-                 className={`w-full h-full rounded-full object-cover border-4 ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-white dark:border-white/20'} shadow-2xl relative z-10 bg-gray-100 transition-transform group-hover:scale-[1.02]`} 
+                 className={`w-full h-full rounded-full object-cover border-[5px] ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-white dark:border-white/20'} shadow-2xl relative z-10 bg-gray-100 transition-transform group-hover:scale-[1.02]`} 
                />
                
                {isEditing && (
-                 <label className="absolute bottom-1 right-1 z-20 bg-blue-500 p-2.5 rounded-full text-white shadow-lg cursor-pointer hover:bg-blue-600 transition-all hover:scale-110 border-2 border-white">
+                 <label className="absolute bottom-2 right-2 z-20 bg-blue-500 p-2.5 rounded-full text-white shadow-lg cursor-pointer hover:bg-blue-600 transition-all hover:scale-110 border-2 border-white">
                    <Camera className="w-5 h-5" />
                    <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                  </label>
@@ -221,25 +244,30 @@ export const ProfileScreen: React.FC = () => {
             
             {!isEditing ? (
               <div className={`text-center w-full transform-gpu ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`} style={{ animationDelay: '100ms', animationFillMode: 'both' }}>
-                <h2 className="text-3xl font-black text-gray-900 dark:text-white flex items-center justify-center gap-2 flex-wrap mb-1 drop-shadow-sm">
+                <h2 className="text-3xl font-black text-gray-900 dark:text-white flex items-center justify-center gap-2 flex-wrap mb-1 drop-shadow-md">
                   {profileUser.username}
                   {profileUser.isPrivateProfile && !isOwnProfile && <Lock className="w-5 h-5 text-gray-400" />}
                 </h2>
                 
                 {/* Badges */}
-                <div className="flex justify-center gap-2 mb-3">
+                <div className="flex justify-center gap-2 mb-4">
                    {isOwnerUser && <span className="px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 text-[10px] font-bold uppercase border border-yellow-200">Owner</span>}
                    {isAdminUser && <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold uppercase border border-blue-200">Admin</span>}
                 </div>
 
-                <p className="text-gray-600 dark:text-gray-300 text-sm max-w-xs mx-auto leading-relaxed mb-6 font-medium">
+                <p className="text-gray-700 dark:text-gray-200 text-sm max-w-xs mx-auto leading-relaxed mb-6 font-medium backdrop-blur-sm py-1 rounded-lg">
                   {displayDescription || "No bio set"}
                 </p>
                 
-                <div className="flex items-center justify-center gap-8 mb-6">
+                <div className="flex items-center justify-center gap-8 mb-8 p-4 liquid-card inline-flex min-w-[200px]">
                    <div className="text-center">
                      <span className="block text-2xl font-bold text-gray-900 dark:text-white">{profileUser.friends.length}</span>
-                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Friends</span>
+                     <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Friends</span>
+                   </div>
+                   <div className="w-[1px] h-8 bg-gray-300 dark:bg-white/10"></div>
+                   <div className="text-center">
+                     <span className="block text-2xl font-bold text-gray-900 dark:text-white">{profileUser.birthdate ? new Date(profileUser.birthdate).getFullYear() : 'N/A'}</span>
+                     <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Joined</span>
                    </div>
                 </div>
 

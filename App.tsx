@@ -68,7 +68,11 @@ const MainRouter: React.FC = () => {
   return (
     <Router>
        <Routes>
-         <Route path="/" element={<AuthScreen />} />
+         <Route path="/" element={
+           <div className="w-full sm:max-w-md sm:mx-auto mesh-bg h-[100dvh] shadow-2xl relative overflow-hidden transition-colors duration-300 flex flex-col">
+             <AuthScreen />
+           </div>
+         } />
          <Route element={<ProtectedLayout />}>
            <Route path="/home" element={<HomeScreen />} />
            <Route path="/chat" element={<ChatScreen />} />

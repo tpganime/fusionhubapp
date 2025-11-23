@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
@@ -97,7 +98,7 @@ export const AuthScreen: React.FC = () => {
 
   if (isLoading) {
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center mesh-bg">
+        <div className="h-full flex flex-col items-center justify-center">
             <Loader2 className="w-10 h-10 text-white animate-spin mb-4 drop-shadow-lg" />
             <p className="text-white font-medium drop-shadow-md">Loading FusionHub...</p>
         </div>
@@ -105,7 +106,7 @@ export const AuthScreen: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden mesh-bg">
+    <div className="h-full flex flex-col items-center justify-center p-6 relative overflow-hidden">
       {/* Decorative Blobs */}
       <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob"></div>
       <div className="absolute top-[-10%] right-[-10%] w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-2000"></div>
@@ -117,7 +118,12 @@ export const AuthScreen: React.FC = () => {
             <h1 className="text-4xl font-black bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent drop-shadow-sm">
             FusionHub
             </h1>
-            <p className="text-gray-500 dark:text-gray-300 font-medium mt-2">{isLogin ? 'Welcome Back' : 'Join the Future'}</p>
+            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mt-2">
+                {isLogin ? 'Welcome Back!' : 'Join the Future'}
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-300 mt-1 leading-relaxed">
+                Experience a premium social hub with real-time chat, entertainment shortcuts, and a stunning liquid interface.
+            </p>
         </div>
 
         <form onSubmit={isLogin ? handleLogin : handleSignup} className="space-y-5">

@@ -105,6 +105,7 @@ const mapUserToDB = (user: User) => ({
 
 const mapMessageFromDB = (dbMsg: any): Message => {
   const ts = Number(dbMsg.timestamp);
+  // Handle both number (BigInt) and ISO String timestamps
   const finalTs = isNaN(ts) ? new Date(dbMsg.timestamp).getTime() : ts;
   
   return {
@@ -122,8 +123,7 @@ const mapMessageToDB = (msg: Message) => ({
   sender_id: msg.senderId,
   receiver_id: msg.receiverId,
   content: msg.content,
-  // Convert timestamp to ISO string for better DB compatibility (timestamptz)
-  timestamp: new Date(msg.timestamp).toISOString(),
+  timestamp: new Date(msg.timestamp).toISOString(), // Send as ISO String for compatibility with timestamptz
   read: msg.read
 });
 
@@ -211,15 +211,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (!AudioContext) return;
       const ctx = new AudioContext();
       
-      // "Ding" sound - Glassy & Pleasant
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
       gain.connect(ctx.destination);
       
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-      osc.frequency.exponentialRampToValueAtTime(1046.5, ctx.currentTime + 0.1); // C6
+      osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1046.5, ctx.currentTime + 0.1);
       
       gain.gain.setValueAtTime(0.1, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
@@ -235,7 +234,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (!AudioContext) return;
       const ctx = new AudioContext();
       
-      // "Pop" sound - Quick & Subtle
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
@@ -258,7 +256,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const N = window.Notification as any; 
     const hasPermission = "Notification" in window && N.permission === "granted";
 
-    // Always play sound if message arrives (unless user disabled audio in system)
     playNotificationSound();
 
     if (isHidden && hasPermission) {
@@ -267,7 +264,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           body,
           icon: icon || '/favicon.ico',
           badge: '/favicon.ico',
-          silent: true // We play our own sound
+          silent: true
         });
       } catch (e) {
         console.error("System notification error:", e);
@@ -349,6 +346,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, []);
 
   useEffect(() => {
+    // Realtime Subscription
     const channel = supabase.channel('public:data')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
         const newMsg = mapMessageFromDB(payload.new);
@@ -358,11 +356,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             return [...prev, newMsg];
         });
 
+        // Handle Notifications for Received Messages
         if (currentUserRef.current && newMsg.receiverId === currentUserRef.current.id) {
           const sender = usersRef.current.find(u => u.id === newMsg.senderId);
           const senderName = sender ? sender.username : 'Someone';
           
-          // Play sound immediately for received message
           playNotificationSound();
 
           const notif: AppNotification = {
@@ -377,6 +375,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           triggerNotification(`Message from ${senderName}`, newMsg.content, sender?.avatar);
         }
 
+        // Handle Broadcasts
         if (newMsg.receiverId === BROADCAST_ID) {
            if (currentUserRef.current && newMsg.senderId === currentUserRef.current.id) return;
            const sender = usersRef.current.find(u => u.id === newMsg.senderId);
@@ -457,7 +456,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         return;
     }
     
-    // If already granted, just test it
     if (Notification.permission === 'granted') {
         playNotificationSound();
         try {
@@ -467,14 +465,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         return;
     }
 
-    // If denied, alert user
     if (Notification.permission === 'denied') {
         alert("Notifications are currently blocked. Please enable them in your browser settings (usually by clicking the lock icon in the address bar).");
         setShowPermissionPrompt(false);
         return;
     }
 
-    // Request permission
     const permission = await window.Notification.requestPermission();
     if (permission === "granted") {
       playNotificationSound();
@@ -546,6 +542,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const { error } = await supabase.from('messages').insert(mapMessageToDB(newMsg));
     if (error) {
        console.error("Send message failed", error);
+       alert(`Message failed to send: ${error.message}`);
        setMessages(prev => prev.filter(m => m.id !== newMsg.id));
     }
   };
@@ -596,53 +593,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const unreadIds = messages
        .filter(m => m.senderId === senderId && m.receiverId === currentUser.id && !m.read)
        .map(m => m.id);
-    
+
     if (unreadIds.length > 0) {
-      await supabase.from('messages').update({ read: true }).in('id', unreadIds);
+       await supabase.from('messages').update({ read: true }).in('id', unreadIds);
     }
   };
 
-  const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
+
   const toggleAnimations = () => {
     setEnableAnimations(prev => {
-      const newVal = !prev;
-      localStorage.setItem(STORAGE_KEYS.ANIMATIONS, String(newVal));
-      return newVal;
+        const newVal = !prev;
+        localStorage.setItem(STORAGE_KEYS.ANIMATIONS, String(newVal));
+        return newVal;
     });
   };
 
   return (
     <AppContext.Provider value={{
-      currentUser,
-      users,
-      messages,
-      notifications,
-      theme,
-      isLoading,
-      enableAnimations,
-      showPermissionPrompt,
-      appConfig,
-      isAdmin,
-      isOwner,
-      login,
-      loginWithCredentials,
-      logout,
-      signup,
-      updateProfile,
-      deleteAccount,
-      sendMessage,
-      broadcastMessage,
-      sendFriendRequest,
-      acceptFriendRequest,
-      markNotificationRead,
-      toggleTheme,
-      toggleAnimations,
-      markConversationAsRead,
-      checkIsAdmin,
-      checkIsOwner,
-      enableNotifications,
-      closePermissionPrompt,
-      updateAppConfig
+      currentUser, users, messages, notifications, theme, isLoading, enableAnimations, showPermissionPrompt,
+      appConfig, isAdmin, isOwner,
+      login, loginWithCredentials, logout, signup, updateProfile, deleteAccount,
+      sendMessage, broadcastMessage, sendFriendRequest, acceptFriendRequest, markNotificationRead,
+      toggleTheme, toggleAnimations, markConversationAsRead, checkIsAdmin, checkIsOwner, enableNotifications, closePermissionPrompt, updateAppConfig
     }}>
       {children}
     </AppContext.Provider>

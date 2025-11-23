@@ -108,7 +108,7 @@ export const ChatScreen: React.FC = () => {
                   <button
                     key={user.id}
                     onClick={() => setSelectedUser(user)}
-                    className={`w-full flex items-center p-4 liquid-card hover:bg-white/40 dark:hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-95 transform-gpu will-change-transform ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`}
+                    className={`w-full flex items-center p-4 liquid-card hover:bg-white/40 dark:hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-95 transform-gpu will-change-transform ${enableAnimations ? 'animate-slide-up-heavy' : ''}`}
                     style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'both' }}
                   >
                     <div className="relative">
@@ -119,7 +119,7 @@ export const ChatScreen: React.FC = () => {
                     <div className="ml-4 text-left flex-1 min-w-0">
                       <div className="flex justify-between items-center mb-1">
                         <h3 className={`font-bold text-lg truncate flex items-center gap-1 ${hasUnread ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>
-                            {user.username}
+                            {user.name || user.username}
                             {isOwnerUser ? <Crown className="w-3 h-3 text-yellow-500 fill-yellow-500" /> : isAdminUser ? <ShieldCheck className="w-3 h-3 text-blue-500" /> : null}
                         </h3>
                         {lastMsg && <span className="text-[10px] text-gray-500 font-medium">{new Date(lastMsg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>}
@@ -160,7 +160,7 @@ export const ChatScreen: React.FC = () => {
             </div>
             <div className="flex flex-col items-start">
                 <span className="font-bold text-gray-900 dark:text-white text-sm flex items-center gap-1">
-                    {selectedUser.username}
+                    {selectedUser.name || selectedUser.username}
                     {isOwnerUser ? <Crown className="w-3 h-3 text-yellow-500 fill-yellow-500" /> : isAdminUser ? <ShieldCheck className="w-3 h-3 text-blue-500" /> : null}
                 </span>
                 <span className={`text-[10px] font-bold ${isSelectedUserOnline ? 'text-green-500' : 'text-gray-400'}`}>
@@ -185,7 +185,7 @@ export const ChatScreen: React.FC = () => {
              return (
                <div 
                   key={msg.id} 
-                  className={`flex ${isMe ? 'justify-end' : 'justify-start'} transform-gpu will-change-transform ${shouldAnimate ? 'animate-slide-up-heavy opacity-0' : ''}`} 
+                  className={`flex ${isMe ? 'justify-end' : 'justify-start'} transform-gpu will-change-transform ${shouldAnimate ? 'animate-slide-up-heavy' : ''}`} 
                   style={{ animationDelay: shouldAnimate ? `${(idx - (conversation.length - 10)) * 50}ms` : '0s', animationFillMode: 'both' }}
                 >
                  <div className={`max-w-[80%] px-5 py-3 text-sm backdrop-blur-md shadow-sm border ${

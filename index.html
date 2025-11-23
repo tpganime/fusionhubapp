@@ -74,6 +74,10 @@
       }
     </script>
     <style>
+      :root {
+        --glass-opacity: 0.35;
+      }
+      
       body {
         font-family: 'Inter', sans-serif;
         background-color: #F2F2F7;
@@ -129,7 +133,7 @@
       }
 
       .glass-panel {
-        background: rgba(255, 255, 255, 0.35);
+        background: rgba(255, 255, 255, var(--glass-opacity));
         backdrop-filter: blur(25px) saturate(180%);
         -webkit-backdrop-filter: blur(25px) saturate(180%);
         border: 1.5px solid rgba(255, 255, 255, 0.4);
@@ -142,13 +146,13 @@
       }
       
       .dark .glass-panel {
-        background: rgba(20, 20, 20, 0.5);
+        background: rgba(20, 20, 20, var(--glass-opacity));
         border: 1.5px solid rgba(255, 255, 255, 0.08);
         box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
       }
 
       .liquid-card {
-        background: linear-gradient(145deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.2) 100%);
+        background: linear-gradient(145deg, rgba(255, 255, 255, calc(var(--glass-opacity) + 0.15)) 0%, rgba(255, 255, 255, calc(var(--glass-opacity) - 0.15)) 100%);
         backdrop-filter: blur(30px) saturate(150%);
         -webkit-backdrop-filter: blur(30px) saturate(150%);
         border: 1px solid rgba(255, 255, 255, 0.6);
@@ -165,7 +169,7 @@
       }
       
       .dark .liquid-card {
-        background: linear-gradient(145deg, rgba(40, 40, 40, 0.7) 0%, rgba(20, 20, 20, 0.3) 100%);
+        background: linear-gradient(145deg, rgba(40, 40, 40, calc(var(--glass-opacity) + 0.35)) 0%, rgba(20, 20, 20, var(--glass-opacity)) 100%);
         border: 1px solid rgba(255, 255, 255, 0.12);
         box-shadow: 
            0 15px 45px -10px rgba(0,0,0,0.6),
@@ -202,10 +206,12 @@
         border: 1px solid rgba(0,0,0,0.08);
         box-shadow: 0 4px 15px rgba(0,0,0,0.05);
       }
+      /* Dark mode no-liquid visibility fix */
       body.no-liquid.dark .glass-panel {
-        background: #1c1c1e;
+        background: #121212;
         border: 1px solid #2c2c2e;
         box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        color: #ffffff;
       }
 
       body.no-liquid .liquid-card {
@@ -215,11 +221,34 @@
         border: 1px solid rgba(0,0,0,0.08);
         box-shadow: 0 2px 8px rgba(0,0,0,0.05);
       }
+      /* Dark mode no-liquid visibility fix */
       body.no-liquid.dark .liquid-card {
         background: #1c1c1e;
         border: 1px solid #2c2c2e;
         box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        color: #ffffff;
       }
+      
+      body.no-liquid.dark .liquid-input {
+         background: #2c2c2e;
+         color: #ffffff;
+         border-color: #3a3a3c;
+      }
+      
+      /* Ensure text visibility in No-Liquid Dark Mode */
+      body.no-liquid.dark h1,
+      body.no-liquid.dark h2,
+      body.no-liquid.dark h3,
+      body.no-liquid.dark p,
+      body.no-liquid.dark span,
+      body.no-liquid.dark div {
+        color: #ffffff;
+      }
+      /* But allow specific text colors if they are explicitly set to something else (e.g., blue links) */
+      body.no-liquid.dark .text-blue-500 { color: #3b82f6 !important; }
+      body.no-liquid.dark .text-red-500 { color: #ef4444 !important; }
+      body.no-liquid.dark .text-green-500 { color: #22c55e !important; }
+      body.no-liquid.dark .text-gray-500 { color: #9ca3af !important; }
 
       .gpu-accelerated {
         transform: translate3d(0, 0, 0);

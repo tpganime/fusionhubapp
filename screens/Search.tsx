@@ -17,7 +17,7 @@ export const SearchScreen: React.FC = () => {
 
   const filteredUsers = users.filter(u => 
     u.id !== currentUser?.id && 
-    u.username.toLowerCase().includes(query.toLowerCase())
+    (u.username.toLowerCase().includes(query.toLowerCase()) || (u.name && u.name.toLowerCase().includes(query.toLowerCase())))
   );
 
   const isFriend = (userId: string) => currentUser?.friends.includes(userId);
@@ -71,7 +71,7 @@ export const SearchScreen: React.FC = () => {
               <div 
                 key={user.id} 
                 onClick={() => navigate(`/user/${user.id}`)}
-                className={`liquid-card p-4 flex items-center justify-between transition-all hover:bg-white/40 dark:hover:bg-white/10 cursor-pointer group hover:scale-[1.02] transform-gpu will-change-transform ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`}
+                className={`liquid-card p-4 flex items-center justify-between transition-all hover:bg-white/40 dark:hover:bg-white/10 cursor-pointer group hover:scale-[1.02] transform-gpu will-change-transform ${enableAnimations ? 'animate-slide-up-heavy' : ''}`}
                 style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'both' }}
               >
                 <div className="flex items-center space-x-4">
@@ -92,6 +92,7 @@ export const SearchScreen: React.FC = () => {
                     <h3 className="font-bold text-gray-900 dark:text-white group-hover:text-blue-600 transition-colors flex items-center gap-2">
                       {user.username}
                     </h3>
+                    {user.name && <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{user.name}</p>}
                     <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1 max-w-[140px]">
                         {user.description || "No bio"}
                     </p>

@@ -13,6 +13,7 @@ interface AppContextType {
   isLoading: boolean;
   enableAnimations: boolean;
   enableLiquid: boolean;
+  glassOpacity: number;
   showPermissionPrompt: boolean;
   appConfig: AppConfig;
   isAdmin: boolean;
@@ -32,6 +33,7 @@ interface AppContextType {
   toggleTheme: () => void;
   toggleAnimations: () => void;
   toggleLiquid: () => void;
+  setGlassOpacity: (opacity: number) => void;
   markConversationAsRead: (senderId: string) => void;
   checkIsAdmin: (email: string) => boolean;
   checkIsOwner: (email: string) => boolean;
@@ -48,6 +50,7 @@ const STORAGE_KEYS = {
   CURRENT_USER_ID: 'fh_current_user_id_v1',
   ANIMATIONS: 'fh_animations_v1',
   LIQUID: 'fh_liquid_v1',
+  GLASS_OPACITY: 'fh_glass_opacity_v1',
   CACHE_USERS: 'fh_cache_users_v1',
   CACHE_MESSAGES: 'fh_cache_messages_v1'
 };
@@ -67,6 +70,7 @@ const mapUserFromDB = (dbUser: any): User => {
     return {
       id: dbUser.id,
       username: dbUser.username || 'Unknown',
+      name: dbUser.name || '', // Map name
       email: dbUser.email || '',
       password: dbUser.password,
       avatar: dbUser.avatar || 'https://via.placeholder.com/150',
@@ -97,6 +101,7 @@ const mapUserFromDB = (dbUser: any): User => {
 const mapUserToDB = (user: User) => ({
   id: user.id,
   username: user.username,
+  name: user.name, // Map name
   email: user.email,
   password: user.password,
   avatar: user.avatar,
@@ -181,6 +186,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return initial;
   });
 
+  const [glassOpacity, setGlassOpacity] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEYS.GLASS_OPACITY);
+        if (stored !== null) return parseFloat(stored);
+      } catch(e) { console.error(e); }
+    }
+    return 0.35;
+  });
+
   const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
   const [appConfig, setAppConfig] = useState<AppConfig>(DEFAULT_CONFIG);
 
@@ -261,6 +276,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
     localStorage.setItem(STORAGE_KEYS.LIQUID, String(enableLiquid));
   }, [enableLiquid]);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--glass-opacity', glassOpacity.toString());
+    localStorage.setItem(STORAGE_KEYS.GLASS_OPACITY, glassOpacity.toString());
+  }, [glassOpacity]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.ANIMATIONS, String(enableAnimations));
@@ -395,12 +415,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (userError) throw userError;
         const mappedUsers = usersData.map(mapUserFromDB);
         setUsers(mappedUsers);
+        // Force update cache with fresh data
+        localStorage.setItem(STORAGE_KEYS.CACHE_USERS, JSON.stringify(mappedUsers));
         syncConfigFromUsers(mappedUsers);
         
-        const { data: msgsData, error: msgError } = await supabase.from('messages').select('*');
+        // Data Usage Optimization: Fetch only last 100 messages
+        const { data: msgsData, error: msgError } = await supabase.from('messages')
+           .select('*')
+           .order('timestamp', { ascending: false })
+           .limit(100);
+
         if (msgError) throw msgError;
-        const mappedMsgs = msgsData.map(mapMessageFromDB);
+        const mappedMsgs = msgsData.map(mapMessageFromDB).reverse(); // Reverse to chronological order
         setMessages(mappedMsgs);
+        localStorage.setItem(STORAGE_KEYS.CACHE_MESSAGES, JSON.stringify(mappedMsgs));
 
         if (savedId) {
           const found = mappedUsers.find(u => u.id === savedId);
@@ -564,8 +592,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
   
   const updateProfile = async (updatedUser: User) => {
+    // Optimistic update
+    setCurrentUser(updatedUser);
+    setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+    
     const { error } = await supabase.from('users').update(mapUserToDB(updatedUser)).eq('id', updatedUser.id);
-    if (error) alert("Failed to update profile");
+    if (error) {
+      console.error("Profile update failed", error);
+      alert("Failed to update profile in database");
+    }
   };
   
   const deleteAccount = async () => {
@@ -678,11 +713,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   return (
     <AppContext.Provider value={{
-      currentUser, users, messages, notifications, theme, isLoading, enableAnimations, enableLiquid, showPermissionPrompt,
+      currentUser, users, messages, notifications, theme, isLoading, enableAnimations, enableLiquid, glassOpacity, showPermissionPrompt,
       appConfig, isAdmin, isOwner, onlineUsers,
       login, loginWithCredentials, logout, signup, updateProfile, deleteAccount,
       sendMessage, broadcastMessage, sendFriendRequest, acceptFriendRequest, markNotificationRead,
-      toggleTheme, toggleAnimations, toggleLiquid, markConversationAsRead, checkIsAdmin, checkIsOwner, checkIsOnline, enableNotifications, closePermissionPrompt, updateAppConfig
+      toggleTheme, toggleAnimations, toggleLiquid, setGlassOpacity, markConversationAsRead, checkIsAdmin, checkIsOwner, checkIsOnline, enableNotifications, closePermissionPrompt, updateAppConfig
     }}>
       {children}
     </AppContext.Provider>

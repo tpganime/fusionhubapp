@@ -2,11 +2,11 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lock, Eye, Trash2, LogOut, Shield, ChevronRight, Moon, Sun, Zap, LayoutDashboard, Bell, Droplets } from 'lucide-react';
+import { ArrowLeft, Lock, Eye, Trash2, LogOut, Shield, ChevronRight, Moon, Sun, Zap, LayoutDashboard, Bell, Droplets, Sliders } from 'lucide-react';
 import { PRIVACY_POLICY_TEXT } from '../constants';
 
 export const SettingsScreen: React.FC = () => {
-  const { currentUser, updateProfile, logout, deleteAccount, theme, toggleTheme, enableAnimations, toggleAnimations, enableLiquid, toggleLiquid, isAdmin, enableNotifications } = useApp();
+  const { currentUser, updateProfile, logout, deleteAccount, theme, toggleTheme, enableAnimations, toggleAnimations, enableLiquid, toggleLiquid, glassOpacity, setGlassOpacity, isAdmin, enableNotifications } = useApp();
   const navigate = useNavigate();
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
   
@@ -107,6 +107,28 @@ export const SettingsScreen: React.FC = () => {
                  <div className="w-12 h-7 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500 shadow-inner"></div>
                </label>
             </div>
+            
+            {/* Transparency Slider (Only when Liquid is enabled) */}
+            {enableLiquid && (
+               <div className="p-5 animate-fade-in">
+                   <div className="flex items-center gap-4 mb-3">
+                       <div className="p-2.5 bg-gray-100 dark:bg-gray-800 rounded-xl text-gray-600 dark:text-gray-300 shadow-md"><Sliders className="w-5 h-5" /></div>
+                       <div className="flex flex-col flex-1">
+                          <span className="font-bold text-gray-900 dark:text-white text-sm">Transparency</span>
+                          <span className="text-[10px] text-gray-500 dark:text-gray-400">{(glassOpacity * 100).toFixed(0)}%</span>
+                       </div>
+                   </div>
+                   <input 
+                       type="range" 
+                       min="0.1" 
+                       max="1.0" 
+                       step="0.05"
+                       value={glassOpacity} 
+                       onChange={(e) => setGlassOpacity(parseFloat(e.target.value))}
+                       className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+                   />
+               </div>
+            )}
 
             {/* Animations */}
             <div className="p-5 flex items-center justify-between">
@@ -200,7 +222,7 @@ export const SettingsScreen: React.FC = () => {
           </div>
         </section>
 
-        <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-8 opacity-50">FusionHub v1.6.0 Liquid</p>
+        <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-8 opacity-50">FusionHub v1.3.4 liquid beta</p>
 
       </main>
     </div>

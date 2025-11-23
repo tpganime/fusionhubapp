@@ -15,6 +15,7 @@ interface AppContextType {
   enableLiquid: boolean;
   glassOpacity: number;
   showPermissionPrompt: boolean;
+  notificationPermission: NotificationPermission;
   appConfig: AppConfig;
   isAdmin: boolean;
   isOwner: boolean;
@@ -147,6 +148,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
   
   const sessionStartRef = useRef(Date.now());
 
@@ -215,6 +217,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   useEffect(() => { currentUserRef.current = currentUser; }, [currentUser]);
   useEffect(() => { usersRef.current = users; }, [users]);
+
+  // Initialize notification permission
+  useEffect(() => {
+    if ("Notification" in window) {
+      setNotificationPermission(Notification.permission);
+    }
+  }, []);
 
   // Time Tracking
   useEffect(() => {
@@ -320,9 +329,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     // Apply opacity
     document.documentElement.style.setProperty('--glass-opacity', glassOpacity.toString());
     
-    // Apply dynamic blur filter:
-    // If glassOpacity is close to 0 (Clear), we remove blur to reduce lag and make it "like photo"
-    // 0.05 corresponds to 95% transparency on the slider.
+    // Apply dynamic blur filter
     if (glassOpacity <= 0.05) {
         document.documentElement.style.setProperty('--glass-filter', 'none');
     } else {
@@ -423,6 +430,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       try {
         new N(title, { body, icon: icon || '/favicon.ico', silent: true });
       } catch (e) {}
+    } else if (!isHidden) {
+        // Simple toast fallback logic if needed could go here, but sound is enough for now
     }
   };
 
@@ -596,11 +605,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if ("Notification" in window && window.Notification.permission === "default") {
       setShowPermissionPrompt(true);
     }
+    if ("Notification" in window) {
+      setNotificationPermission(window.Notification.permission);
+    }
   };
 
   const enableNotifications = async () => {
     if (!("Notification" in window)) return;
     const permission = await window.Notification.requestPermission();
+    setNotificationPermission(permission);
     if (permission === "granted") {
       playNotificationSound();
       new Notification("Notifications Enabled", { body: "You will now receive alerts!", icon: '/favicon.ico' });
@@ -687,10 +700,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             console.error("Message send failed", error);
             // Revert optimistic update
             setMessages(prev => prev.filter(m => m.id !== newMsg.id));
+            triggerNotification('Error', 'Failed to send message');
         }
     } catch(e) {
         console.error("Message send error", e);
         setMessages(prev => prev.filter(m => m.id !== newMsg.id));
+        triggerNotification('Error', 'Failed to send message');
     }
   };
   
@@ -780,7 +795,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   return (
     <AppContext.Provider value={{
-      currentUser, users, messages, notifications, theme, isLoading, enableAnimations, enableLiquid, glassOpacity, showPermissionPrompt,
+      currentUser, users, messages, notifications, theme, isLoading, enableAnimations, enableLiquid, glassOpacity, showPermissionPrompt, notificationPermission,
       appConfig, isAdmin, isOwner, onlineUsers,
       login, loginWithCredentials, logout, signup, updateProfile, deleteAccount, deactivateAccount,
       sendMessage, broadcastMessage, sendFriendRequest, acceptFriendRequest, markNotificationRead,

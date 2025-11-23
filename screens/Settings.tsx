@@ -6,11 +6,11 @@ import { ArrowLeft, Lock, Eye, Trash2, LogOut, Shield, ChevronRight, Moon, Sun, 
 import { PRIVACY_POLICY_TEXT } from '../constants';
 
 export const SettingsScreen: React.FC = () => {
-  const { currentUser, updateProfile, logout, deleteAccount, deactivateAccount, theme, toggleTheme, enableAnimations, toggleAnimations, enableLiquid, toggleLiquid, glassOpacity, setGlassOpacity, isAdmin, enableNotifications } = useApp();
+  const { currentUser, updateProfile, logout, deleteAccount, deactivateAccount, theme, toggleTheme, enableAnimations, toggleAnimations, enableLiquid, toggleLiquid, glassOpacity, setGlassOpacity, isAdmin, enableNotifications, notificationPermission } = useApp();
   const navigate = useNavigate();
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
   
-  const isNotificationGranted = "Notification" in window && window.Notification.permission === 'granted';
+  const isNotificationGranted = notificationPermission === 'granted';
 
   if (!currentUser) return null;
 

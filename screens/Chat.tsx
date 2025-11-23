@@ -171,7 +171,8 @@ export const ChatScreen: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-2 pb-28 pt-24 no-scrollbar">
+      {/* Message List with increased bottom padding for input visibility */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-2 pb-40 pt-24 no-scrollbar">
         {conversation.length === 0 ? (
            <div className="text-center mt-20 opacity-50">
              <div className="w-20 h-20 bg-white/30 rounded-full mx-auto mb-3 flex items-center justify-center text-3xl">👋</div>
@@ -210,17 +211,25 @@ export const ChatScreen: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Liquid Input Area - Z-Index increased to 60 to avoid being covered by BottomNav */}
-      <div className="fixed bottom-24 left-0 right-0 px-4 z-[60] pointer-events-none">
-        <form onSubmit={handleSend} className="pointer-events-auto flex items-center gap-2 liquid-card p-1.5 shadow-2xl sm:max-w-md sm:mx-auto">
+      {/* Input Area - Fixed Z-Index and Removed liquid-card class from form to prevent active scale issues */}
+      <div className="fixed bottom-24 left-0 right-0 px-4 z-[70] pointer-events-none">
+        <form 
+          onSubmit={handleSend} 
+          className="pointer-events-auto flex items-center gap-2 p-1.5 shadow-2xl sm:max-w-md sm:mx-auto bg-white/40 dark:bg-black/40 backdrop-blur-xl border border-white/30 dark:border-white/10 rounded-[2rem]"
+        >
           <input
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             placeholder="Type a message..."
+            autoComplete="off"
             className="flex-1 bg-transparent px-5 py-3 focus:outline-none text-sm text-gray-900 dark:text-white placeholder-gray-500 font-medium"
           />
-          <button type="submit" disabled={!inputText.trim()} className="p-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full text-white shadow-lg disabled:opacity-50 transition-all hover:scale-105 active:scale-95">
+          <button 
+            type="submit" 
+            disabled={!inputText.trim()} 
+            className="p-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full text-white shadow-lg disabled:opacity-50 transition-all hover:scale-105 active:scale-95"
+          >
             <Send className="w-5 h-5 ml-0.5" />
           </button>
         </form>

@@ -109,11 +109,23 @@ export const ProfileScreen: React.FC = () => {
 
   const handleSave = async () => {
     if (currentUser) {
+      let finalDescription = description;
+      
+      // Critical Check: Prevent Admin from overwriting App Config
+      // If the current user has a description starting with '{', it's likely the App Config.
+      // If the admin tried to edit their bio, we should prefer the original config to prevent breaking the app,
+      // unless we want to allow them to break it. For safety, we keep the config if the new bio is empty,
+      // or if they didn't explicitly change it. 
+      // Since our UI hides the config (shows ''), editing would send '' as description, wiping the config.
+      if (currentUser.description && currentUser.description.startsWith('{')) {
+         finalDescription = currentUser.description;
+      }
+
       await updateProfile({
         ...currentUser,
         username,
         name,
-        description, 
+        description: finalDescription, 
         avatar,
         birthdate,
         gender

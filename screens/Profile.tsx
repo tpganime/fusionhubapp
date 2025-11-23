@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
@@ -128,17 +129,20 @@ export const ProfileScreen: React.FC = () => {
       {/* Full Screen Avatar Modal */}
       {showFullAvatar && (
         <div 
-          className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in"
+          className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in"
           onClick={() => setShowFullAvatar(false)}
         >
           <button 
-            className="absolute top-6 right-6 p-2 bg-white/20 rounded-full text-white hover:bg-white/30 transition-colors"
+            className="absolute top-6 right-6 p-2 bg-white/20 rounded-full text-white hover:bg-white/30 transition-colors z-[201]"
             onClick={() => setShowFullAvatar(false)}
           >
             <X className="w-6 h-6" />
           </button>
           <img 
             src={displayAvatar} 
+            onError={(e) => {
+               (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400?text=Error';
+            }}
             alt="Full Profile" 
             className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl animate-pop-in" 
             onClick={(e) => e.stopPropagation()}
@@ -167,17 +171,20 @@ export const ProfileScreen: React.FC = () => {
                <div className="absolute inset-0 bg-gradient-to-tr from-blue-300 to-purple-300 dark:from-blue-600 dark:to-purple-600 rounded-full blur-xl opacity-50 animate-pulse-slow"></div>
                
                {isOwnerUser ? (
-                   <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-30 animate-float">
+                   <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-30 animate-float pointer-events-none">
                        <Crown className={`w-10 h-10 text-yellow-500 fill-yellow-200 drop-shadow-lg`} />
                    </div>
                ) : isAdminUser ? (
-                   <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-30 animate-float">
+                   <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-30 animate-float pointer-events-none">
                        <ShieldCheck className={`w-10 h-10 text-blue-500 fill-blue-100 drop-shadow-lg`} />
                    </div>
                ) : null}
 
                <img 
                  src={displayAvatar} 
+                 onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150';
+                 }}
                  alt="Profile" 
                  className={`w-full h-full rounded-full object-cover border-4 ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-white dark:border-white/20'} shadow-2xl relative z-10 bg-gray-100 transition-transform group-hover:scale-[1.02]`} 
                />

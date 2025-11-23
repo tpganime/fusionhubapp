@@ -136,9 +136,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [messages, setMessages] = useState<Message[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [enableAnimations, setEnableAnimations] = useState(true);
-  const [enableLiquid, setEnableLiquid] = useState(true);
+  
+  // Initialize state directly from localStorage to prevent overwriting
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem(STORAGE_KEYS.THEME) as 'light' | 'dark') || 'light';
+    }
+    return 'light';
+  });
+
+  const [enableAnimations, setEnableAnimations] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(STORAGE_KEYS.ANIMATIONS);
+      return stored !== null ? stored === 'true' : true;
+    }
+    return true;
+  });
+
+  const [enableLiquid, setEnableLiquid] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(STORAGE_KEYS.LIQUID);
+      return stored !== null ? stored === 'true' : true;
+    }
+    return true;
+  });
+
   const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
   const [appConfig, setAppConfig] = useState<AppConfig>(DEFAULT_CONFIG);
 
@@ -189,6 +211,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
     localStorage.setItem(STORAGE_KEYS.LIQUID, String(enableLiquid));
   }, [enableLiquid]);
+
+  // Animation Persistence
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.ANIMATIONS, String(enableAnimations));
+  }, [enableAnimations]);
 
   // -- Config Management --
   const syncConfigFromUsers = (userList: User[]) => {
@@ -321,14 +348,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             }
         }
 
-        const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME) as 'light' | 'dark';
-        if (savedTheme) setTheme(savedTheme);
-
-        const savedAnim = localStorage.getItem(STORAGE_KEYS.ANIMATIONS);
-        if (savedAnim !== null) setEnableAnimations(savedAnim === 'true');
-
-        const savedLiquid = localStorage.getItem(STORAGE_KEYS.LIQUID);
-        if (savedLiquid !== null) setEnableLiquid(savedLiquid === 'true');
+        // Removed localStorage reads for settings here as they are now handled in useState initialization
 
         const { data: usersData, error: userError } = await supabase.from('users').select('*');
         if (userError) throw userError;
@@ -621,18 +641,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const toggleAnimations = () => {
-    setEnableAnimations(prev => {
-        const newVal = !prev;
-        localStorage.setItem(STORAGE_KEYS.ANIMATIONS, String(newVal));
-        return newVal;
-    });
+    setEnableAnimations(prev => !prev);
   };
 
   const toggleLiquid = () => {
-    setEnableLiquid(prev => {
-      const newVal = !prev;
-      return newVal;
-    });
+    setEnableLiquid(prev => !prev);
   };
 
   return (

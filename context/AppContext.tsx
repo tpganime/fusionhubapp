@@ -12,6 +12,7 @@ interface AppContextType {
   theme: 'light' | 'dark';
   isLoading: boolean;
   enableAnimations: boolean;
+  enableLiquid: boolean;
   showPermissionPrompt: boolean;
   appConfig: AppConfig;
   isAdmin: boolean;
@@ -29,6 +30,7 @@ interface AppContextType {
   markNotificationRead: (id: string) => void;
   toggleTheme: () => void;
   toggleAnimations: () => void;
+  toggleLiquid: () => void;
   markConversationAsRead: (senderId: string) => void;
   checkIsAdmin: (email: string) => boolean;
   checkIsOwner: (email: string) => boolean;
@@ -43,6 +45,7 @@ const STORAGE_KEYS = {
   THEME: 'fh_theme_v1',
   CURRENT_USER_ID: 'fh_current_user_id_v1',
   ANIMATIONS: 'fh_animations_v1',
+  LIQUID: 'fh_liquid_v1',
   CACHE_USERS: 'fh_cache_users_v1',
   CACHE_MESSAGES: 'fh_cache_messages_v1'
 };
@@ -135,6 +138,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [isLoading, setIsLoading] = useState(true);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [enableAnimations, setEnableAnimations] = useState(true);
+  const [enableLiquid, setEnableLiquid] = useState(true);
   const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
   const [appConfig, setAppConfig] = useState<AppConfig>(DEFAULT_CONFIG);
 
@@ -175,6 +179,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
     localStorage.setItem(STORAGE_KEYS.THEME, theme);
   }, [theme]);
+
+  // Liquid Mode Effect
+  useEffect(() => {
+    if (enableLiquid) {
+      document.body.classList.remove('no-liquid');
+    } else {
+      document.body.classList.add('no-liquid');
+    }
+    localStorage.setItem(STORAGE_KEYS.LIQUID, String(enableLiquid));
+  }, [enableLiquid]);
 
   // -- Config Management --
   const syncConfigFromUsers = (userList: User[]) => {
@@ -312,6 +326,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
         const savedAnim = localStorage.getItem(STORAGE_KEYS.ANIMATIONS);
         if (savedAnim !== null) setEnableAnimations(savedAnim === 'true');
+
+        const savedLiquid = localStorage.getItem(STORAGE_KEYS.LIQUID);
+        if (savedLiquid !== null) setEnableLiquid(savedLiquid === 'true');
 
         const { data: usersData, error: userError } = await supabase.from('users').select('*');
         if (userError) throw userError;
@@ -611,13 +628,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   };
 
+  const toggleLiquid = () => {
+    setEnableLiquid(prev => {
+      const newVal = !prev;
+      return newVal;
+    });
+  };
+
   return (
     <AppContext.Provider value={{
-      currentUser, users, messages, notifications, theme, isLoading, enableAnimations, showPermissionPrompt,
+      currentUser, users, messages, notifications, theme, isLoading, enableAnimations, enableLiquid, showPermissionPrompt,
       appConfig, isAdmin, isOwner,
       login, loginWithCredentials, logout, signup, updateProfile, deleteAccount,
       sendMessage, broadcastMessage, sendFriendRequest, acceptFriendRequest, markNotificationRead,
-      toggleTheme, toggleAnimations, markConversationAsRead, checkIsAdmin, checkIsOwner, enableNotifications, closePermissionPrompt, updateAppConfig
+      toggleTheme, toggleAnimations, toggleLiquid, markConversationAsRead, checkIsAdmin, checkIsOwner, enableNotifications, closePermissionPrompt, updateAppConfig
     }}>
       {children}
     </AppContext.Provider>

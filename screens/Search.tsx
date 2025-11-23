@@ -21,7 +21,11 @@ export const SearchScreen: React.FC = () => {
   );
 
   const isFriend = (userId: string) => currentUser?.friends.includes(userId);
-  const isRequestSent = (user: any) => user.requests.includes(currentUser?.id);
+  const isRequestSent = (user: any) => {
+      // Ensure we check against an array, defaulting to empty if undefined
+      const reqs = user.requests || [];
+      return reqs.includes(currentUser?.id);
+  };
 
   const handleRequest = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -74,7 +78,7 @@ export const SearchScreen: React.FC = () => {
                 <div className="flex items-center space-x-4">
                   <div className="relative">
                       <img src={user.avatar} alt={user.username} className={`w-14 h-14 rounded-full object-cover border-2 ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-white/50 shadow-sm'}`} />
-                      {isOnline && <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"></span>}
+                      {isOnline && <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white dark:border-gray-800 animate-pulse-slow"></span>}
                       {isOwnerUser ? (
                         <div className="absolute -top-2 -right-2 bg-yellow-400 rounded-full p-1 shadow-sm">
                           <Crown className="w-3 h-3 text-white fill-white" />

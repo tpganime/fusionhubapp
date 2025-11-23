@@ -124,7 +124,7 @@ export const HomeScreen: React.FC = () => {
                            <ArrowRight className="w-4 h-4 text-gray-500" />
                         </div>
                         
-                        <div className="mb-4 w-14 h-14 rounded-[1.2rem] bg-gradient-to-br from-white to-white/50 dark:from-white/10 dark:to-white/5 flex items-center justify-center text-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] border border-white/40 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                        <div className="mb-4 w-14 h-14 rounded-[1.2rem] bg-gradient-to-br from-white to-white/50 dark:from-white/10 dark:to-white/5 flex items-center justify-center text-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] border border-white/40 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 group-hover:animate-bounce-soft">
                            {shortcut.icon ? (
                                <img src={`https://www.google.com/s2/favicons?domain=${shortcut.icon}&sz=64`} alt="icon" className="w-7 h-7" />
                            ) : (

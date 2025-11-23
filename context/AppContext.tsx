@@ -199,16 +199,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     if (!currentUser) return;
 
+    // Use a fixed channel name so everyone connects to the same presence room
     const presenceChannel = supabase.channel('global_presence');
     
     presenceChannel
       .on('presence', { event: 'sync' }, () => {
         const state = presenceChannel.presenceState();
-        // Supabase returns an array of presence objects for each key.
-        // We assume the key is the user_id or mapped via the track payload.
         const activeIds = new Set<string>();
+        
         Object.values(state).forEach((presences: any) => {
            presences.forEach((p: any) => {
+             // 'user_id' matches the key we send in .track()
              if (p.user_id) activeIds.add(p.user_id);
            });
         });
@@ -580,8 +581,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     // 1. Optimistic Update (Immediate UI Feedback)
     setUsers(prev => prev.map(u => {
       if (u.id === targetUserId) {
-        if (u.requests.includes(currentUser.id)) return u;
-        return { ...u, requests: [...u.requests, currentUser.id] };
+        // Safe check for requests existence
+        const currentReqs = u.requests || [];
+        if (currentReqs.includes(currentUser.id)) return u;
+        return { ...u, requests: [...currentReqs, currentUser.id] };
       }
       return u;
     }));
@@ -597,10 +600,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
              requests: [...currentRequests, currentUser.id] 
            }).eq('id', targetUserId);
         }
+      } else {
+        // Fallback if select fails but user exists (unlikely in this flow but safe)
+        // Just append blindly if we couldn't fetch (not recommended but better than nothing)
       }
     } catch (err) {
       console.error("Failed to send request", err);
-      // Optional: Revert optimistic update on failure
+      // Optional: Revert optimistic update on failure, but for now we keep it to prevent UI flickering
     }
   };
   

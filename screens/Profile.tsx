@@ -141,11 +141,17 @@ export const ProfileScreen: React.FC = () => {
       
       {/* Dynamic Background - Full Screen Immersive */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+          {/* Main Image Layer - fully opaque but blurred */}
           <div 
-             className="absolute inset-0 bg-cover bg-center opacity-40 dark:opacity-20 blur-xl scale-110 transition-all duration-700 ease-in-out"
-             style={{ backgroundImage: `url("${displayAvatar}")` }}
+             className="absolute inset-0 bg-cover bg-center transition-all duration-700 ease-in-out"
+             style={{ 
+                 backgroundImage: `url("${displayAvatar}")`,
+                 filter: 'blur(35px) brightness(0.65)',
+                 transform: 'scale(1.1)' 
+             }}
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-[#F2F2F7]/80 to-[#F2F2F7] dark:from-black/30 dark:via-[#000000]/80 dark:to-[#000000]"></div>
+          {/* Gradient Overlay for text readability */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60 dark:to-black/90"></div>
       </div>
 
       {/* Full Screen Avatar Modal */}
@@ -199,7 +205,7 @@ export const ProfileScreen: React.FC = () => {
         <div className="fixed top-4 left-4 z-50">
            <button 
              onClick={() => navigate(-1)} 
-             className="p-2.5 rounded-full glass-panel text-gray-900 dark:text-white hover:bg-white/20 transition-all shadow-lg"
+             className="p-2.5 rounded-full glass-panel text-gray-900 dark:text-white hover:bg-white/20 transition-all shadow-lg backdrop-blur-xl border border-white/20"
            >
              <ArrowLeft className="w-6 h-6" />
            </button>
@@ -245,21 +251,25 @@ export const ProfileScreen: React.FC = () => {
             {!isEditing ? (
               <div className={`text-center w-full transform-gpu ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`} style={{ animationDelay: '100ms', animationFillMode: 'both' }}>
                 <h2 className="text-3xl font-black text-gray-900 dark:text-white flex items-center justify-center gap-2 flex-wrap mb-1 drop-shadow-md">
-                  {profileUser.username}
+                  <span className="bg-clip-text text-transparent bg-gradient-to-br from-gray-900 to-gray-700 dark:from-white dark:to-gray-200">
+                    {profileUser.username}
+                  </span>
                   {profileUser.isPrivateProfile && !isOwnProfile && <Lock className="w-5 h-5 text-gray-400" />}
                 </h2>
                 
                 {/* Badges */}
                 <div className="flex justify-center gap-2 mb-4">
-                   {isOwnerUser && <span className="px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 text-[10px] font-bold uppercase border border-yellow-200">Owner</span>}
-                   {isAdminUser && <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold uppercase border border-blue-200">Admin</span>}
+                   {isOwnerUser && <span className="px-2 py-0.5 rounded-full bg-yellow-400/20 text-yellow-700 dark:text-yellow-200 text-[10px] font-bold uppercase border border-yellow-500/30 backdrop-blur-md">Owner</span>}
+                   {isAdminUser && <span className="px-2 py-0.5 rounded-full bg-blue-400/20 text-blue-700 dark:text-blue-200 text-[10px] font-bold uppercase border border-blue-500/30 backdrop-blur-md">Admin</span>}
                 </div>
 
-                <p className="text-gray-700 dark:text-gray-200 text-sm max-w-xs mx-auto leading-relaxed mb-6 font-medium backdrop-blur-sm py-1 rounded-lg">
-                  {displayDescription || "No bio set"}
-                </p>
+                <div className="relative inline-block px-4 py-2 rounded-xl bg-white/10 dark:bg-black/20 backdrop-blur-md border border-white/20 mb-6">
+                  <p className="text-gray-800 dark:text-gray-100 text-sm leading-relaxed font-medium">
+                    {displayDescription || "No bio set"}
+                  </p>
+                </div>
                 
-                <div className="flex items-center justify-center gap-8 mb-8 p-4 liquid-card inline-flex min-w-[200px]">
+                <div className="flex items-center justify-center gap-8 mb-8 p-4 liquid-card inline-flex min-w-[200px] border-white/30 dark:border-white/10">
                    <div className="text-center">
                      <span className="block text-2xl font-bold text-gray-900 dark:text-white">{profileUser.friends.length}</span>
                      <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Friends</span>
@@ -282,7 +292,7 @@ export const ProfileScreen: React.FC = () => {
                      </button>
                      
                      {isFriend ? (
-                         <button className="flex-1 py-3 rounded-2xl bg-green-500/10 text-green-600 border border-green-500/20 font-bold flex items-center justify-center gap-2">
+                         <button className="flex-1 py-3 rounded-2xl bg-green-500/10 text-green-600 border border-green-500/20 font-bold flex items-center justify-center gap-2 backdrop-blur-md">
                              <Check className="w-5 h-5" /> Friends
                          </button>
                      ) : (
@@ -291,7 +301,7 @@ export const ProfileScreen: React.FC = () => {
                              disabled={isRequested}
                              className={`flex-1 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all border ${
                                  isRequested 
-                                 ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 border-transparent cursor-default' 
+                                 ? 'bg-gray-100/50 dark:bg-gray-800/50 text-gray-500 border-transparent cursor-default backdrop-blur-sm' 
                                  : 'liquid-card hover:bg-white/50 dark:hover:bg-white/10 text-gray-900 dark:text-white'
                              }`}
                          >
@@ -304,7 +314,7 @@ export const ProfileScreen: React.FC = () => {
                 {isOwnProfile && (
                    <button 
                      onClick={() => setIsEditing(true)}
-                     className="px-8 py-2.5 liquid-card rounded-full text-sm font-bold text-gray-700 dark:text-white hover:bg-white/40 transition-all mb-4"
+                     className="px-8 py-2.5 liquid-card rounded-full text-sm font-bold text-gray-700 dark:text-white hover:bg-white/40 transition-all mb-4 backdrop-blur-md"
                    >
                      Edit Profile
                    </button>
@@ -315,7 +325,7 @@ export const ProfileScreen: React.FC = () => {
       </div>
 
       {!isEditing && canViewDetails && (
-        <div className={`mx-5 mt-2 liquid-card p-6 space-y-6 relative z-10 transform-gpu ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`} style={{ animationDelay: '200ms', animationFillMode: 'both' }}>
+        <div className={`mx-5 mt-2 liquid-card p-6 space-y-6 relative z-10 transform-gpu backdrop-blur-xl border-white/30 dark:border-white/10 ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`} style={{ animationDelay: '200ms', animationFillMode: 'both' }}>
            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">About</h3>
            
            <div className="flex items-center gap-5">
@@ -353,7 +363,7 @@ export const ProfileScreen: React.FC = () => {
       )}
 
       {!isEditing && !canViewDetails && (
-        <div className="mx-5 mt-4 liquid-card p-10 text-center relative z-10">
+        <div className="mx-5 mt-4 liquid-card p-10 text-center relative z-10 backdrop-blur-xl">
             <Lock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-bold text-gray-700 dark:text-gray-200">Private Profile</h3>
             <p className="text-sm text-gray-500 mt-1">Add {profileUser.username} as a friend to see more.</p>
@@ -361,7 +371,7 @@ export const ProfileScreen: React.FC = () => {
       )}
 
       {isEditing && (
-        <div className="mx-5 mt-4 liquid-card p-6 relative z-10 animate-fade-in">
+        <div className="mx-5 mt-4 liquid-card p-6 relative z-10 animate-fade-in backdrop-blur-xl">
             <div className="space-y-5">
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase ml-1">Username</label>

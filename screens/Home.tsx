@@ -80,7 +80,10 @@ export const HomeScreen: React.FC = () => {
         <div className={`relative overflow-hidden liquid-card p-8 mb-8 transform-gpu ${enableAnimations ? 'animate-fade-in' : ''}`}>
            {/* Fluid background effect */}
            <div className="absolute -top-20 -right-20 w-64 h-64 bg-gradient-to-br from-purple-200 to-blue-200 dark:from-purple-900/40 dark:to-blue-900/40 rounded-full blur-3xl opacity-60 pointer-events-none animate-blob"></div>
-           <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-gradient-to-tr from-pink-200 to-yellow-100 dark:from-pink-900/40 dark:to-yellow-900/20 rounded-full blur-3xl opacity-60 pointer-events-none animate-blob" style={{ animationDelay: '2s'}}></div>
+           <div 
+             className="absolute -bottom-20 -left-20 w-64 h-64 bg-gradient-to-tr from-pink-200 to-yellow-100 dark:from-pink-900/40 dark:to-yellow-900/20 rounded-full blur-3xl opacity-60 pointer-events-none animate-blob" 
+             style={{ animationDelay: '2s' }}
+           ></div>
 
            <div className="relative z-10">
              <h2 className="text-lg font-medium text-gray-600 dark:text-gray-300">

@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { HOME_SHORTCUTS } from '../constants';
 import { TopBar } from '../components/TopBar';
 import { ComingSoon } from '../components/ComingSoon';
-import { ExternalLink, Lock, Bell } from 'lucide-react';
+import { ExternalLink, Lock, Bell, ArrowRight } from 'lucide-react';
 
 export const HomeScreen: React.FC = () => {
   const { currentUser, enableAnimations, appConfig, enableNotifications } = useApp();
@@ -17,7 +16,6 @@ export const HomeScreen: React.FC = () => {
 
   useEffect(() => {
     const updateTime = () => {
-      // Use Indian Standard Time (IST)
       const now = new Date();
       const options: Intl.DateTimeFormatOptions = { timeZone: 'Asia/Kolkata' };
       
@@ -42,7 +40,6 @@ export const HomeScreen: React.FC = () => {
   }, []);
 
   useEffect(() => {
-     // Check if notifications are default (not yet granted or denied)
      if ("Notification" in window && window.Notification.permission === 'default') {
          setShowNotifBanner(true);
      }
@@ -53,56 +50,58 @@ export const HomeScreen: React.FC = () => {
   }
 
   return (
-    <div className="h-full overflow-y-auto pb-24 transition-colors duration-300 scrollbar-hide">
+    <div className="h-full overflow-y-auto pb-32 no-scrollbar">
       <TopBar />
-      <main className="px-6 pt-6">
+      <main className="px-5 pt-2">
         
-        {/* Notification Permission Banner */}
+        {/* Notification Permission Liquid Banner */}
         {showNotifBanner && (
-            <div className={`mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-2xl flex items-center justify-between shadow-sm transform-gpu ${enableAnimations ? 'animate-pop-in' : ''}`}>
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-100 dark:bg-blue-800 rounded-full text-blue-600 dark:text-blue-300">
-                        <Bell className="w-5 h-5" />
+            <div className={`mb-6 p-5 liquid-card flex items-center justify-between transform-gpu ${enableAnimations ? 'animate-pop-in' : ''}`}>
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-blue-500/20 rounded-full text-blue-600 dark:text-blue-300 shadow-inner">
+                        <Bell className="w-6 h-6" />
                     </div>
                     <div>
-                        <h3 className="font-bold text-gray-800 dark:text-gray-100 text-sm">Enable Notifications</h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Get updates instantly!</p>
+                        <h3 className="font-bold text-gray-800 dark:text-gray-100 text-sm">Notifications</h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-300">Don't miss a beat!</p>
                     </div>
                 </div>
                 <button 
                     onClick={() => { enableNotifications(); setShowNotifBanner(false); }}
-                    className="px-4 py-2 bg-blue-500 text-white text-xs font-bold rounded-xl shadow-md active:scale-95 transition-all"
+                    className="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-500/30 active:scale-95 transition-all"
                 >
                     Allow
                 </button>
             </div>
         )}
 
-        {/* Greeting Card - Elastic Slide In */}
-        <div className={`relative overflow-hidden rounded-[2rem] p-6 bg-white dark:bg-dark-surface shadow-sm border border-white/50 dark:border-gray-800 mb-8 transform-gpu ${enableAnimations ? 'animate-elastic-up opacity-0' : ''}`} style={{ animationDelay: '0ms' }}>
-           {/* Decorative Gradient Blob */}
-           <div className="absolute -top-10 -right-10 w-48 h-48 bg-gradient-to-br from-blue-100 via-purple-100 to-transparent dark:from-blue-900/30 dark:via-purple-900/30 dark:to-transparent rounded-full blur-3xl pointer-events-none"></div>
+        {/* Greeting Liquid Card */}
+        <div className={`relative overflow-hidden liquid-card p-8 mb-8 transform-gpu ${enableAnimations ? 'animate-elastic-up opacity-0' : ''}`} style={{ animationDelay: '0ms' }}>
+           {/* Fluid background effect */}
+           <div className="absolute -top-20 -right-20 w-64 h-64 bg-gradient-to-br from-purple-200 to-blue-200 dark:from-purple-900/40 dark:to-blue-900/40 rounded-full blur-3xl opacity-60 pointer-events-none animate-blob"></div>
+           <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-gradient-to-tr from-pink-200 to-yellow-100 dark:from-pink-900/40 dark:to-yellow-900/20 rounded-full blur-3xl opacity-60 pointer-events-none animate-blob" style={{ animationDelay: '2s'}}></div>
 
            <div className="relative z-10">
-             <h2 className="text-xl font-bold text-gray-700 dark:text-gray-300">
+             <h2 className="text-lg font-medium text-gray-600 dark:text-gray-300">
                {timeData.greeting},
              </h2>
-             <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-6">
+             <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-6 tracking-tight drop-shadow-sm">
                {currentUser?.username}
              </h1>
              
-             <div className="mt-4">
-                <p className="text-5xl font-light text-gray-800 dark:text-white tracking-tight">
+             <div className="mt-4 flex flex-col items-start">
+                <span className="text-6xl font-thin text-gray-800 dark:text-white tracking-tighter mix-blend-overlay">
                   {timeData.time}
-                </p>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-2">
+                </span>
+                <span className="px-3 py-1 mt-2 rounded-full bg-white/30 dark:bg-white/10 text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-widest backdrop-blur-md border border-white/20">
                   {timeData.date}
-                </p>
+                </span>
              </div>
            </div>
         </div>
 
-        {/* Shortcuts Grid - Staggered Pop In */}
+        {/* Shortcuts Grid - Liquid Tiles */}
+        <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4 pl-2">Apps</h3>
         <div className="grid grid-cols-2 gap-4">
           {HOME_SHORTCUTS.map((shortcut, index) => {
              const isEnabled = appConfig.features.shortcuts[shortcut.name] ?? true;
@@ -114,46 +113,42 @@ export const HomeScreen: React.FC = () => {
                        href={shortcut.url}
                        target="_blank"
                        rel="noopener noreferrer"
-                       className={`group relative overflow-hidden rounded-3xl p-5 bg-white/70 dark:bg-dark-surface/70 backdrop-blur-sm border border-white/50 dark:border-gray-700 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 transform-gpu ${enableAnimations ? 'animate-pop-in opacity-0' : ''}`}
+                       className={`group relative overflow-hidden liquid-card p-5 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 transform-gpu ${enableAnimations ? 'animate-pop-in opacity-0' : ''}`}
                        style={{ animationDelay: `${100 + (index * 50)}ms`, animationFillMode: 'both' }}
                      >
-                        <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                           <ExternalLink className="w-4 h-4 text-gray-400" />
+                        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0 duration-300">
+                           <ArrowRight className="w-4 h-4 text-gray-500" />
                         </div>
                         
-                        <div className="mb-3 w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/40 dark:to-blue-800/20 flex items-center justify-center text-2xl shadow-inner group-hover:scale-110 transition-transform duration-300">
+                        <div className="mb-4 w-14 h-14 rounded-[1.2rem] bg-gradient-to-br from-white to-white/50 dark:from-white/10 dark:to-white/5 flex items-center justify-center text-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] border border-white/40 group-hover:scale-110 transition-transform duration-300">
                            {shortcut.icon ? (
-                               <img src={`https://www.google.com/s2/favicons?domain=${shortcut.icon}&sz=64`} alt="icon" className="w-6 h-6" />
+                               <img src={`https://www.google.com/s2/favicons?domain=${shortcut.icon}&sz=64`} alt="icon" className="w-7 h-7" />
                            ) : (
-                               <span className="text-blue-500">🔗</span>
+                               <span className="text-2xl">🔗</span>
                            )}
                         </div>
                         
-                        <h3 className="font-bold text-gray-800 dark:text-white mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{shortcut.name}</h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">{shortcut.description}</p>
+                        <h3 className="font-bold text-gray-800 dark:text-white mb-1">{shortcut.name}</h3>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-1">{shortcut.description}</p>
                      </a>
                  );
              } else {
                  return (
                      <div 
                        key={shortcut.name}
-                       className={`group relative overflow-hidden rounded-3xl p-5 bg-gray-100/50 dark:bg-white/5 backdrop-blur-sm border border-gray-200 dark:border-white/5 opacity-80 cursor-not-allowed transform-gpu ${enableAnimations ? 'animate-pop-in opacity-0' : ''}`}
+                       className={`group relative overflow-hidden liquid-card p-5 opacity-60 cursor-not-allowed transform-gpu ${enableAnimations ? 'animate-pop-in opacity-0' : ''}`}
                        style={{ animationDelay: `${100 + (index * 50)}ms`, animationFillMode: 'both' }}
                      >
-                        <div className="absolute top-0 right-0 p-3">
-                           <Lock className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                        <div className="absolute top-3 right-3">
+                           <Lock className="w-4 h-4 text-gray-400" />
                         </div>
                         
-                        <div className="mb-3 w-12 h-12 rounded-2xl bg-gray-200 dark:bg-gray-800 flex items-center justify-center text-2xl grayscale opacity-50">
-                           {shortcut.icon ? (
-                               <img src={`https://www.google.com/s2/favicons?domain=${shortcut.icon}&sz=64`} alt="icon" className="w-6 h-6" />
-                           ) : (
-                               <span className="text-gray-400">🔗</span>
-                           )}
+                        <div className="mb-4 w-14 h-14 rounded-[1.2rem] bg-gray-200 dark:bg-gray-800/50 flex items-center justify-center grayscale">
+                           <div className="w-7 h-7 rounded-full bg-gray-300 dark:bg-gray-700"></div>
                         </div>
                         
-                        <h3 className="font-bold text-gray-500 dark:text-gray-500 mb-1">{shortcut.name}</h3>
-                        <p className="text-xs text-blue-500/80 dark:text-blue-400/80 font-bold uppercase tracking-wide">Coming Soon</p>
+                        <h3 className="font-bold text-gray-500 mb-1">{shortcut.name}</h3>
+                        <p className="text-[10px] text-blue-500 font-bold uppercase tracking-wide">Locked</p>
                      </div>
                  );
              }
@@ -165,7 +160,6 @@ export const HomeScreen: React.FC = () => {
              <p className="text-sm text-gray-400">No shortcuts available.</p>
            </div>
         )}
-
       </main>
     </div>
   );

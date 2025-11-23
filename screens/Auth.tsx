@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, ArrowRight, AlertCircle, Mail, Loader2 } from 'lucide-react';
 import { User } from '../types';
 
-// Simple UUID generator for browser environments
 const generateUUID = () => {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
@@ -20,7 +19,6 @@ export const AuthScreen: React.FC = () => {
   const { loginWithCredentials, signup, users, isLoading, currentUser, enableAnimations } = useApp();
   const navigate = useNavigate();
 
-  // Form States
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,7 +27,6 @@ export const AuthScreen: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
 
-  // Redirect if logged in
   useEffect(() => {
     if (currentUser && !isLoading) {
       navigate('/home');
@@ -39,7 +36,6 @@ export const AuthScreen: React.FC = () => {
   const handleCheckUsername = (val: string) => {
     setUsername(val);
     if (val.length > 2) {
-      // Check against the loaded users from Supabase
       const exists = users.some(u => u.username.toLowerCase() === val.toLowerCase());
       setUsernameAvailable(!exists);
     } else {
@@ -57,7 +53,6 @@ export const AuthScreen: React.FC = () => {
         navigate('/home');
     } catch (err: any) {
         setError(err.message || 'Invalid email or password');
-        console.error(err);
     } finally {
         setIsSubmitting(false);
     }
@@ -81,7 +76,7 @@ export const AuthScreen: React.FC = () => {
 
     try {
         const newUser: User = {
-          id: generateUUID(), // Use standard UUID for DB compatibility
+          id: generateUUID(),
           username,
           password,
           email: email.trim(),
@@ -94,8 +89,7 @@ export const AuthScreen: React.FC = () => {
         await signup(newUser);
         navigate('/home');
     } catch (err: any) {
-        setError(err.message || 'Failed to create account. Please try again.');
-        console.error(err);
+        setError(err.message || 'Failed to create account.');
     } finally {
         setIsSubmitting(false);
     }
@@ -104,122 +98,106 @@ export const AuthScreen: React.FC = () => {
   if (isLoading) {
     return (
         <div className="min-h-screen flex flex-col items-center justify-center mesh-bg">
-            <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
-            <p className="text-gray-600 font-medium">Connecting to FusionHub...</p>
+            <Loader2 className="w-10 h-10 text-white animate-spin mb-4 drop-shadow-lg" />
+            <p className="text-white font-medium drop-shadow-md">Loading FusionHub...</p>
         </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden mesh-bg transition-colors duration-300">
-      {/* Background Blobs */}
-      <div className="absolute top-[-10%] left-[-10%] w-64 h-64 bg-blue-300 rounded-full mix-blend-multiply filter blur-2xl opacity-70 animate-blob dark:opacity-40 dark:mix-blend-normal dark:bg-blue-900"></div>
-      <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-purple-300 rounded-full mix-blend-multiply filter blur-2xl opacity-70 animate-blob animation-delay-2000 dark:opacity-40 dark:mix-blend-normal dark:bg-purple-900"></div>
-      <div className="absolute -bottom-8 left-20 w-64 h-64 bg-pink-300 rounded-full mix-blend-multiply filter blur-2xl opacity-70 animate-blob animation-delay-4000 dark:opacity-40 dark:mix-blend-normal dark:bg-pink-900"></div>
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden mesh-bg">
+      {/* Decorative Blobs */}
+      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob"></div>
+      <div className="absolute top-[-10%] right-[-10%] w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-2000"></div>
+      <div className="absolute -bottom-20 left-20 w-96 h-96 bg-pink-400 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-4000"></div>
 
-      <div className={`w-full max-w-md glass-panel dark:bg-dark-surface/60 p-8 rounded-3xl shadow-2xl z-10 border border-white/30 dark:border-white/10 ${enableAnimations ? 'animate-elastic-up' : ''}`}>
-        <h1 className="text-3xl font-bold text-center mb-2 text-black">
-          FusionHub
-        </h1>
-        <p className="text-center text-gray-500 dark:text-gray-400 mb-8">{isLogin ? 'Welcome Back' : 'Create Account'}</p>
+      {/* Liquid Glass Card */}
+      <div className={`w-full max-w-md liquid-card p-10 z-10 ${enableAnimations ? 'animate-elastic-up' : ''}`}>
+        <div className="text-center mb-8">
+            <h1 className="text-4xl font-black bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent drop-shadow-sm">
+            FusionHub
+            </h1>
+            <p className="text-gray-500 dark:text-gray-300 font-medium mt-2">{isLogin ? 'Welcome Back' : 'Join the Future'}</p>
+        </div>
 
-        <form onSubmit={isLogin ? handleLogin : handleSignup} className="space-y-4">
+        <form onSubmit={isLogin ? handleLogin : handleSignup} className="space-y-5">
           
           {!isLogin && (
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 ml-1">Username</label>
+              <label className="text-xs font-bold text-gray-600 dark:text-gray-300 ml-2 uppercase tracking-wide">Username</label>
               <div className="relative">
                 <input
                   type="text"
                   value={username}
                   onChange={(e) => handleCheckUsername(e.target.value)}
-                  className={`w-full p-3 rounded-xl border ${usernameAvailable === false ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : 'border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-red-900/0'} focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all text-gray-900 dark:text-white placeholder-gray-400`}
+                  className={`w-full p-4 liquid-input text-gray-900 dark:text-white placeholder-gray-500 ${usernameAvailable === false ? 'border-red-400' : ''}`}
                   placeholder="Choose a username"
                   required={!isLogin}
                 />
                 {username.length > 2 && (
-                  <div className="absolute right-3 top-3.5">
+                  <div className="absolute right-4 top-4">
                       {usernameAvailable ? (
-                          <div className="w-2 h-2 bg-green-500 rounded-full shadow-lg shadow-green-500/50"></div>
+                          <div className="w-3 h-3 bg-green-500 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.6)]"></div>
                       ) : (
                           <AlertCircle className="w-5 h-5 text-red-500" />
                       )}
                   </div>
                 )}
               </div>
-              {usernameAvailable === false && (
-                  <p className="text-xs text-red-500 ml-1">Username is not available</p>
-              )}
             </div>
           )}
 
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 ml-1">Email</label>
+            <label className="text-xs font-bold text-gray-600 dark:text-gray-300 ml-2 uppercase tracking-wide">Email</label>
             <div className="relative">
                <input
                  type="email"
                  value={email}
                  onChange={(e) => setEmail(e.target.value)}
-                 className="w-full p-3 pl-10 rounded-xl border border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-black/20 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all text-gray-900 dark:text-white placeholder-gray-400"
-                 placeholder="Enter your email"
+                 className="w-full p-4 pl-12 liquid-input text-gray-900 dark:text-white placeholder-gray-500"
+                 placeholder="name@example.com"
                  required
                />
-               <Mail className="absolute left-3 top-3.5 text-gray-400 w-5 h-5" />
+               <Mail className="absolute left-4 top-4 text-gray-500 w-5 h-5" />
             </div>
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 ml-1">Password</label>
+            <label className="text-xs font-bold text-gray-600 dark:text-gray-300 ml-2 uppercase tracking-wide">Password</label>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-black/20 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all text-gray-900 dark:text-white placeholder-gray-400"
+                className="w-full p-4 liquid-input text-gray-900 dark:text-white placeholder-gray-500"
                 placeholder="••••••••"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                className="absolute right-4 top-4 text-gray-500 hover:text-gray-700 dark:hover:text-white transition-colors"
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
           </div>
 
-          {isLogin && (
-            <div className="flex justify-between items-center pt-1">
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input type="checkbox" defaultChecked className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4" />
-                <span className="text-xs text-gray-600 dark:text-gray-400">Remember me</span>
-              </label>
-              <button type="button" className="text-xs text-blue-500 hover:underline dark:text-blue-400">Forgot Password?</button>
-            </div>
-          )}
-
-          {error && <p className="text-sm text-center text-red-500 bg-red-100 dark:bg-red-900/30 py-2 rounded-lg border border-red-200 dark:border-red-900">{error}</p>}
+          {error && <div className="p-3 rounded-xl bg-red-100/50 border border-red-200 text-red-600 text-sm text-center backdrop-blur-md">{error}</div>}
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white p-3 rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all flex items-center justify-center space-x-2 mt-4 disabled:opacity-70 disabled:scale-100"
+            className="w-full py-4 mt-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl font-bold text-lg shadow-xl shadow-blue-500/20 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center space-x-2 disabled:opacity-70 disabled:scale-100"
           >
-            {isSubmitting ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-                <>
-                    <span>{isLogin ? 'Login' : 'Sign Up'}</span>
-                    <ArrowRight size={18} />
-                </>
-            )}
+            {isSubmitting ? <Loader2 className="animate-spin" /> : <span>{isLogin ? 'Login' : 'Create Account'}</span>}
+            {!isSubmitting && <ArrowRight size={20} />}
           </button>
         </form>
 
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            {isLogin ? "Don't have an account?" : "Already have an account?"}
+        <div className="mt-8 text-center">
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            {isLogin ? "New here?" : "Have an account?"}
             <button
               onClick={() => { 
                   setIsLogin(!isLogin); 
@@ -228,7 +206,7 @@ export const AuthScreen: React.FC = () => {
                   setPassword('');
                   setUsername('');
               }}
-              className="ml-1 text-blue-600 dark:text-blue-400 font-semibold hover:underline"
+              className="ml-2 text-blue-600 dark:text-blue-300 font-bold hover:underline"
             >
               {isLogin ? 'Sign Up' : 'Login'}
             </button>

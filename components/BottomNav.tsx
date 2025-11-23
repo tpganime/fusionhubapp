@@ -13,30 +13,31 @@ export const BottomNav: React.FC = () => {
     { id: 'profile', path: '/profile', icon: User, label: 'Profile' },
   ];
 
-  // Calculate active index for the sliding bubble
+  // Calculate active index
   const activeIndex = tabs.findIndex(tab => 
     location.pathname === tab.path || (tab.path !== '/home' && location.pathname.startsWith(tab.path))
   );
   const currentIndex = activeIndex === -1 ? 0 : activeIndex;
 
   return (
-    <div className="fixed bottom-8 left-0 right-0 z-50 flex justify-center pointer-events-none">
-      <div className="pointer-events-auto relative bg-white/20 dark:bg-black/40 backdrop-blur-3xl border border-white/30 dark:border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.2)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] rounded-full p-2 transform-gpu">
+    <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center pointer-events-none px-4">
+      {/* Liquid Glass Capsule */}
+      <div className="pointer-events-auto relative glass-panel flex items-center p-1.5 shadow-2xl backdrop-blur-2xl rounded-[3rem]">
         
-        {/* Liquid Bubble Active Indicator */}
+        {/* Floating Liquid Active Blob */}
         <div 
-          className="absolute top-2 bottom-2 w-16 bg-gradient-to-b from-white/60 to-white/20 dark:from-white/20 dark:to-white/5 rounded-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_4px_12px_rgba(0,0,0,0.1)] backdrop-blur-md transition-transform duration-500 cubic-bezier(0.34, 1.56, 0.64, 1) z-0"
+          className="absolute top-1.5 bottom-1.5 w-14 bg-gradient-to-b from-white to-white/60 dark:from-white/30 dark:to-white/10 rounded-full shadow-[0_4px_10px_rgba(0,0,0,0.1)] transition-transform duration-500 cubic-bezier(0.34, 1.56, 0.64, 1) z-0 border border-white/50"
           style={{
-            left: '0.5rem', // Matches p-2 (0.5rem)
-            transform: `translate3d(${currentIndex * 4.5}rem, 0, 0)` // GPU optimized translate
+            left: '0.375rem', 
+            transform: `translate3d(${currentIndex * 3.5}rem, 0, 0)` // Spacing multiplier
           }}
         >
-           {/* Glossy reflection on the bubble */}
-           <div className="absolute top-1 left-1/2 -translate-x-1/2 w-10 h-4 bg-gradient-to-b from-white/80 to-transparent rounded-full opacity-60"></div>
+           {/* Reflection Highlight */}
+           <div className="absolute top-1 left-1/2 -translate-x-1/2 w-8 h-3 bg-gradient-to-b from-white/90 to-transparent rounded-full opacity-70"></div>
         </div>
 
-        {/* Icons Container */}
-        <div className="relative z-10 flex items-center gap-2">
+        {/* Icons */}
+        <div className="relative z-10 flex items-center">
           {tabs.map((tab, index) => {
             const isActive = index === currentIndex;
             const Icon = tab.icon;
@@ -44,13 +45,13 @@ export const BottomNav: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => navigate(tab.path)}
-                className="w-16 h-14 flex items-center justify-center rounded-full transition-all duration-300 group focus:outline-none"
+                className="w-14 h-12 flex items-center justify-center rounded-full transition-all duration-300 group focus:outline-none"
               >
                 <Icon 
                   className={`w-6 h-6 transition-all duration-500 ${
                     isActive 
-                      ? 'text-gray-800 dark:text-white scale-110 stroke-[2.5px] drop-shadow-sm' 
-                      : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-white scale-100'
+                      ? 'text-gray-900 dark:text-white scale-110 stroke-[2.5px] drop-shadow-sm' 
+                      : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200 scale-90'
                   }`} 
                 />
               </button>

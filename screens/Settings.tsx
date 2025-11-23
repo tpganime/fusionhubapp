@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
@@ -10,7 +9,6 @@ export const SettingsScreen: React.FC = () => {
   const navigate = useNavigate();
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
   
-  // Check notification permission state to show correct toggle state
   const isNotificationGranted = "Notification" in window && window.Notification.permission === 'granted';
 
   if (!currentUser) return null;
@@ -37,14 +35,14 @@ export const SettingsScreen: React.FC = () => {
 
   if (showPrivacyPolicy) {
     return (
-      <div className="h-full overflow-y-auto bg-white dark:bg-dark-bg scrollbar-hide">
-        <div className="sticky top-0 bg-white/80 dark:bg-dark-surface/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 p-4 flex items-center z-50">
-          <button onClick={() => setShowPrivacyPolicy(false)} className="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 text-gray-900 dark:text-white">
-            <ArrowLeft className="w-6 h-6" />
+      <div className="h-full overflow-y-auto no-scrollbar">
+        <div className="sticky top-4 mx-4 z-50 glass-panel p-3 flex items-center mb-4">
+          <button onClick={() => setShowPrivacyPolicy(false)} className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10">
+            <ArrowLeft className="w-6 h-6 text-gray-900 dark:text-white" />
           </button>
           <h2 className="text-lg font-bold ml-2 text-gray-900 dark:text-white">Privacy Policy</h2>
         </div>
-        <div className="p-6 whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300 leading-relaxed max-w-2xl mx-auto">
+        <div className="p-6 liquid-card mx-4 mb-20 whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
           {PRIVACY_POLICY_TEXT}
         </div>
       </div>
@@ -52,24 +50,24 @@ export const SettingsScreen: React.FC = () => {
   }
 
   return (
-    <div className={`h-full overflow-y-auto transition-colors duration-300 scrollbar-hide ${enableAnimations ? 'animate-fade-in' : ''}`}>
-      <div className="sticky top-0 bg-white/60 dark:bg-dark-surface/80 backdrop-blur-md border-b border-white/50 dark:border-gray-800 p-4 flex items-center z-50">
-        <button onClick={() => navigate('/profile')} className="p-2 -ml-2 rounded-full hover:bg-white/40 dark:hover:bg-white/10 text-gray-900 dark:text-white">
-          <ArrowLeft className="w-6 h-6" />
+    <div className={`h-full overflow-y-auto pb-32 no-scrollbar ${enableAnimations ? 'animate-fade-in' : ''}`}>
+      <div className="sticky top-4 mx-4 z-50 glass-panel p-3 flex items-center mb-6">
+        <button onClick={() => navigate('/profile')} className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10">
+          <ArrowLeft className="w-6 h-6 text-gray-900 dark:text-white" />
         </button>
         <h2 className="text-xl font-bold ml-2 text-gray-900 dark:text-white">Settings</h2>
       </div>
 
-      <main className="p-4 space-y-6 max-w-md mx-auto pb-24">
+      <main className="px-5 space-y-6 max-w-md mx-auto">
         
         {/* Admin Section */}
         {isAdmin && (
           <section>
-            <h3 className="text-xs font-bold text-gray-400 uppercase mb-2 ml-3">Admin</h3>
-            <div className="bg-white/70 dark:bg-dark-surface rounded-2xl shadow-sm border border-white/50 dark:border-gray-800 overflow-hidden">
-               <button onClick={() => navigate('/admin')} className="w-full p-4 flex items-center justify-between hover:bg-white/80 dark:hover:bg-white/5 transition-colors group">
-                 <div className="flex items-center gap-3">
-                   <div className="p-2 bg-gradient-to-r from-red-500 to-orange-500 rounded-lg text-white shadow-md group-hover:scale-110 transition-transform"><LayoutDashboard className="w-5 h-5" /></div>
+            <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 ml-2 tracking-wider">Admin</h3>
+            <div className="liquid-card overflow-hidden">
+               <button onClick={() => navigate('/admin')} className="w-full p-5 flex items-center justify-between hover:bg-white/20 transition-colors group">
+                 <div className="flex items-center gap-4">
+                   <div className="p-2.5 bg-gradient-to-br from-red-500 to-orange-500 rounded-xl text-white shadow-lg group-hover:scale-110 transition-transform"><LayoutDashboard className="w-5 h-5" /></div>
                    <span className="font-bold text-gray-900 dark:text-white">Admin Panel</span>
                  </div>
                  <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -80,118 +78,116 @@ export const SettingsScreen: React.FC = () => {
 
         {/* Appearance */}
         <section>
-          <h3 className="text-xs font-bold text-gray-400 uppercase mb-2 ml-3">Appearance</h3>
-          <div className="bg-white/70 dark:bg-dark-surface rounded-2xl shadow-sm border border-white/50 dark:border-gray-800 overflow-hidden">
-             <div className="p-4 flex items-center justify-between border-b border-gray-50 dark:border-gray-800">
-               <div className="flex items-center gap-3">
-                 <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-indigo-900 text-indigo-300' : 'bg-yellow-100 text-yellow-600'}`}>
+          <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 ml-2 tracking-wider">Appearance</h3>
+          <div className="liquid-card overflow-hidden divide-y divide-gray-200/30 dark:divide-white/10">
+             
+             {/* Dark Mode */}
+             <div className="p-5 flex items-center justify-between">
+               <div className="flex items-center gap-4">
+                 <div className={`p-2.5 rounded-xl shadow-md ${theme === 'dark' ? 'bg-indigo-900 text-indigo-300' : 'bg-yellow-100 text-yellow-600'}`}>
                     {theme === 'dark' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
                  </div>
-                 <span className="font-medium text-gray-900 dark:text-white">Dark Mode</span>
+                 <span className="font-bold text-gray-900 dark:text-white text-sm">Dark Mode</span>
                </div>
                <label className="relative inline-flex items-center cursor-pointer">
                  <input type="checkbox" checked={theme === 'dark'} onChange={toggleTheme} className="sr-only peer" />
-                 <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                 <div className="w-12 h-7 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 shadow-inner"></div>
                </label>
             </div>
-            <div className="p-4 flex items-center justify-between border-b border-gray-50 dark:border-gray-800">
-               <div className="flex items-center gap-3">
-                 <div className="p-2 bg-pink-100 dark:bg-pink-900 rounded-lg text-pink-600 dark:text-pink-300"><Zap className="w-5 h-5" /></div>
-                 <span className="font-medium text-gray-900 dark:text-white">Animations</span>
+
+            {/* Animations */}
+            <div className="p-5 flex items-center justify-between">
+               <div className="flex items-center gap-4">
+                 <div className="p-2.5 bg-pink-100 dark:bg-pink-900/50 rounded-xl text-pink-600 dark:text-pink-300 shadow-md"><Zap className="w-5 h-5" /></div>
+                 <span className="font-bold text-gray-900 dark:text-white text-sm">Animations</span>
                </div>
                <label className="relative inline-flex items-center cursor-pointer">
                  <input type="checkbox" checked={enableAnimations} onChange={toggleAnimations} className="sr-only peer" />
-                 <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-pink-300 dark:peer-focus:ring-pink-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-600"></div>
+                 <div className="w-12 h-7 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-500 shadow-inner"></div>
                </label>
             </div>
-             {/* Notifications Toggle */}
-            <div className="p-4 flex items-center justify-between">
-               <div className="flex items-center gap-3">
-                 <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg text-blue-600 dark:text-blue-300"><Bell className="w-5 h-5" /></div>
+
+             {/* Notifications */}
+            <div className="p-5 flex items-center justify-between">
+               <div className="flex items-center gap-4">
+                 <div className="p-2.5 bg-blue-100 dark:bg-blue-900/50 rounded-xl text-blue-600 dark:text-blue-300 shadow-md"><Bell className="w-5 h-5" /></div>
                  <div className="flex flex-col">
-                   <span className="font-medium text-gray-900 dark:text-white">Notifications</span>
-                   <span className="text-xs text-gray-500">{isNotificationGranted ? 'Enabled' : 'Tap to enable'}</span>
+                   <span className="font-bold text-gray-900 dark:text-white text-sm">Notifications</span>
                  </div>
                </div>
                <button 
                   onClick={enableNotifications}
-                  className={`relative inline-flex items-center cursor-pointer ${isNotificationGranted ? 'opacity-100' : 'opacity-60'}`}
+                  className={`relative inline-flex items-center cursor-pointer ${isNotificationGranted ? 'opacity-100' : 'opacity-70'}`}
                >
-                 <div className={`w-11 h-6 rounded-full transition-colors ${isNotificationGranted ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}>
-                    <div className={`absolute top-[2px] left-[2px] bg-white border border-gray-300 rounded-full h-5 w-5 transition-transform ${isNotificationGranted ? 'translate-x-full border-transparent' : ''}`}></div>
+                 <div className={`w-12 h-7 rounded-full transition-colors shadow-inner ${isNotificationGranted ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}>
+                    <div className={`absolute top-[3px] left-[3px] bg-white border border-gray-200 rounded-full h-5 w-5 transition-transform shadow-sm ${isNotificationGranted ? 'translate-x-full border-transparent' : ''}`}></div>
                  </div>
                </button>
             </div>
           </div>
         </section>
 
-        {/* Privacy Controls */}
+        {/* Privacy */}
         <section>
-          <h3 className="text-xs font-bold text-gray-400 uppercase mb-2 ml-3">Privacy</h3>
-          <div className="bg-white/70 dark:bg-dark-surface rounded-2xl shadow-sm border border-white/50 dark:border-gray-800 overflow-hidden">
-            <div className="p-4 flex items-center justify-between border-b border-gray-50 dark:border-gray-800">
-               <div className="flex items-center gap-3">
-                 <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg text-purple-600 dark:text-purple-300"><Eye className="w-5 h-5" /></div>
-                 <span className="font-medium text-gray-900 dark:text-white">Private Profile</span>
+          <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 ml-2 tracking-wider">Privacy</h3>
+          <div className="liquid-card overflow-hidden divide-y divide-gray-200/30 dark:divide-white/10">
+            <div className="p-5 flex items-center justify-between">
+               <div className="flex items-center gap-4">
+                 <div className="p-2.5 bg-purple-100 dark:bg-purple-900/50 rounded-xl text-purple-600 dark:text-purple-300 shadow-md"><Eye className="w-5 h-5" /></div>
+                 <span className="font-bold text-gray-900 dark:text-white text-sm">Private Profile</span>
                </div>
                <label className="relative inline-flex items-center cursor-pointer">
                  <input type="checkbox" checked={currentUser.isPrivateProfile} onChange={togglePrivateProfile} className="sr-only peer" />
-                 <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                 <div className="w-12 h-7 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600 shadow-inner"></div>
                </label>
             </div>
-            <div className="p-4 flex items-center justify-between">
-               <div className="flex items-center gap-3">
-                 <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg text-blue-600 dark:text-blue-300"><Lock className="w-5 h-5" /></div>
-                 <span className="font-medium text-gray-900 dark:text-white">Allow Private Chats</span>
+            <div className="p-5 flex items-center justify-between">
+               <div className="flex items-center gap-4">
+                 <div className="p-2.5 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl text-indigo-600 dark:text-indigo-300 shadow-md"><Lock className="w-5 h-5" /></div>
+                 <span className="font-bold text-gray-900 dark:text-white text-sm">Allow DM</span>
                </div>
                <label className="relative inline-flex items-center cursor-pointer">
                  <input type="checkbox" checked={currentUser.allowPrivateChat} onChange={togglePrivateChat} className="sr-only peer" />
-                 <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                 <div className="w-12 h-7 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 shadow-inner"></div>
                </label>
             </div>
           </div>
         </section>
 
-        {/* Information */}
+        {/* Legal */}
         <section>
-          <h3 className="text-xs font-bold text-gray-400 uppercase mb-2 ml-3">Legal</h3>
-          <div className="bg-white/70 dark:bg-dark-surface rounded-2xl shadow-sm border border-white/50 dark:border-gray-800 overflow-hidden">
-            <button onClick={() => setShowPrivacyPolicy(true)} className="w-full p-4 flex items-center justify-between hover:bg-white/80 dark:hover:bg-white/5 transition-colors">
-               <div className="flex items-center gap-3">
-                 <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg text-green-600 dark:text-green-300"><Shield className="w-5 h-5" /></div>
-                 <span className="font-medium text-gray-900 dark:text-white">Privacy Policy</span>
+          <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 ml-2 tracking-wider">Legal</h3>
+          <div className="liquid-card overflow-hidden">
+            <button onClick={() => setShowPrivacyPolicy(true)} className="w-full p-5 flex items-center justify-between hover:bg-white/20 transition-colors">
+               <div className="flex items-center gap-4">
+                 <div className="p-2.5 bg-green-100 dark:bg-green-900/50 rounded-xl text-green-600 dark:text-green-300 shadow-md"><Shield className="w-5 h-5" /></div>
+                 <span className="font-bold text-gray-900 dark:text-white text-sm">Privacy Policy</span>
                </div>
                <ChevronRight className="w-5 h-5 text-gray-400" />
             </button>
           </div>
         </section>
 
-        {/* Account Actions */}
+        {/* Danger Zone */}
         <section>
-          <h3 className="text-xs font-bold text-gray-400 uppercase mb-2 ml-3">Account</h3>
-          <div className="bg-white/70 dark:bg-dark-surface rounded-2xl shadow-sm border border-white/50 dark:border-gray-800 overflow-hidden">
-            <button onClick={handleLogout} className="w-full p-4 flex items-center justify-between text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors border-b border-gray-50 dark:border-gray-800">
-               <div className="flex items-center gap-3">
-                 <div className="p-2 bg-orange-100 dark:bg-orange-900/50 rounded-lg"><LogOut className="w-5 h-5" /></div>
-                 <span className="font-medium">Log Out</span>
+          <h3 className="text-xs font-bold text-red-500/70 uppercase mb-3 ml-2 tracking-wider">Danger Zone</h3>
+          <div className="liquid-card overflow-hidden divide-y divide-gray-200/30 dark:divide-white/10">
+            <button onClick={handleLogout} className="w-full p-5 flex items-center justify-between text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors">
+               <div className="flex items-center gap-4">
+                 <div className="p-2.5 bg-orange-100 dark:bg-orange-900/30 rounded-xl"><LogOut className="w-5 h-5" /></div>
+                 <span className="font-bold">Log Out</span>
                </div>
             </button>
-            <button onClick={() => alert("Account Deactivated (Simulation)")} className="w-full p-4 flex items-center justify-between text-gray-600 dark:text-gray-400 hover:bg-white/80 dark:hover:bg-white/5 transition-colors border-b border-gray-50 dark:border-gray-800">
-               <div className="flex items-center gap-3">
-                 <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg"><Lock className="w-5 h-5" /></div>
-                 <span className="font-medium">Deactivate Account</span>
-               </div>
-            </button>
-            <button onClick={handleDelete} className="w-full p-4 flex items-center justify-between text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-               <div className="flex items-center gap-3">
-                 <div className="p-2 bg-red-100 dark:bg-red-900/50 rounded-lg"><Trash2 className="w-5 h-5" /></div>
-                 <span className="font-medium">Delete Account</span>
+            <button onClick={handleDelete} className="w-full p-5 flex items-center justify-between text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+               <div className="flex items-center gap-4">
+                 <div className="p-2.5 bg-red-100 dark:bg-red-900/30 rounded-xl"><Trash2 className="w-5 h-5" /></div>
+                 <span className="font-bold">Delete Account</span>
                </div>
             </button>
           </div>
         </section>
 
-        <p className="text-center text-xs text-gray-400 mt-8">FusionHub v1.5.0</p>
+        <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-8 opacity-50">FusionHub v1.6.0 Liquid</p>
 
       </main>
     </div>

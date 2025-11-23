@@ -34,25 +34,27 @@ export const SearchScreen: React.FC = () => {
   };
 
   return (
-    <div className="h-full overflow-y-auto pb-24 transition-colors duration-300 scrollbar-hide">
+    <div className="h-full overflow-y-auto pb-32 no-scrollbar">
       <TopBar />
-      <main className="px-4 pt-4">
-        <h1 className={`text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white transform-gpu ${enableAnimations ? 'animate-slide-in-right' : ''}`}>Search</h1>
+      <main className="px-5 pt-2">
+        <h1 className="text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white">Discover</h1>
         
         <div className={`relative mb-6 transform-gpu ${enableAnimations ? 'animate-elastic-up' : ''}`}>
-          <SearchIcon className="absolute left-4 top-3.5 text-gray-400 w-5 h-5" />
+          <SearchIcon className="absolute left-5 top-4 text-gray-500 w-5 h-5 z-10" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by username..."
-            className="w-full pl-12 pr-4 py-3 rounded-2xl bg-white/60 dark:bg-dark-surface/60 backdrop-blur-sm border border-white/50 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-sm text-gray-900 dark:text-white transition-colors"
+            placeholder="Search people..."
+            className="w-full pl-14 pr-4 py-4 liquid-input text-gray-900 dark:text-white placeholder-gray-500 font-medium shadow-sm"
           />
         </div>
 
         <div className="space-y-3">
           {query && filteredUsers.length === 0 && (
-            <p className="text-center text-gray-500 mt-10">No users found.</p>
+            <div className="text-center py-10 opacity-50">
+                <p>No users found.</p>
+            </div>
           )}
           
           {filteredUsers.map((user, index) => {
@@ -64,32 +66,27 @@ export const SearchScreen: React.FC = () => {
               <div 
                 key={user.id} 
                 onClick={() => navigate(`/user/${user.id}`)}
-                className={`bg-white/70 dark:bg-dark-surface/70 backdrop-blur-sm p-4 rounded-2xl shadow-sm border ${isOwnerUser ? 'border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.3)]' : isAdminUser ? 'border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'border-white/50 dark:border-gray-700'} flex items-center justify-between transition-all hover:bg-white/90 dark:hover:bg-dark-surface/90 cursor-pointer group hover:scale-[1.02] transform-gpu ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`}
+                className={`liquid-card p-4 flex items-center justify-between transition-all hover:bg-white/40 dark:hover:bg-white/10 cursor-pointer group hover:scale-[1.02] transform-gpu ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`}
                 style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'both' }}
               >
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-4">
                   <div className="relative">
-                      <img src={user.avatar} alt={user.username} className={`w-12 h-12 rounded-full object-cover border ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-gray-100 dark:border-gray-700'}`} />
+                      <img src={user.avatar} alt={user.username} className={`w-14 h-14 rounded-full object-cover border-2 ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-white/50 shadow-sm'}`} />
                       {isOwnerUser ? (
-                        <div className="absolute -top-2 -right-2 bg-yellow-400 rounded-full p-1 shadow-sm animate-bounce">
+                        <div className="absolute -top-2 -right-2 bg-yellow-400 rounded-full p-1 shadow-sm">
                           <Crown className="w-3 h-3 text-white fill-white" />
                         </div>
                       ) : isAdminUser ? (
-                        <div className="absolute -top-2 -right-2 bg-blue-500 rounded-full p-1 shadow-sm animate-bounce">
+                        <div className="absolute -top-2 -right-2 bg-blue-500 rounded-full p-1 shadow-sm">
                           <ShieldCheck className="w-3 h-3 text-white" />
                         </div>
                       ) : null}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors flex items-center gap-2">
+                    <h3 className="font-bold text-gray-900 dark:text-white group-hover:text-blue-600 transition-colors flex items-center gap-2">
                       {user.username}
-                      {isOwnerUser ? (
-                          <span className="text-[10px] bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full font-bold">OWNER</span>
-                      ) : isAdminUser ? (
-                          <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-bold">ADMIN</span>
-                      ) : null}
                     </h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1 max-w-[150px]">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1 max-w-[140px]">
                         {user.description || "No bio"}
                     </p>
                   </div>
@@ -99,21 +96,19 @@ export const SearchScreen: React.FC = () => {
                   {canMessage && (
                     <button
                       onClick={(e) => handleMessage(e, user)}
-                      className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
-                      title="Send Message"
+                      className="p-2.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-colors border border-blue-500/20"
                     >
                       <MessageCircle className="w-5 h-5" />
                     </button>
                   )}
 
                   {isFriend ? (
-                    <span className="px-3 py-1 text-xs bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300 rounded-full font-medium">Friend</span>
+                    <span className="px-3 py-1.5 text-xs bg-green-500/10 text-green-600 dark:text-green-400 rounded-full font-bold border border-green-500/20">Friend</span>
                   ) : (
                     <button 
                       onClick={(e) => handleRequest(e, user.id)}
                       disabled={requested.includes(user.id)}
-                      className={`p-2 rounded-full transition-colors ${requested.includes(user.id) ? 'bg-gray-100 dark:bg-gray-800 text-gray-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
-                      title={requested.includes(user.id) ? "Request Sent" : "Add Friend"}
+                      className={`p-2.5 rounded-full transition-colors border ${requested.includes(user.id) ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 border-transparent' : 'bg-gray-100/50 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-white/50 border-gray-200 dark:border-gray-700'}`}
                     >
                       {requested.includes(user.id) ? <Check className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
                     </button>

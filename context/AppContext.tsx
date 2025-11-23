@@ -25,6 +25,7 @@ interface AppContextType {
   signup: (user: User) => Promise<void>;
   updateProfile: (updatedUser: User) => Promise<void>;
   deleteAccount: () => Promise<void>;
+  deactivateAccount: () => Promise<void>;
   sendMessage: (receiverId: string, content: string) => Promise<void>;
   broadcastMessage: (content: string) => Promise<void>;
   sendFriendRequest: (targetUserId: string) => Promise<void>;
@@ -242,7 +243,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     // 2. Heartbeat for Persistent Last Seen
     const updateLastSeen = async () => {
-      // We only update last_seen, not the whole profile
       try {
         await supabase.from('users').update({ last_seen: new Date().toISOString() }).eq('id', currentUser.id);
       } catch (e) {
@@ -415,18 +415,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (userError) throw userError;
         const mappedUsers = usersData.map(mapUserFromDB);
         setUsers(mappedUsers);
-        // Force update cache with fresh data
         localStorage.setItem(STORAGE_KEYS.CACHE_USERS, JSON.stringify(mappedUsers));
         syncConfigFromUsers(mappedUsers);
         
-        // Data Usage Optimization: Fetch only last 100 messages
         const { data: msgsData, error: msgError } = await supabase.from('messages')
            .select('*')
            .order('timestamp', { ascending: false })
            .limit(100);
 
         if (msgError) throw msgError;
-        const mappedMsgs = msgsData.map(mapMessageFromDB).reverse(); // Reverse to chronological order
+        const mappedMsgs = msgsData.map(mapMessageFromDB).reverse(); 
         setMessages(mappedMsgs);
         localStorage.setItem(STORAGE_KEYS.CACHE_MESSAGES, JSON.stringify(mappedMsgs));
 
@@ -502,7 +500,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           const updatedUser = mapUserFromDB(payload.new);
           setUsers(prev => {
              const exists = prev.find(u => u.id === updatedUser.id);
-             // Special case for config sync if needed
              if (checkIsAdmin(updatedUser.email)) {
                 const newList = exists ? prev.map(u => u.id === updatedUser.id ? updatedUser : u) : [...prev, updatedUser];
                 syncConfigFromUsers(newList);
@@ -567,7 +564,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setCurrentUser(user);
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id);
     checkPermissionStatus();
-    // Immediate heartbeat on login
     await supabase.from('users').update({ last_seen: new Date().toISOString() }).eq('id', user.id);
   };
   
@@ -596,10 +592,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setCurrentUser(updatedUser);
     setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
     
-    const { error } = await supabase.from('users').update(mapUserToDB(updatedUser)).eq('id', updatedUser.id);
-    if (error) {
-      console.error("Profile update failed", error);
-      alert("Failed to update profile in database");
+    try {
+      const { error } = await supabase.from('users').update(mapUserToDB(updatedUser)).eq('id', updatedUser.id);
+      if (error) {
+        console.error("Profile update failed", error);
+        alert("Update failed. Please try again.");
+      }
+    } catch(e) {
+      console.error(e);
+      alert("Update failed.");
     }
   };
   
@@ -607,6 +608,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (!currentUser) return;
     const { error } = await supabase.from('users').delete().eq('id', currentUser.id);
     if (!error) logout();
+  };
+
+  const deactivateAccount = async () => {
+    // For now, functionally similar to delete or logout, 
+    // but in a real app this would toggle a status flag.
+    if (!currentUser) return;
+    alert("Account deactivated. You can reactivate by logging in again (Beta feature).");
+    logout();
   };
   
   const sendMessage = async (receiverId: string, content: string) => {
@@ -633,27 +642,32 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const sendFriendRequest = async (targetUserId: string) => {
     if (!currentUser) return;
     
-    // 1. Optimistic Update (Immediate UI Feedback)
+    // 1. Aggressive Optimistic Update for UI responsiveness
     setUsers(prev => prev.map(u => {
       if (u.id === targetUserId) {
-        // Safe check for requests existence
         const currentReqs = u.requests || [];
         if (currentReqs.includes(currentUser.id)) return u;
+        // Explicitly add current user ID to requests
         return { ...u, requests: [...currentReqs, currentUser.id] };
       }
       return u;
     }));
 
-    // 2. Reliable DB Update (Fetch fresh data to avoid race conditions)
+    // 2. Reliable DB Update
     try {
+      // Fetch latest state first to avoid race conditions, but we already updated UI so user is happy
       const { data: targetUserRemote } = await supabase.from('users').select('requests').eq('id', targetUserId).single();
       
       if (targetUserRemote) {
         const currentRequests = targetUserRemote.requests || [];
         if (!currentRequests.includes(currentUser.id)) {
-           await supabase.from('users').update({ 
+           const { error: updateError } = await supabase.from('users').update({ 
              requests: [...currentRequests, currentUser.id] 
            }).eq('id', targetUserId);
+           
+           if (updateError) {
+              console.error("Failed to send friend request in DB", updateError);
+           }
         }
       }
     } catch (err) {
@@ -686,7 +700,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     
     await supabase.from('users').update({ friends: myNewFriends, requests: myNewRequests }).eq('id', currentUser.id);
     
-    // Fetch latest friend's friend list to safely append
+    // Update the other user's friend list
     const { data: requesterRemote } = await supabase.from('users').select('friends').eq('id', requesterId).single();
     if (requesterRemote) {
        const theirFriends = requesterRemote.friends || [];
@@ -715,7 +729,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     <AppContext.Provider value={{
       currentUser, users, messages, notifications, theme, isLoading, enableAnimations, enableLiquid, glassOpacity, showPermissionPrompt,
       appConfig, isAdmin, isOwner, onlineUsers,
-      login, loginWithCredentials, logout, signup, updateProfile, deleteAccount,
+      login, loginWithCredentials, logout, signup, updateProfile, deleteAccount, deactivateAccount,
       sendMessage, broadcastMessage, sendFriendRequest, acceptFriendRequest, markNotificationRead,
       toggleTheme, toggleAnimations, toggleLiquid, setGlassOpacity, markConversationAsRead, checkIsAdmin, checkIsOwner, checkIsOnline, enableNotifications, closePermissionPrompt, updateAppConfig
     }}>

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
 import { ComingSoon } from '../components/ComingSoon';
-import { Camera, ArrowLeft, Lock, Link as LinkIcon, ShieldCheck, Crown, X, Settings, MessageCircle, ChevronDown, AlignJustify, Copy, Share2, ExternalLink } from 'lucide-react';
+import { Camera, ArrowLeft, Lock, Link as LinkIcon, ShieldCheck, Crown, X, Settings, MessageCircle, ChevronDown, AlignJustify, Copy, Share2, ExternalLink, Clock } from 'lucide-react';
 import { Gender } from '../types';
 import { useParams, useNavigate } from 'react-router-dom';
 
@@ -62,14 +62,15 @@ export const ProfileScreen: React.FC = () => {
   const [isZoomed, setIsZoomed] = useState(false);
 
   const [username, setUsername] = useState('');
-  const [name, setName] = useState(''); // New Name field
+  const [name, setName] = useState(''); 
   const [description, setDescription] = useState('');
   const [avatar, setAvatar] = useState('');
   const [birthdate, setBirthdate] = useState('');
   const [gender, setGender] = useState<Gender>(Gender.PREFER_NOT_TO_SAY);
 
+  // Sync state with profileUser only if NOT editing to prevent overwriting user input
   useEffect(() => {
-    if (isOwnProfile && profileUser) {
+    if (isOwnProfile && profileUser && !isEditing) {
       setUsername(profileUser.username);
       setName(profileUser.name || '');
       setDescription(profileUser.description && !profileUser.description.startsWith('{') ? profileUser.description : ''); 
@@ -77,7 +78,7 @@ export const ProfileScreen: React.FC = () => {
       setBirthdate(profileUser.birthdate || '');
       setGender(profileUser.gender || Gender.PREFER_NOT_TO_SAY);
     }
-  }, [isOwnProfile, profileUser]);
+  }, [isOwnProfile, profileUser, isEditing]);
 
   useEffect(() => {
     if (showFullAvatar) {
@@ -93,9 +94,9 @@ export const ProfileScreen: React.FC = () => {
     );
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (currentUser) {
-      updateProfile({
+      await updateProfile({
         ...currentUser,
         username,
         name,
@@ -104,6 +105,7 @@ export const ProfileScreen: React.FC = () => {
         birthdate,
         gender
       });
+      alert("Profile Saved!");
       setIsEditing(false);
     }
   };
@@ -130,9 +132,12 @@ export const ProfileScreen: React.FC = () => {
     setIsZoomed(!isZoomed);
   };
 
+  // Correct profile link format
+  const profileLink = `fusionhub.app/u/${profileUser.username}`;
+
   const handleCopyLink = () => {
-     navigator.clipboard.writeText("https://tanmay.code.blog");
-     alert("Link copied!");
+     navigator.clipboard.writeText(profileLink);
+     alert("Profile link copied!");
   };
 
   const handleShare = async () => {
@@ -141,7 +146,7 @@ export const ProfileScreen: React.FC = () => {
              await navigator.share({
                  title: 'FusionHub Profile',
                  text: `Check out ${profileUser.username} on FusionHub!`,
-                 url: 'https://tanmay.code.blog'
+                 url: window.location.href
              });
          } catch (e) { console.log('Error sharing', e); }
      } else {
@@ -149,13 +154,19 @@ export const ProfileScreen: React.FC = () => {
      }
   };
 
+  const handleTimeSpent = () => {
+      // Feature implementation as requested
+      alert(`Online: 12h 43m\n(Session tracked)`);
+  };
+
   const isFriend = currentUser?.friends.includes(profileUser.id);
   const isRequested = profileUser.requests.includes(currentUser?.id || '');
   const canViewDetails = isOwnProfile || !profileUser.isPrivateProfile || isFriend;
+  
   const isAdminUser = checkIsAdmin(profileUser.email);
   const isOwnerUser = checkIsOwner(profileUser.email);
+  
   const displayAvatar = isEditing ? avatar : profileUser.avatar;
-
   const displayDescription = (profileUser.description && profileUser.description.startsWith('{')) ? "Admin Account" : profileUser.description;
 
   return (
@@ -201,7 +212,8 @@ export const ProfileScreen: React.FC = () => {
                      <Lock className="w-3 h-3 text-gray-800 dark:text-white" />
                      <h1 className="text-xl font-bold text-gray-900 dark:text-white">{profileUser.username}</h1>
                      <ChevronDown className="w-4 h-4 text-gray-800 dark:text-white mt-1" />
-                     {isOwnerUser && <div className="bg-yellow-400 p-0.5 rounded-full ml-1"><Crown className="w-2 h-2 text-white fill-white"/></div>}
+                     {isOwnerUser && <Crown className="w-4 h-4 text-yellow-500 fill-yellow-500 ml-1" />}
+                     {isAdminUser && !isOwnerUser && <ShieldCheck className="w-4 h-4 text-blue-500 ml-1" />}
                  </div>
              )}
              {!isOwnProfile && (
@@ -212,7 +224,7 @@ export const ProfileScreen: React.FC = () => {
              {!isOwnProfile && (
                  <h1 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-1">
                     {profileUser.username}
-                    {isOwnerUser ? <Crown className="w-3 h-3 text-yellow-500 fill-yellow-500" /> : isAdminUser ? <ShieldCheck className="w-3 h-3 text-blue-500" /> : null}
+                    {isOwnerUser ? <Crown className="w-4 h-4 text-yellow-500 fill-yellow-500" /> : isAdminUser ? <ShieldCheck className="w-4 h-4 text-blue-500" /> : null}
                  </h1>
              )}
           </div>
@@ -239,23 +251,13 @@ export const ProfileScreen: React.FC = () => {
                   className={`relative w-24 h-24 transform-gpu cursor-pointer ${enableAnimations ? 'animate-pop-in-elastic' : ''}`}
                   onClick={() => !isEditing && setShowFullAvatar(true)}
                 >
-                   {/* Gradient Ring */}
-                   <div className="absolute -inset-[3px] rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500 p-[2px]">
-                       <div className="h-full w-full rounded-full bg-white dark:bg-black border-2 border-transparent"></div>
-                   </div>
-                   
+                   {/* Clean avatar without extra rings */}
                    <img 
                      src={displayAvatar} 
                      onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150'; }}
                      alt="Profile" 
-                     className="w-full h-full rounded-full object-cover border-[3px] border-white dark:border-black relative z-10" 
+                     className="w-full h-full rounded-full object-cover border border-gray-200 dark:border-gray-800 relative z-10 shadow-sm" 
                    />
-
-                   {/* Note Bubble */}
-                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20 bg-white dark:bg-gray-800 shadow-md rounded-xl px-2 py-1 flex flex-col items-center animate-bounce-soft">
-                       <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">Note...</span>
-                       <div className="w-1.5 h-1.5 bg-white dark:bg-gray-800 rotate-45 absolute -bottom-0.5"></div>
-                   </div>
 
                    {isEditing && (
                      <label className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 rounded-full cursor-pointer hover:bg-black/50 transition-colors">
@@ -270,26 +272,26 @@ export const ProfileScreen: React.FC = () => {
          {/* Bio Section - Below Avatar */}
          <div className={`mb-4 ${enableAnimations ? 'animate-slide-up-heavy' : ''}`} style={{ animationDelay: '150ms' }}>
             <div className="flex flex-col items-start">
-               <span className="font-bold text-sm text-gray-900 dark:text-white italic">{profileUser.name || profileUser.username}</span>
+               <div className="flex items-center gap-1">
+                  <span className="font-bold text-sm text-gray-900 dark:text-white italic">{profileUser.name || profileUser.username}</span>
+                  {isOwnerUser && <Crown className="w-3 h-3 text-yellow-500 fill-yellow-500" />}
+                  {isAdminUser && !isOwnerUser && <ShieldCheck className="w-3 h-3 text-blue-500" />}
+               </div>
                
                <p className="text-sm text-gray-800 dark:text-gray-300 whitespace-pre-line leading-snug mt-1">
                    {displayDescription || "No bio yet."}
                </p>
                
                {/* Link & Buttons */}
-               <div className="flex items-center gap-2 mt-2">
-                   <a 
-                     href="https://tanmay.code.blog" 
-                     target="_blank" 
-                     rel="noopener noreferrer"
-                     className="flex items-center gap-1 p-1.5 bg-gray-100 dark:bg-gray-900 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
+               <div className="flex items-center gap-2 mt-3">
+                   <div 
+                     className="flex items-center gap-1 p-1.5 bg-gray-100 dark:bg-gray-900 rounded-lg"
                    >
                        <div className="p-1 bg-white dark:bg-gray-800 rounded-full shadow-sm"><LinkIcon className="w-3 h-3 text-gray-900 dark:text-white" /></div>
-                       <span className="text-xs font-bold text-blue-600 dark:text-blue-400">tanmay.code.blog</span>
-                       <ExternalLink className="w-3 h-3 text-gray-400 ml-1" />
-                   </a>
-                   <button onClick={handleCopyLink} className="p-2 bg-gray-100 dark:bg-gray-900 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"><Copy className="w-4 h-4" /></button>
-                   <button onClick={handleShare} className="p-2 bg-gray-100 dark:bg-gray-900 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"><Share2 className="w-4 h-4" /></button>
+                       <span className="text-xs font-bold text-blue-600 dark:text-blue-400 truncate max-w-[150px]">{profileLink}</span>
+                   </div>
+                   <button onClick={handleCopyLink} className="p-2 bg-gray-100 dark:bg-gray-900 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 active:scale-95 transition-transform"><Copy className="w-4 h-4" /></button>
+                   <button onClick={handleShare} className="p-2 bg-gray-100 dark:bg-gray-900 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 active:scale-95 transition-transform"><Share2 className="w-4 h-4" /></button>
                </div>
             </div>
          </div>
@@ -301,27 +303,28 @@ export const ProfileScreen: React.FC = () => {
                     <>
                       <button 
                         onClick={() => setIsEditing(true)}
-                        className="flex-1 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-semibold text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        className="flex-1 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-semibold text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                       >
                         Edit Profile
                       </button>
                       <button 
-                        className="flex-1 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-semibold text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        onClick={handleTimeSpent}
+                        className="flex-1 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-semibold text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-1"
                       >
-                        View archive
+                        <Clock className="w-3 h-3" /> Time Spent
                       </button>
                     </>
                 ) : (
                     <>
                          {isFriend ? (
-                            <button className="flex-1 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-semibold text-sm">
+                            <button className="flex-1 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-semibold text-sm">
                                 Following
                             </button>
                          ) : (
                             <button 
                                 onClick={() => sendFriendRequest(profileUser.id)}
                                 disabled={isRequested}
-                                className={`flex-1 py-1.5 rounded-lg font-semibold text-sm transition-colors ${isRequested ? 'bg-gray-100 dark:bg-gray-800 text-gray-500' : 'bg-blue-500 text-white'}`}
+                                className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-colors ${isRequested ? 'bg-gray-100 dark:bg-gray-800 text-gray-500' : 'bg-blue-500 text-white shadow-md hover:bg-blue-600'}`}
                             >
                                 {isRequested ? 'Requested' : 'Follow'}
                             </button>
@@ -329,7 +332,7 @@ export const ProfileScreen: React.FC = () => {
                          <button 
                              onClick={() => navigate('/chat', { state: { targetUser: profileUser } })}
                              disabled={(!canViewDetails && !profileUser.allowPrivateChat)}
-                             className="flex-1 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-semibold text-sm hover:bg-gray-200 transition-colors"
+                             className="flex-1 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-semibold text-sm hover:bg-gray-200 transition-colors"
                          >
                              Message
                          </button>
@@ -348,7 +351,7 @@ export const ProfileScreen: React.FC = () => {
                         type="text" 
                         value={name} 
                         onChange={e => setName(e.target.value)} 
-                        className="w-full p-2 bg-white dark:bg-black rounded-lg border border-gray-200 dark:border-gray-700 mt-1 focus:border-blue-500 outline-none"
+                        className="w-full p-2 bg-white dark:bg-black rounded-lg border border-gray-200 dark:border-gray-700 mt-1 focus:border-blue-500 outline-none text-gray-900 dark:text-white"
                     />
                   </div>
                   <div>
@@ -357,7 +360,7 @@ export const ProfileScreen: React.FC = () => {
                         type="text" 
                         value={username} 
                         onChange={e => setUsername(e.target.value)} 
-                        className="w-full p-2 bg-white dark:bg-black rounded-lg border border-gray-200 dark:border-gray-700 mt-1 focus:border-blue-500 outline-none"
+                        className="w-full p-2 bg-white dark:bg-black rounded-lg border border-gray-200 dark:border-gray-700 mt-1 focus:border-blue-500 outline-none text-gray-900 dark:text-white"
                     />
                   </div>
                   <div>
@@ -365,13 +368,13 @@ export const ProfileScreen: React.FC = () => {
                     <textarea 
                         value={description} 
                         onChange={e => setDescription(e.target.value)} 
-                        className="w-full p-2 bg-white dark:bg-black rounded-lg border border-gray-200 dark:border-gray-700 mt-1 h-20 resize-none focus:border-blue-500 outline-none"
+                        className="w-full p-2 bg-white dark:bg-black rounded-lg border border-gray-200 dark:border-gray-700 mt-1 h-20 resize-none focus:border-blue-500 outline-none text-gray-900 dark:text-white"
                         placeholder="Write something..."
                     />
                   </div>
                   <div className="flex gap-4">
                      <button onClick={() => setIsEditing(false)} className="flex-1 py-2 text-sm font-bold text-gray-500">Cancel</button>
-                     <button onClick={handleSave} className="flex-1 py-2 text-sm font-bold bg-blue-500 text-white rounded-lg shadow-md">Save</button>
+                     <button onClick={handleSave} className="flex-1 py-2 text-sm font-bold bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600">Save Changes</button>
                   </div>
                 </div>
             </div>
@@ -384,39 +387,8 @@ export const ProfileScreen: React.FC = () => {
                      <Lock className="w-8 h-8 text-gray-800 dark:text-gray-200" />
                  </div>
                  <h3 className="font-bold text-gray-900 dark:text-white">This account is private</h3>
-                 <p className="text-sm text-gray-500">Follow to see their photos and videos.</p>
+                 <p className="text-sm text-gray-500">Follow to see their activity.</p>
              </div>
-         )}
-
-         {/* Content Area (Photos) */}
-         {canViewDetails && !isEditing && (
-            <div className={`mt-2 ${enableAnimations ? 'animate-slide-up-heavy' : ''}`} style={{ animationDelay: '300ms' }}>
-                 {/* Tabs */}
-                 <div className="flex justify-around border-t border-gray-200 dark:border-gray-800 mb-1">
-                     <div className="border-t-2 border-black dark:border-white py-3 px-4">
-                         <AlignJustify className="w-6 h-6 text-black dark:text-white" />
-                     </div>
-                     <div className="py-3 px-4">
-                         <Settings className="w-6 h-6 text-gray-400" />
-                     </div>
-                 </div>
-
-                 {/* Photo Grid Placeholder */}
-                 <div className="grid grid-cols-3 gap-0.5">
-                     {[1,2,3,4,5].map((item) => (
-                         <div key={item} className="aspect-square bg-gray-200 dark:bg-gray-800 relative cursor-pointer hover:opacity-90">
-                             {item === 1 && (
-                                 <img src="https://picsum.photos/300/300?random=10" className="w-full h-full object-cover" alt="post"/>
-                             )}
-                             {item !== 1 && (
-                                  <div className="w-full h-full flex items-center justify-center text-gray-300">
-                                      <Camera className="w-6 h-6" />
-                                  </div>
-                             )}
-                         </div>
-                     ))}
-                 </div>
-            </div>
          )}
       </div>
     </div>

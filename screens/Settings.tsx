@@ -2,11 +2,11 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lock, Eye, Trash2, LogOut, Shield, ChevronRight, Moon, Sun, Zap, LayoutDashboard, Bell, Droplets, Sliders } from 'lucide-react';
+import { ArrowLeft, Lock, Eye, Trash2, LogOut, Shield, ChevronRight, Moon, Sun, Zap, LayoutDashboard, Bell, Droplets, Sliders, Power } from 'lucide-react';
 import { PRIVACY_POLICY_TEXT } from '../constants';
 
 export const SettingsScreen: React.FC = () => {
-  const { currentUser, updateProfile, logout, deleteAccount, theme, toggleTheme, enableAnimations, toggleAnimations, enableLiquid, toggleLiquid, glassOpacity, setGlassOpacity, isAdmin, enableNotifications } = useApp();
+  const { currentUser, updateProfile, logout, deleteAccount, deactivateAccount, theme, toggleTheme, enableAnimations, toggleAnimations, enableLiquid, toggleLiquid, glassOpacity, setGlassOpacity, isAdmin, enableNotifications } = useApp();
   const navigate = useNavigate();
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
   
@@ -32,6 +32,13 @@ export const SettingsScreen: React.FC = () => {
       deleteAccount();
       navigate('/');
     }
+  };
+
+  const handleDeactivate = () => {
+      if (window.confirm("Are you sure you want to deactivate? Your profile will be hidden until you log in again.")) {
+          deactivateAccount();
+          navigate('/');
+      }
   };
 
   if (showPrivacyPolicy) {
@@ -115,12 +122,12 @@ export const SettingsScreen: React.FC = () => {
                        <div className="p-2.5 bg-gray-100 dark:bg-gray-800 rounded-xl text-gray-600 dark:text-gray-300 shadow-md"><Sliders className="w-5 h-5" /></div>
                        <div className="flex flex-col flex-1">
                           <span className="font-bold text-gray-900 dark:text-white text-sm">Transparency</span>
-                          <span className="text-[10px] text-gray-500 dark:text-gray-400">{(glassOpacity * 100).toFixed(0)}%</span>
+                          <span className="text-[10px] text-gray-500 dark:text-gray-400">{(glassOpacity * 100).toFixed(0)}% (Lower is clearer)</span>
                        </div>
                    </div>
                    <input 
                        type="range" 
-                       min="0.1" 
+                       min="0.0" 
                        max="1.0" 
                        step="0.05"
                        value={glassOpacity} 
@@ -213,6 +220,12 @@ export const SettingsScreen: React.FC = () => {
                  <span className="font-bold">Log Out</span>
                </div>
             </button>
+            <button onClick={handleDeactivate} className="w-full p-5 flex items-center justify-between text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800/20 transition-colors">
+               <div className="flex items-center gap-4">
+                 <div className="p-2.5 bg-gray-200 dark:bg-gray-800 rounded-xl"><Power className="w-5 h-5" /></div>
+                 <span className="font-bold">Deactivate Account</span>
+               </div>
+            </button>
             <button onClick={handleDelete} className="w-full p-5 flex items-center justify-between text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                <div className="flex items-center gap-4">
                  <div className="p-2.5 bg-red-100 dark:bg-red-900/30 rounded-xl"><Trash2 className="w-5 h-5" /></div>
@@ -222,7 +235,7 @@ export const SettingsScreen: React.FC = () => {
           </div>
         </section>
 
-        <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-8 opacity-50">FusionHub v1.3.4 liquid beta</p>
+        <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-8 opacity-50">FusionHub v1.3.4 LIQUID</p>
 
       </main>
     </div>

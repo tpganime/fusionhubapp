@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
@@ -38,9 +37,9 @@ export const SearchScreen: React.FC = () => {
     <div className="h-full overflow-y-auto pb-24 transition-colors duration-300 scrollbar-hide">
       <TopBar />
       <main className="px-4 pt-4">
-        <h1 className={`text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white ${enableAnimations ? 'animate-slide-in-right' : ''}`}>Search</h1>
+        <h1 className={`text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white transform-gpu ${enableAnimations ? 'animate-slide-in-right' : ''}`}>Search</h1>
         
-        <div className={`relative mb-6 ${enableAnimations ? 'animate-elastic-up' : ''}`}>
+        <div className={`relative mb-6 transform-gpu ${enableAnimations ? 'animate-elastic-up' : ''}`}>
           <SearchIcon className="absolute left-4 top-3.5 text-gray-400 w-5 h-5" />
           <input
             type="text"
@@ -65,8 +64,8 @@ export const SearchScreen: React.FC = () => {
               <div 
                 key={user.id} 
                 onClick={() => navigate(`/user/${user.id}`)}
-                className={`bg-white/70 dark:bg-dark-surface/70 backdrop-blur-sm p-4 rounded-2xl shadow-sm border ${isOwnerUser ? 'border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.3)]' : isAdminUser ? 'border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'border-white/50 dark:border-gray-700'} flex items-center justify-between transition-all hover:bg-white/90 dark:hover:bg-dark-surface/90 cursor-pointer group hover:scale-[1.02] ${enableAnimations ? 'animate-slide-up' : ''}`}
-                style={{ animationDelay: `${index * 0.05}s`, animationFillMode: 'both' }}
+                className={`bg-white/70 dark:bg-dark-surface/70 backdrop-blur-sm p-4 rounded-2xl shadow-sm border ${isOwnerUser ? 'border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.3)]' : isAdminUser ? 'border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'border-white/50 dark:border-gray-700'} flex items-center justify-between transition-all hover:bg-white/90 dark:hover:bg-dark-surface/90 cursor-pointer group hover:scale-[1.02] transform-gpu ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`}
+                style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'both' }}
               >
                 <div className="flex items-center space-x-3">
                   <div className="relative">
@@ -107,7 +106,7 @@ export const SearchScreen: React.FC = () => {
                     </button>
                   )}
 
-                  {isFriend(user.id) ? (
+                  {isFriend ? (
                     <span className="px-3 py-1 text-xs bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300 rounded-full font-medium">Friend</span>
                   ) : (
                     <button 

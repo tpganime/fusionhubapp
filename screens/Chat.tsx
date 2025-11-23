@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
@@ -75,7 +74,7 @@ export const ChatScreen: React.FC = () => {
       <div className="h-full overflow-y-auto pb-24 transition-colors duration-300 scrollbar-hide">
         <TopBar />
         <main className="px-4 pt-2">
-          <h1 className={`text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white ${enableAnimations ? 'animate-slide-in-right' : ''}`}>Chats</h1>
+          <h1 className={`text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white transform-gpu ${enableAnimations ? 'animate-slide-in-right' : ''}`}>Chats</h1>
           
           <div className="space-y-2">
             {chatUsers.length === 0 ? (
@@ -95,8 +94,8 @@ export const ChatScreen: React.FC = () => {
                   <button
                     key={user.id}
                     onClick={() => setSelectedUser(user)}
-                    className={`w-full flex items-center p-3 bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white dark:border-gray-800 hover:bg-white dark:hover:bg-white/5 transition-all hover:scale-[1.02] ${enableAnimations ? 'animate-slide-up' : ''}`}
-                    style={{ animationDelay: `${index * 0.05}s`, animationFillMode: 'both' }}
+                    className={`w-full flex items-center p-3 bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white dark:border-gray-800 hover:bg-white dark:hover:bg-white/5 transition-all hover:scale-[1.02] active:scale-95 transform-gpu ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`}
+                    style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'both' }}
                   >
                     <div className="relative">
                       <img src={user.avatar} alt={user.username} className={`w-12 h-12 rounded-full object-cover border ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-gray-200 dark:border-gray-700'}`} />
@@ -135,7 +134,7 @@ export const ChatScreen: React.FC = () => {
   return (
     <div className={`h-full flex flex-col transition-colors duration-300 ${enableAnimations ? 'animate-fade-in' : ''}`}>
       <div className="h-16 glass-panel dark:bg-dark-surface/80 flex items-center px-4 shadow-sm z-20 dark:border-gray-800">
-        <button onClick={() => setSelectedUser(null)} className="p-2 -ml-2 mr-2 rounded-full hover:bg-gray-200/50 dark:hover:bg-white/10 text-gray-900 dark:text-white">
+        <button onClick={() => setSelectedUser(null)} className="p-2 -ml-2 mr-2 rounded-full hover:bg-gray-200/50 dark:hover:bg-white/10 text-gray-900 dark:text-white transition-colors">
           <ArrowLeft className="w-6 h-6" />
         </button>
         <button 
@@ -159,8 +158,15 @@ export const ChatScreen: React.FC = () => {
         ) : (
            conversation.map((msg, idx) => {
              const isMe = msg.senderId === currentUser?.id;
+             // Only animate the last 10 messages to save resources on long chats
+             const shouldAnimate = enableAnimations && idx >= conversation.length - 10;
+             
              return (
-               <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} ${enableAnimations ? 'animate-slide-up' : ''}`} style={{ animationDelay: enableAnimations ? `${idx * 0.02}s` : '0s' }}>
+               <div 
+                  key={msg.id} 
+                  className={`flex ${isMe ? 'justify-end' : 'justify-start'} transform-gpu ${shouldAnimate ? 'animate-slide-up opacity-0' : ''}`} 
+                  style={{ animationDelay: shouldAnimate ? `${(idx - (conversation.length - 10)) * 50}ms` : '0s', animationFillMode: 'both' }}
+                >
                  <div className={`max-w-[75%] px-4 py-2 rounded-2xl text-sm ${
                    isMe 
                      ? 'bg-blue-500 text-white rounded-br-none' 
@@ -183,7 +189,7 @@ export const ChatScreen: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className={`fixed bottom-20 left-0 right-0 px-4 z-30 pointer-events-none ${enableAnimations ? 'animate-slide-up' : ''}`}>
+      <div className={`fixed bottom-20 left-0 right-0 px-4 z-30 pointer-events-none transform-gpu ${enableAnimations ? 'animate-slide-up' : ''}`}>
         <form onSubmit={handleSend} className="pointer-events-auto flex items-center gap-2 bg-white/80 dark:bg-dark-surface/80 backdrop-blur-xl p-2 rounded-full shadow-lg border border-white/50 dark:border-gray-700 sm:max-w-md sm:mx-auto">
           <input
             type="text"
@@ -192,7 +198,7 @@ export const ChatScreen: React.FC = () => {
             placeholder="Type a message..."
             className="flex-1 bg-transparent px-4 py-2 focus:outline-none text-sm text-gray-900 dark:text-white placeholder-gray-500"
           />
-          <button type="submit" disabled={!inputText.trim()} className="p-2 bg-blue-500 rounded-full text-white hover:bg-blue-600 disabled:opacity-50 transition-colors transform active:scale-90 duration-100">
+          <button type="submit" disabled={!inputText.trim()} className="p-2 bg-blue-500 rounded-full text-white hover:bg-blue-600 disabled:opacity-50 transition-colors transform active:scale-90 duration-100 shadow-md">
             <Send className="w-5 h-5" />
           </button>
         </form>

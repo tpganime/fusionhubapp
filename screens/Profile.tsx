@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
@@ -141,24 +140,23 @@ export const ProfileScreen: React.FC = () => {
          <div className="h-48 w-full overflow-hidden relative bg-gray-200 dark:bg-gray-800">
             <img 
               src={displayAvatar} 
-              className={`w-full h-full object-cover opacity-100 ${enableAnimations && isAdminUser ? 'animate-pulse-fast' : ''}`}
+              className={`w-full h-full object-cover opacity-100 ${enableAnimations && isAdminUser ? 'animate-pulse-slow' : ''}`}
               alt="Banner"
-              style={{ animationDuration: '10s' }}
             />
             <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/50"></div>
          </div>
          
          <div className="px-4">
-            <div className={`relative -mt-20 mb-4 flex flex-col items-center ${enableAnimations ? 'animate-elastic-up' : ''}`}>
-               <div className={`relative w-32 h-32 group ${isAdminUser && enableAnimations ? 'animate-bounce' : ''}`} style={{ animationDuration: '3s' }}>
+            <div className={`relative -mt-20 mb-4 flex flex-col items-center transform-gpu ${enableAnimations ? 'animate-elastic-up' : ''}`}>
+               <div className={`relative w-32 h-32 group transform-gpu`} style={{ animationDuration: '3s' }}>
                   <div className={`absolute inset-0 rounded-full bg-black/20 blur-md transform translate-y-2 ${enableAnimations ? 'animate-blob' : ''}`}></div>
                   {isOwnerUser ? (
-                      <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-30">
-                          <Crown className={`w-10 h-10 text-yellow-500 drop-shadow-lg fill-yellow-200 ${enableAnimations ? 'animate-pulse-fast' : ''}`} />
+                      <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-30 transform-gpu animate-pop-in">
+                          <Crown className={`w-10 h-10 text-yellow-500 drop-shadow-lg fill-yellow-200`} />
                       </div>
                   ) : isAdminUser ? (
-                      <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-30">
-                          <ShieldCheck className={`w-10 h-10 text-blue-500 drop-shadow-lg fill-blue-100 dark:fill-blue-900 ${enableAnimations ? 'animate-pulse-fast' : ''}`} />
+                      <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-30 transform-gpu animate-pop-in">
+                          <ShieldCheck className={`w-10 h-10 text-blue-500 drop-shadow-lg fill-blue-100 dark:fill-blue-900`} />
                       </div>
                   ) : null}
                   <img 
@@ -175,15 +173,15 @@ export const ProfileScreen: React.FC = () => {
                </div>
                
                {!isEditing ? (
-                 <div className={`text-center mt-3 ${enableAnimations ? 'animate-slide-up' : ''}`}>
+                 <div className={`text-center mt-3 transform-gpu ${enableAnimations ? 'animate-slide-up' : ''}`} style={{ animationDelay: '100ms', animationFillMode: 'both' }}>
                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 justify-center flex-wrap">
                      {profileUser.username}
                      {isOwnerUser ? (
-                         <span className={`px-2 py-0.5 rounded-full bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 text-white text-[10px] font-bold uppercase tracking-wider shadow-md flex items-center gap-1 ${enableAnimations ? 'animate-pulse' : ''}`}>
+                         <span className={`px-2 py-0.5 rounded-full bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 text-white text-[10px] font-bold uppercase tracking-wider shadow-md flex items-center gap-1`}>
                              Owner <Crown className="w-3 h-3 fill-white" />
                          </span>
                      ) : isAdminUser ? (
-                         <span className={`px-2 py-0.5 rounded-full bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-500 text-white text-[10px] font-bold uppercase tracking-wider shadow-md flex items-center gap-1 ${enableAnimations ? 'animate-pulse' : ''}`}>
+                         <span className={`px-2 py-0.5 rounded-full bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-500 text-white text-[10px] font-bold uppercase tracking-wider shadow-md flex items-center gap-1`}>
                              Admin <ShieldCheck className="w-3 h-3" />
                          </span>
                      ) : null}
@@ -194,14 +192,14 @@ export const ProfileScreen: React.FC = () => {
                    </p>
                    
                    <div className="flex items-center justify-center gap-6 mt-4 text-sm text-gray-500 dark:text-gray-400">
-                      <div className={`flex flex-col items-center ${enableAnimations ? 'animate-bounce-in' : ''}`}>
+                      <div className={`flex flex-col items-center transform-gpu ${enableAnimations ? 'animate-pop-in' : ''}`} style={{ animationDelay: '200ms', animationFillMode: 'both' }}>
                         <span className="font-bold text-gray-900 dark:text-white text-lg">{profileUser.friends.length}</span>
                         <span className="text-xs uppercase tracking-wide">Friends</span>
                       </div>
                    </div>
 
                    {!isOwnProfile && (
-                     <div className="mt-6 flex flex-col gap-3 items-center w-full max-w-xs mx-auto">
+                     <div className="mt-6 flex flex-col gap-3 items-center w-full max-w-xs mx-auto transform-gpu opacity-0 animate-slide-up" style={{ animationDelay: '300ms', animationFillMode: 'both' }}>
                         <div className="flex gap-3 w-full">
                             <button 
                                 onClick={() => navigate('/chat', { state: { targetUser: profileUser } })}
@@ -249,7 +247,7 @@ export const ProfileScreen: React.FC = () => {
       {!isEditing && (
         <div className="px-4 mt-2">
           {canViewDetails ? (
-            <div className={`bg-white/70 dark:bg-dark-surface/80 backdrop-blur-sm rounded-3xl p-6 shadow-sm border border-white/50 dark:border-gray-800 space-y-5 ${enableAnimations ? 'animate-slide-up' : ''}`} style={{ animationDelay: '0.1s' }}>
+            <div className={`bg-white/70 dark:bg-dark-surface/80 backdrop-blur-sm rounded-3xl p-6 shadow-sm border border-white/50 dark:border-gray-800 space-y-5 transform-gpu ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`} style={{ animationDelay: '400ms', animationFillMode: 'both' }}>
                <h3 className="font-bold text-gray-900 dark:text-white text-lg mb-4">About</h3>
                
                <div className="flex items-center gap-4">
@@ -295,7 +293,7 @@ export const ProfileScreen: React.FC = () => {
       )}
 
       {isEditing && (
-        <div className={`px-4 mt-4 ${enableAnimations ? 'animate-fade-in' : ''}`}>
+        <div className={`px-4 mt-4 transform-gpu ${enableAnimations ? 'animate-fade-in' : ''}`}>
             <div className="bg-white/80 dark:bg-dark-surface/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-white/50 dark:border-gray-800 space-y-4">
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase ml-1">Username</label>

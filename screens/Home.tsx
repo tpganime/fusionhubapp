@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { HOME_SHORTCUTS } from '../constants';
@@ -48,8 +47,8 @@ export const HomeScreen: React.FC = () => {
     <div className="h-full overflow-y-auto pb-24 transition-colors duration-300 scrollbar-hide">
       <TopBar />
       <main className="px-6 pt-6">
-        {/* Greeting Card */}
-        <div className={`relative overflow-hidden rounded-[2rem] p-6 bg-white dark:bg-dark-surface shadow-sm border border-white/50 dark:border-gray-800 mb-8 ${enableAnimations ? 'animate-slide-in-right' : ''}`}>
+        {/* Greeting Card - Elastic Slide In */}
+        <div className={`relative overflow-hidden rounded-[2rem] p-6 bg-white dark:bg-dark-surface shadow-sm border border-white/50 dark:border-gray-800 mb-8 transform-gpu ${enableAnimations ? 'animate-elastic-up opacity-0' : ''}`} style={{ animationDelay: '0ms' }}>
            {/* Decorative Gradient Blob */}
            <div className="absolute -top-10 -right-10 w-48 h-48 bg-gradient-to-br from-blue-100 via-purple-100 to-transparent dark:from-blue-900/30 dark:via-purple-900/30 dark:to-transparent rounded-full blur-3xl pointer-events-none"></div>
 
@@ -72,7 +71,7 @@ export const HomeScreen: React.FC = () => {
            </div>
         </div>
 
-        {/* Shortcuts Grid */}
+        {/* Shortcuts Grid - Staggered Pop In */}
         <div className="grid grid-cols-2 gap-4">
           {HOME_SHORTCUTS.map((shortcut, index) => {
              const isEnabled = appConfig.features.shortcuts[shortcut.name] ?? true;
@@ -84,14 +83,14 @@ export const HomeScreen: React.FC = () => {
                        href={shortcut.url}
                        target="_blank"
                        rel="noopener noreferrer"
-                       className={`group relative overflow-hidden rounded-3xl p-5 bg-white/70 dark:bg-dark-surface/70 backdrop-blur-sm border border-white/50 dark:border-gray-700 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ${enableAnimations ? 'animate-scale-in' : ''}`}
-                       style={{ animationDelay: `${index * 0.1}s`, animationFillMode: 'both' }}
+                       className={`group relative overflow-hidden rounded-3xl p-5 bg-white/70 dark:bg-dark-surface/70 backdrop-blur-sm border border-white/50 dark:border-gray-700 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 transform-gpu ${enableAnimations ? 'animate-pop-in opacity-0' : ''}`}
+                       style={{ animationDelay: `${100 + (index * 50)}ms`, animationFillMode: 'both' }}
                      >
                         <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
                            <ExternalLink className="w-4 h-4 text-gray-400" />
                         </div>
                         
-                        <div className="mb-3 w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/40 dark:to-blue-800/20 flex items-center justify-center text-2xl shadow-inner">
+                        <div className="mb-3 w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/40 dark:to-blue-800/20 flex items-center justify-center text-2xl shadow-inner group-hover:scale-110 transition-transform duration-300">
                            {shortcut.icon ? (
                                <img src={`https://www.google.com/s2/favicons?domain=${shortcut.icon}&sz=64`} alt="icon" className="w-6 h-6" />
                            ) : (
@@ -107,8 +106,8 @@ export const HomeScreen: React.FC = () => {
                  return (
                      <div 
                        key={shortcut.name}
-                       className={`group relative overflow-hidden rounded-3xl p-5 bg-gray-100/50 dark:bg-white/5 backdrop-blur-sm border border-gray-200 dark:border-white/5 opacity-80 cursor-not-allowed ${enableAnimations ? 'animate-scale-in' : ''}`}
-                       style={{ animationDelay: `${index * 0.1}s`, animationFillMode: 'both' }}
+                       className={`group relative overflow-hidden rounded-3xl p-5 bg-gray-100/50 dark:bg-white/5 backdrop-blur-sm border border-gray-200 dark:border-white/5 opacity-80 cursor-not-allowed transform-gpu ${enableAnimations ? 'animate-pop-in opacity-0' : ''}`}
+                       style={{ animationDelay: `${100 + (index * 50)}ms`, animationFillMode: 'both' }}
                      >
                         <div className="absolute top-0 right-0 p-3">
                            <Lock className="w-4 h-4 text-gray-400 dark:text-gray-500" />

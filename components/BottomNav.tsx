@@ -21,14 +21,14 @@ export const BottomNav: React.FC = () => {
 
   return (
     <div className="fixed bottom-8 left-0 right-0 z-50 flex justify-center pointer-events-none">
-      <div className="pointer-events-auto relative bg-white/20 dark:bg-black/40 backdrop-blur-3xl border border-white/30 dark:border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.2)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] rounded-full p-2">
+      <div className="pointer-events-auto relative bg-white/20 dark:bg-black/40 backdrop-blur-3xl border border-white/30 dark:border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.2)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] rounded-full p-2 transform-gpu">
         
         {/* Liquid Bubble Active Indicator */}
         <div 
-          className="absolute top-2 bottom-2 w-16 bg-gradient-to-b from-white/60 to-white/20 dark:from-white/20 dark:to-white/5 rounded-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_4px_12px_rgba(0,0,0,0.1)] backdrop-blur-md transition-all duration-500 cubic-bezier(0.23, 1, 0.32, 1) z-0"
+          className="absolute top-2 bottom-2 w-16 bg-gradient-to-b from-white/60 to-white/20 dark:from-white/20 dark:to-white/5 rounded-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_4px_12px_rgba(0,0,0,0.1)] backdrop-blur-md transition-transform duration-500 cubic-bezier(0.34, 1.56, 0.64, 1) z-0"
           style={{
             left: '0.5rem', // Matches p-2 (0.5rem)
-            transform: `translateX(${currentIndex * 4.5}rem)` // w-16 (4rem) + gap-2 (0.5rem) = 4.5rem
+            transform: `translate3d(${currentIndex * 4.5}rem, 0, 0)` // GPU optimized translate
           }}
         >
            {/* Glossy reflection on the bubble */}

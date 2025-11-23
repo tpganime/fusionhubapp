@@ -125,32 +125,54 @@ export const ProfileScreen: React.FC = () => {
   const displayDescription = (profileUser.description && profileUser.description.startsWith('{')) ? "Admin Account" : profileUser.description;
 
   return (
-    <div className="h-full overflow-y-auto pb-32 no-scrollbar">
+    <div className="h-full overflow-y-auto pb-32 no-scrollbar relative">
+      
+      {/* Dynamic Background */}
+      <div className="absolute top-0 left-0 right-0 h-[60vh] z-0 overflow-hidden pointer-events-none">
+          <div 
+             className="w-full h-full bg-cover bg-center opacity-40 dark:opacity-20 blur-[60px] scale-125 transition-all duration-700 ease-in-out"
+             style={{ backgroundImage: `url(${displayAvatar})` }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-[#F2F2F7]/80 to-[#F2F2F7] dark:from-black/10 dark:via-[#000000]/80 dark:to-[#000000]"></div>
+      </div>
+
       {/* Full Screen Avatar Modal */}
       {showFullAvatar && (
         <div 
-          className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in"
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4 animate-fade-in overflow-hidden"
           onClick={() => setShowFullAvatar(false)}
         >
+          {/* Modal Background Effect */}
+          <div className="absolute inset-0 bg-black/90 backdrop-blur-md"></div>
+          <div 
+            className="absolute inset-0 bg-cover bg-center opacity-30 blur-3xl scale-125 pointer-events-none"
+            style={{ backgroundImage: `url(${displayAvatar})` }}
+          ></div>
+
           <button 
             className="absolute top-6 right-6 p-2 bg-white/20 rounded-full text-white hover:bg-white/30 transition-colors z-[201]"
             onClick={() => setShowFullAvatar(false)}
           >
             <X className="w-6 h-6" />
           </button>
+          
           <img 
             src={displayAvatar} 
             onError={(e) => {
                (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400?text=Error';
             }}
             alt="Full Profile" 
-            className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl animate-pop-in cursor-zoom-out" 
+            className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl animate-pop-in cursor-zoom-out relative z-[201]" 
             onClick={(e) => e.stopPropagation()}
           />
         </div>
       )}
 
-      {isOwnProfile ? <TopBar /> : (
+      {isOwnProfile ? (
+        <div className="relative z-10">
+          <TopBar />
+        </div>
+      ) : (
         <div className="fixed top-4 left-4 z-50">
            <button 
              onClick={() => navigate(-1)} 
@@ -161,7 +183,7 @@ export const ProfileScreen: React.FC = () => {
         </div>
       )}
 
-      <div className="relative pt-20 px-5">
+      <div className="relative pt-20 px-5 z-10">
          <div className="flex flex-col items-center">
             {/* Liquid Profile Picture Container */}
             <div 
@@ -199,7 +221,7 @@ export const ProfileScreen: React.FC = () => {
             
             {!isEditing ? (
               <div className={`text-center w-full transform-gpu ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`} style={{ animationDelay: '100ms', animationFillMode: 'both' }}>
-                <h2 className="text-3xl font-black text-gray-900 dark:text-white flex items-center justify-center gap-2 flex-wrap mb-1">
+                <h2 className="text-3xl font-black text-gray-900 dark:text-white flex items-center justify-center gap-2 flex-wrap mb-1 drop-shadow-sm">
                   {profileUser.username}
                   {profileUser.isPrivateProfile && !isOwnProfile && <Lock className="w-5 h-5 text-gray-400" />}
                 </h2>
@@ -265,7 +287,7 @@ export const ProfileScreen: React.FC = () => {
       </div>
 
       {!isEditing && canViewDetails && (
-        <div className={`mx-5 mt-2 liquid-card p-6 space-y-6 transform-gpu ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`} style={{ animationDelay: '200ms', animationFillMode: 'both' }}>
+        <div className={`mx-5 mt-2 liquid-card p-6 space-y-6 relative z-10 transform-gpu ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`} style={{ animationDelay: '200ms', animationFillMode: 'both' }}>
            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">About</h3>
            
            <div className="flex items-center gap-5">
@@ -303,7 +325,7 @@ export const ProfileScreen: React.FC = () => {
       )}
 
       {!isEditing && !canViewDetails && (
-        <div className="mx-5 mt-4 liquid-card p-10 text-center">
+        <div className="mx-5 mt-4 liquid-card p-10 text-center relative z-10">
             <Lock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-bold text-gray-700 dark:text-gray-200">Private Profile</h3>
             <p className="text-sm text-gray-500 mt-1">Add {profileUser.username} as a friend to see more.</p>
@@ -311,7 +333,7 @@ export const ProfileScreen: React.FC = () => {
       )}
 
       {isEditing && (
-        <div className="mx-5 mt-4 liquid-card p-6 animate-fade-in">
+        <div className="mx-5 mt-4 liquid-card p-6 relative z-10 animate-fade-in">
             <div className="space-y-5">
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase ml-1">Username</label>

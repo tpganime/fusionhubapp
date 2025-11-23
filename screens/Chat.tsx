@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
@@ -172,7 +171,7 @@ export const ChatScreen: React.FC = () => {
       </div>
 
       {/* Message List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2 pb-40 pt-24 no-scrollbar">
+      <div className="flex-1 overflow-y-auto p-4 space-y-2 pb-44 pt-24 no-scrollbar">
         {conversation.length === 0 ? (
            <div className={`text-center mt-20 opacity-50 ${enableAnimations ? 'animate-pop-in' : ''}`}>
              <div className="w-20 h-20 bg-white/30 rounded-full mx-auto mb-3 flex items-center justify-center text-3xl">👋</div>
@@ -212,8 +211,8 @@ export const ChatScreen: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area */}
-      <div className={`fixed bottom-24 left-0 right-0 px-4 z-[70] pointer-events-none ${enableAnimations ? 'animate-slide-up' : ''}`}>
+      {/* Input Area - Adjusted for bigger nav */}
+      <div className={`fixed bottom-28 left-0 right-0 px-4 z-[70] pointer-events-none ${enableAnimations ? 'animate-slide-up' : ''}`}>
         <form 
           onSubmit={handleSend} 
           className="pointer-events-auto flex items-center gap-2 p-1.5 shadow-2xl sm:max-w-md sm:mx-auto bg-white/40 dark:bg-black/40 backdrop-blur-xl border border-white/30 dark:border-white/10 rounded-[2rem]"

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Home, MessageCircle, Search, User } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -23,18 +22,18 @@ export const BottomNav: React.FC = () => {
   return (
     <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center pointer-events-none px-4 animate-slide-up">
       {/* Liquid Glass Capsule */}
-      <div className="pointer-events-auto relative glass-panel flex items-center p-1.5 shadow-2xl backdrop-blur-2xl rounded-[3rem]">
+      <div className="pointer-events-auto relative glass-panel flex items-center p-2 shadow-2xl backdrop-blur-2xl rounded-[3rem]">
         
         {/* Floating Liquid Active Blob */}
         <div 
-          className="absolute top-1.5 bottom-1.5 w-14 bg-gradient-to-b from-white to-white/60 dark:from-white/30 dark:to-white/10 rounded-full shadow-[0_4px_10px_rgba(0,0,0,0.1)] transition-all duration-500 cubic-bezier(0.34, 1.56, 0.64, 1) z-0 border border-white/50"
+          className="absolute top-2 bottom-2 w-16 bg-gradient-to-b from-white to-white/60 dark:from-white/30 dark:to-white/10 rounded-[2.5rem] shadow-[0_4px_10px_rgba(0,0,0,0.1)] transition-all duration-500 cubic-bezier(0.34, 1.56, 0.64, 1) z-0 border border-white/50"
           style={{
-            left: '0.375rem', 
-            transform: `translate3d(${currentIndex * 3.5}rem, 0, 0)` // Spacing multiplier
+            left: '0.5rem', 
+            transform: `translate3d(${currentIndex * 4}rem, 0, 0)` // Spacing multiplier (4rem = w-16)
           }}
         >
            {/* Reflection Highlight */}
-           <div className="absolute top-1 left-1/2 -translate-x-1/2 w-8 h-3 bg-gradient-to-b from-white/90 to-transparent rounded-full opacity-70"></div>
+           <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-8 h-3 bg-gradient-to-b from-white/90 to-transparent rounded-full opacity-70"></div>
         </div>
 
         {/* Icons */}
@@ -46,10 +45,10 @@ export const BottomNav: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => navigate(tab.path)}
-                className="w-14 h-12 flex items-center justify-center rounded-full transition-all duration-300 group focus:outline-none active:scale-75"
+                className="w-16 h-14 flex items-center justify-center rounded-full transition-all duration-300 group focus:outline-none active:scale-90"
               >
                 <Icon 
-                  className={`w-6 h-6 transition-all duration-500 cubic-bezier(0.34, 1.56, 0.64, 1) ${
+                  className={`w-7 h-7 transition-all duration-500 cubic-bezier(0.34, 1.56, 0.64, 1) ${
                     isActive 
                       ? 'text-gray-900 dark:text-white scale-110 stroke-[2.5px] drop-shadow-sm -translate-y-0.5' 
                       : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200 scale-90'

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
@@ -8,7 +9,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { BROADCAST_ID } from '../constants';
 
 export const ChatScreen: React.FC = () => {
-  const { currentUser, users, messages, sendMessage, markConversationAsRead, enableAnimations, checkIsAdmin, checkIsOwner, appConfig } = useApp();
+  const { currentUser, users, messages, sendMessage, markConversationAsRead, enableAnimations, checkIsAdmin, checkIsOwner, checkIsOnline, appConfig } = useApp();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -88,6 +89,7 @@ export const ChatScreen: React.FC = () => {
                 const hasUnread = lastMsg && lastMsg.senderId === user.id && !lastMsg.read;
                 const isAdminUser = checkIsAdmin(user.email);
                 const isOwnerUser = checkIsOwner(user.email);
+                const isOnline = checkIsOnline(user.id);
 
                 return (
                   <button
@@ -99,6 +101,7 @@ export const ChatScreen: React.FC = () => {
                     <div className="relative">
                       <img src={user.avatar} alt={user.username} className={`w-14 h-14 rounded-full object-cover border-2 ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-white/50'}`} />
                       {hasUnread && <span className="absolute top-0 right-0 w-4 h-4 bg-blue-500 rounded-full border-2 border-white animate-pulse"></span>}
+                      {isOnline && !hasUnread && <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"></span>}
                     </div>
                     <div className="ml-4 text-left flex-1 min-w-0">
                       <div className="flex justify-between items-center mb-1">
@@ -124,6 +127,7 @@ export const ChatScreen: React.FC = () => {
 
   const isOwnerUser = checkIsOwner(selectedUser.email);
   const isAdminUser = checkIsAdmin(selectedUser.email);
+  const isSelectedUserOnline = checkIsOnline(selectedUser.id);
 
   return (
     <div className={`h-full flex flex-col no-scrollbar ${enableAnimations ? 'animate-fade-in' : ''}`}>
@@ -137,13 +141,18 @@ export const ChatScreen: React.FC = () => {
             onClick={() => navigate(`/user/${selectedUser.id}`)}
             className="flex items-center gap-3 hover:opacity-80 transition-opacity"
             >
-            <img src={selectedUser.avatar} alt="avatar" className={`w-10 h-10 rounded-full object-cover border ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-white/50'}`} />
+            <div className="relative">
+                <img src={selectedUser.avatar} alt="avatar" className={`w-10 h-10 rounded-full object-cover border ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-white/50'}`} />
+                {isSelectedUserOnline && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border border-white dark:border-gray-800"></span>}
+            </div>
             <div className="flex flex-col">
                 <span className="font-bold text-gray-900 dark:text-white text-sm flex items-center gap-1">
                     {selectedUser.username}
                     {isOwnerUser ? <Crown className="w-3 h-3 text-yellow-500 fill-yellow-500" /> : isAdminUser ? <ShieldCheck className="w-3 h-3 text-blue-500" /> : null}
                 </span>
-                <span className="text-[10px] text-green-500 font-bold">Online</span>
+                <span className={`text-[10px] font-bold ${isSelectedUserOnline ? 'text-green-500' : 'text-gray-400'}`}>
+                    {isSelectedUserOnline ? 'Online' : 'Offline'}
+                </span>
             </div>
             </button>
         </div>

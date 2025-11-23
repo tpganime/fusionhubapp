@@ -46,7 +46,7 @@ const compressImage = (file: File): Promise<string> => {
 };
 
 export const ProfileScreen: React.FC = () => {
-  const { currentUser, users, updateProfile, sendFriendRequest, checkIsAdmin, checkIsOwner, enableAnimations, appConfig } = useApp();
+  const { currentUser, users, updateProfile, sendFriendRequest, checkIsAdmin, checkIsOwner, checkIsOnline, enableAnimations, appConfig } = useApp();
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   
@@ -132,6 +132,7 @@ export const ProfileScreen: React.FC = () => {
   const canViewDetails = isOwnProfile || !profileUser.isPrivateProfile || isFriend;
   const isAdminUser = checkIsAdmin(profileUser.email);
   const isOwnerUser = checkIsOwner(profileUser.email);
+  const isOnline = checkIsOnline(profileUser.id);
   const displayAvatar = isEditing ? avatar : profileUser.avatar;
 
   const displayDescription = (profileUser.description && profileUser.description.startsWith('{')) ? "Admin Account" : profileUser.description;
@@ -139,19 +140,19 @@ export const ProfileScreen: React.FC = () => {
   return (
     <div className="h-full overflow-y-auto pb-32 no-scrollbar relative">
       
-      {/* Dynamic Background - Full Screen Immersive */}
+      {/* Dynamic Background - Full Screen Immersive & Lighter */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
           {/* Main Image Layer - fully opaque but blurred */}
           <div 
-             className="absolute inset-0 bg-cover bg-center transition-all duration-700 ease-in-out"
+             className="absolute inset-0 bg-cover bg-center transition-all duration-1000 ease-in-out"
              style={{ 
                  backgroundImage: `url("${displayAvatar}")`,
-                 filter: 'blur(35px) brightness(0.65)',
-                 transform: 'scale(1.1)' 
+                 filter: 'blur(40px) brightness(1.1)', // Increased brightness for "light" feel
+                 transform: 'scale(1.2)' 
              }}
           />
-          {/* Gradient Overlay for text readability */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60 dark:to-black/90"></div>
+          {/* Lighter Gradient Overlay for fresh look */}
+          <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/10 to-white/60 dark:from-black/40 dark:via-transparent dark:to-black/80"></div>
       </div>
 
       {/* Full Screen Avatar Modal */}
@@ -160,7 +161,7 @@ export const ProfileScreen: React.FC = () => {
           className="fixed inset-0 z-[200] flex items-center justify-center animate-fade-in overflow-hidden"
         >
           {/* Modal Background Effect */}
-          <div className="absolute inset-0 bg-black/90 backdrop-blur-xl transition-opacity duration-300" onClick={() => setShowFullAvatar(false)}></div>
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-xl transition-opacity duration-300" onClick={() => setShowFullAvatar(false)}></div>
           
           <button 
             className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors z-[202] backdrop-blur-md"
@@ -202,10 +203,10 @@ export const ProfileScreen: React.FC = () => {
           <TopBar />
         </div>
       ) : (
-        <div className="fixed top-4 left-4 z-50">
+        <div className="fixed top-4 left-4 z-50 animate-slide-down">
            <button 
              onClick={() => navigate(-1)} 
-             className="p-2.5 rounded-full glass-panel text-gray-900 dark:text-white hover:bg-white/20 transition-all shadow-lg backdrop-blur-xl border border-white/20"
+             className="p-2.5 rounded-full glass-panel text-gray-900 dark:text-white hover:bg-white/40 transition-all shadow-lg backdrop-blur-xl border border-white/40"
            >
              <ArrowLeft className="w-6 h-6" />
            </button>
@@ -216,7 +217,7 @@ export const ProfileScreen: React.FC = () => {
          <div className="flex flex-col items-center">
             {/* Liquid Profile Picture Container */}
             <div 
-              className={`relative w-40 h-40 mb-4 transform-gpu cursor-pointer group ${enableAnimations ? 'animate-fade-in' : ''}`}
+              className={`relative w-40 h-40 mb-4 transform-gpu cursor-pointer group ${enableAnimations ? 'animate-pop-in' : ''}`}
               onClick={() => !isEditing && setShowFullAvatar(true)}
             >
                <div className="absolute inset-0 bg-gradient-to-tr from-blue-300 to-purple-300 dark:from-blue-600 dark:to-purple-600 rounded-full blur-xl opacity-50 animate-pulse-slow"></div>
@@ -237,11 +238,11 @@ export const ProfileScreen: React.FC = () => {
                     (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150';
                  }}
                  alt="Profile" 
-                 className={`w-full h-full rounded-full object-cover border-[5px] ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-white dark:border-white/20'} shadow-2xl relative z-10 bg-gray-100 transition-transform group-hover:scale-[1.02]`} 
+                 className={`w-full h-full rounded-full object-cover border-[5px] ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-white dark:border-white/20'} shadow-2xl relative z-10 bg-gray-100 transition-transform duration-300 group-hover:scale-105 group-hover:rotate-2`} 
                />
                
                {isEditing && (
-                 <label className="absolute bottom-2 right-2 z-20 bg-blue-500 p-2.5 rounded-full text-white shadow-lg cursor-pointer hover:bg-blue-600 transition-all hover:scale-110 border-2 border-white">
+                 <label className="absolute bottom-2 right-2 z-20 bg-blue-500 p-2.5 rounded-full text-white shadow-lg cursor-pointer hover:bg-blue-600 transition-all hover:scale-110 border-2 border-white animate-bounce-soft">
                    <Camera className="w-5 h-5" />
                    <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                  </label>
@@ -250,49 +251,52 @@ export const ProfileScreen: React.FC = () => {
             
             {!isEditing ? (
               <div className={`text-center w-full transform-gpu ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`} style={{ animationDelay: '100ms', animationFillMode: 'both' }}>
-                <h2 className="text-3xl font-black text-gray-900 dark:text-white flex items-center justify-center gap-2 flex-wrap mb-1 drop-shadow-md">
+                <h2 className="text-3xl font-black text-gray-900 dark:text-white flex items-center justify-center gap-2 flex-wrap mb-1 drop-shadow-sm">
                   <span className="bg-clip-text text-transparent bg-gradient-to-br from-gray-900 to-gray-700 dark:from-white dark:to-gray-200">
                     {profileUser.username}
                   </span>
                   {profileUser.isPrivateProfile && !isOwnProfile && <Lock className="w-5 h-5 text-gray-400" />}
                 </h2>
                 
-                {/* Badges */}
-                <div className="flex justify-center gap-2 mb-4">
-                   {isOwnerUser && <span className="px-2 py-0.5 rounded-full bg-yellow-400/20 text-yellow-700 dark:text-yellow-200 text-[10px] font-bold uppercase border border-yellow-500/30 backdrop-blur-md">Owner</span>}
-                   {isAdminUser && <span className="px-2 py-0.5 rounded-full bg-blue-400/20 text-blue-700 dark:text-blue-200 text-[10px] font-bold uppercase border border-blue-500/30 backdrop-blur-md">Admin</span>}
+                {/* Status Badges */}
+                <div className="flex justify-center gap-2 mb-4 animate-fade-in" style={{ animationDelay: '300ms' }}>
+                   {isOwnerUser && <span className="px-2 py-0.5 rounded-full bg-yellow-400/30 text-yellow-800 dark:text-yellow-200 text-[10px] font-bold uppercase border border-yellow-500/40 backdrop-blur-md">Owner</span>}
+                   {isAdminUser && <span className="px-2 py-0.5 rounded-full bg-blue-400/30 text-blue-800 dark:text-blue-200 text-[10px] font-bold uppercase border border-blue-500/40 backdrop-blur-md">Admin</span>}
+                   {isOnline && <span className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-700 dark:text-green-300 text-[10px] font-bold uppercase border border-green-500/30 backdrop-blur-md flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>Online</span>}
                 </div>
 
-                <div className="relative inline-block px-4 py-2 rounded-xl bg-white/10 dark:bg-black/20 backdrop-blur-md border border-white/20 mb-6">
-                  <p className="text-gray-800 dark:text-gray-100 text-sm leading-relaxed font-medium">
+                <div className="relative inline-block px-4 py-2 rounded-xl bg-white/40 dark:bg-black/30 backdrop-blur-md border border-white/40 dark:border-white/10 mb-6 shadow-sm hover:scale-105 transition-transform duration-300">
+                  <p className="text-gray-900 dark:text-gray-100 text-sm leading-relaxed font-medium">
                     {displayDescription || "No bio set"}
                   </p>
                 </div>
                 
-                <div className="flex items-center justify-center gap-8 mb-8 p-4 liquid-card inline-flex min-w-[200px] border-white/30 dark:border-white/10">
+                {/* Stats Container - Only Friends */}
+                <div 
+                   className={`flex items-center justify-center mb-8 p-4 liquid-card inline-flex min-w-[140px] border-white/50 dark:border-white/10 bg-white/60 dark:bg-white/5 transform transition-transform hover:scale-110 duration-300 ${enableAnimations ? 'animate-zoom-in opacity-0' : ''}`}
+                   style={{ animationDelay: '200ms', animationFillMode: 'both' }}
+                >
                    <div className="text-center">
                      <span className="block text-2xl font-bold text-gray-900 dark:text-white">{profileUser.friends.length}</span>
-                     <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Friends</span>
-                   </div>
-                   <div className="w-[1px] h-8 bg-gray-300 dark:bg-white/10"></div>
-                   <div className="text-center">
-                     <span className="block text-2xl font-bold text-gray-900 dark:text-white">{profileUser.birthdate ? new Date(profileUser.birthdate).getFullYear() : 'N/A'}</span>
-                     <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Joined</span>
+                     <span className="text-[10px] font-bold text-gray-600 dark:text-gray-400 uppercase tracking-widest">Friends</span>
                    </div>
                 </div>
 
                 {!isOwnProfile && (
-                  <div className="flex gap-3 justify-center w-full max-w-sm mx-auto mb-6">
+                  <div 
+                    className={`flex gap-3 justify-center w-full max-w-sm mx-auto mb-6 ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`}
+                    style={{ animationDelay: '300ms', animationFillMode: 'both' }}
+                  >
                      <button 
                          onClick={() => navigate('/chat', { state: { targetUser: profileUser } })}
                          disabled={(!canViewDetails && !profileUser.allowPrivateChat)}
-                         className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100"
+                         className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100 hover:shadow-blue-500/50"
                      >
                          <MessageCircle className="w-5 h-5" /> Message
                      </button>
                      
                      {isFriend ? (
-                         <button className="flex-1 py-3 rounded-2xl bg-green-500/10 text-green-600 border border-green-500/20 font-bold flex items-center justify-center gap-2 backdrop-blur-md">
+                         <button className="flex-1 py-3 rounded-2xl bg-green-500/20 text-green-700 dark:text-green-400 border border-green-500/30 font-bold flex items-center justify-center gap-2 backdrop-blur-md">
                              <Check className="w-5 h-5" /> Friends
                          </button>
                      ) : (
@@ -302,7 +306,7 @@ export const ProfileScreen: React.FC = () => {
                              className={`flex-1 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all border ${
                                  isRequested 
                                  ? 'bg-gray-100/50 dark:bg-gray-800/50 text-gray-500 border-transparent cursor-default backdrop-blur-sm' 
-                                 : 'liquid-card hover:bg-white/50 dark:hover:bg-white/10 text-gray-900 dark:text-white'
+                                 : 'liquid-card hover:bg-white/60 dark:hover:bg-white/20 text-gray-900 dark:text-white hover:scale-105'
                              }`}
                          >
                              {isRequested ? 'Requested' : <><UserPlus className="w-5 h-5" /> Add Friend</>}
@@ -314,7 +318,8 @@ export const ProfileScreen: React.FC = () => {
                 {isOwnProfile && (
                    <button 
                      onClick={() => setIsEditing(true)}
-                     className="px-8 py-2.5 liquid-card rounded-full text-sm font-bold text-gray-700 dark:text-white hover:bg-white/40 transition-all mb-4 backdrop-blur-md"
+                     className={`px-8 py-2.5 liquid-card rounded-full text-sm font-bold text-gray-800 dark:text-white hover:bg-white/60 dark:hover:bg-white/20 transition-all mb-4 backdrop-blur-md hover:scale-105 shadow-md ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`}
+                     style={{ animationDelay: '300ms', animationFillMode: 'both' }}
                    >
                      Edit Profile
                    </button>
@@ -325,36 +330,36 @@ export const ProfileScreen: React.FC = () => {
       </div>
 
       {!isEditing && canViewDetails && (
-        <div className={`mx-5 mt-2 liquid-card p-6 space-y-6 relative z-10 transform-gpu backdrop-blur-xl border-white/30 dark:border-white/10 ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`} style={{ animationDelay: '200ms', animationFillMode: 'both' }}>
-           <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">About</h3>
+        <div className={`mx-5 mt-2 liquid-card p-6 space-y-6 relative z-10 transform-gpu backdrop-blur-xl border-white/50 dark:border-white/10 bg-white/60 dark:bg-white/10 shadow-lg ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`} style={{ animationDelay: '400ms', animationFillMode: 'both' }}>
+           <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-4">About</h3>
            
-           <div className="flex items-center gap-5">
-              <div className="w-12 h-12 rounded-2xl bg-pink-500/10 flex items-center justify-center text-pink-500 border border-pink-500/20">
+           <div className="flex items-center gap-5 group">
+              <div className="w-12 h-12 rounded-2xl bg-pink-500/10 flex items-center justify-center text-pink-600 dark:text-pink-400 border border-pink-500/20 group-hover:scale-110 transition-transform duration-300">
                  <Calendar className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-xs text-gray-400 uppercase font-bold">Birthdate</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">Birthdate</p>
                 <p className="text-gray-900 dark:text-white font-semibold text-lg">{profileUser.birthdate || 'Not specified'}</p>
               </div>
            </div>
 
-           <div className="flex items-center gap-5">
-              <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-500 border border-purple-500/20">
+           <div className="flex items-center gap-5 group">
+              <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400 border border-purple-500/20 group-hover:scale-110 transition-transform duration-300">
                  <UsersIcon className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-xs text-gray-400 uppercase font-bold">Gender</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">Gender</p>
                 <p className="text-gray-900 dark:text-white font-semibold text-lg">{profileUser.gender || 'Not specified'}</p>
               </div>
            </div>
 
            {isOwnProfile && (
-             <div className="flex items-center gap-5">
-                <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500 border border-blue-500/20">
+             <div className="flex items-center gap-5 group">
+                <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400 border border-blue-500/20 group-hover:scale-110 transition-transform duration-300">
                    <Mail className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400 uppercase font-bold">Email</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">Email</p>
                   <p className="text-gray-900 dark:text-white font-semibold text-lg break-all">{profileUser.email}</p>
                 </div>
              </div>
@@ -363,15 +368,15 @@ export const ProfileScreen: React.FC = () => {
       )}
 
       {!isEditing && !canViewDetails && (
-        <div className="mx-5 mt-4 liquid-card p-10 text-center relative z-10 backdrop-blur-xl">
-            <Lock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-gray-700 dark:text-gray-200">Private Profile</h3>
+        <div className={`mx-5 mt-4 liquid-card p-10 text-center relative z-10 backdrop-blur-xl bg-white/60 dark:bg-white/10 ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`} style={{ animationDelay: '400ms', animationFillMode: 'both' }}>
+            <Lock className="w-12 h-12 text-gray-400 mx-auto mb-4 animate-bounce-soft" />
+            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">Private Profile</h3>
             <p className="text-sm text-gray-500 mt-1">Add {profileUser.username} as a friend to see more.</p>
         </div>
       )}
 
       {isEditing && (
-        <div className="mx-5 mt-4 liquid-card p-6 relative z-10 animate-fade-in backdrop-blur-xl">
+        <div className="mx-5 mt-4 liquid-card p-6 relative z-10 animate-fade-in backdrop-blur-xl bg-white/70 dark:bg-white/10">
             <div className="space-y-5">
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase ml-1">Username</label>

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
@@ -6,7 +7,7 @@ import { Search as SearchIcon, UserPlus, Check, MessageCircle, ShieldCheck, Crow
 import { useNavigate } from 'react-router-dom';
 
 export const SearchScreen: React.FC = () => {
-  const { users, currentUser, sendFriendRequest, enableAnimations, checkIsAdmin, checkIsOwner, appConfig } = useApp();
+  const { users, currentUser, sendFriendRequest, enableAnimations, checkIsAdmin, checkIsOwner, checkIsOnline, appConfig } = useApp();
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
 
@@ -20,12 +21,11 @@ export const SearchScreen: React.FC = () => {
   );
 
   const isFriend = (userId: string) => currentUser?.friends.includes(userId);
-  const [requested, setRequested] = useState<string[]>([]); 
+  const isRequestSent = (user: any) => user.requests.includes(currentUser?.id);
 
   const handleRequest = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     sendFriendRequest(id);
-    setRequested(prev => [...prev, id]);
   };
 
   const handleMessage = (e: React.MouseEvent, user: any) => {
@@ -61,6 +61,8 @@ export const SearchScreen: React.FC = () => {
             const canMessage = isFriend(user.id) || user.allowPrivateChat;
             const isAdminUser = checkIsAdmin(user.email);
             const isOwnerUser = checkIsOwner(user.email);
+            const isOnline = checkIsOnline(user.id);
+            const requested = isRequestSent(user);
             
             return (
               <div 
@@ -72,6 +74,7 @@ export const SearchScreen: React.FC = () => {
                 <div className="flex items-center space-x-4">
                   <div className="relative">
                       <img src={user.avatar} alt={user.username} className={`w-14 h-14 rounded-full object-cover border-2 ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-white/50 shadow-sm'}`} />
+                      {isOnline && <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"></span>}
                       {isOwnerUser ? (
                         <div className="absolute -top-2 -right-2 bg-yellow-400 rounded-full p-1 shadow-sm">
                           <Crown className="w-3 h-3 text-white fill-white" />
@@ -102,15 +105,15 @@ export const SearchScreen: React.FC = () => {
                     </button>
                   )}
 
-                  {isFriend ? (
+                  {isFriend(user.id) ? (
                     <span className="px-3 py-1.5 text-xs bg-green-500/10 text-green-600 dark:text-green-400 rounded-full font-bold border border-green-500/20">Friend</span>
                   ) : (
                     <button 
                       onClick={(e) => handleRequest(e, user.id)}
-                      disabled={requested.includes(user.id)}
-                      className={`p-2.5 rounded-full transition-colors border ${requested.includes(user.id) ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 border-transparent' : 'bg-gray-100/50 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-white/50 border-gray-200 dark:border-gray-700'}`}
+                      disabled={requested}
+                      className={`p-2.5 rounded-full transition-colors border ${requested ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 border-transparent' : 'bg-gray-100/50 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-white/50 border-gray-200 dark:border-gray-700'}`}
                     >
-                      {requested.includes(user.id) ? <Check className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
+                      {requested ? <Check className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
                     </button>
                   )}
                 </div>

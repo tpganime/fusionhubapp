@@ -17,6 +17,7 @@ interface AppContextType {
   appConfig: AppConfig;
   isAdmin: boolean;
   isOwner: boolean;
+  onlineUsers: string[];
   login: (user: User) => Promise<void>;
   loginWithCredentials: (email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -34,6 +35,7 @@ interface AppContextType {
   markConversationAsRead: (senderId: string) => void;
   checkIsAdmin: (email: string) => boolean;
   checkIsOwner: (email: string) => boolean;
+  checkIsOnline: (userId: string) => boolean;
   enableNotifications: () => Promise<void>;
   closePermissionPrompt: () => void;
   updateAppConfig: (newConfig: AppConfig) => Promise<void>;
@@ -134,11 +136,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // -- ROBUST INITIALIZATION --
-  // We initialize state by reading localStorage. We also apply the DOM classes 
-  // immediately to prevent FOUC (Flash of Unstyled Content).
   
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     let initial: 'light' | 'dark' = 'light';
@@ -148,7 +147,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (stored === 'dark' || stored === 'light') initial = stored;
       } catch (e) { console.error(e); }
     }
-    // Apply immediately
     if (typeof document !== 'undefined') {
         if (initial === 'dark') document.documentElement.classList.add('dark');
         else document.documentElement.classList.remove('dark');
@@ -174,7 +172,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (stored !== null) initial = stored === 'true';
       } catch(e) { console.error(e); }
     }
-    // Apply immediately
     if (typeof document !== 'undefined') {
         if (initial) document.body.classList.remove('no-liquid');
         else document.body.classList.add('no-liquid');
@@ -190,6 +187,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const checkIsOwner = (email: string) => email.toLowerCase() === OWNER_EMAIL.toLowerCase();
   const checkIsAdmin = (email: string) => email.toLowerCase() === ADMIN_EMAIL.toLowerCase() || checkIsOwner(email);
+  const checkIsOnline = (userId: string) => onlineUsers.includes(userId);
 
   const isOwner = currentUser ? checkIsOwner(currentUser.email) : false;
   const isAdmin = currentUser ? checkIsAdmin(currentUser.email) : false;
@@ -197,7 +195,39 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => { currentUserRef.current = currentUser; }, [currentUser]);
   useEffect(() => { usersRef.current = users; }, [users]);
 
-  // Use useLayoutEffect for visual toggles to ensure no flicker on updates
+  // Presence Tracking
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const presenceChannel = supabase.channel('global_presence');
+    
+    presenceChannel
+      .on('presence', { event: 'sync' }, () => {
+        const state = presenceChannel.presenceState();
+        // Supabase returns an array of presence objects for each key.
+        // We assume the key is the user_id or mapped via the track payload.
+        const activeIds = new Set<string>();
+        Object.values(state).forEach((presences: any) => {
+           presences.forEach((p: any) => {
+             if (p.user_id) activeIds.add(p.user_id);
+           });
+        });
+        setOnlineUsers(Array.from(activeIds));
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await presenceChannel.track({ 
+            user_id: currentUser.id, 
+            online_at: new Date().toISOString() 
+          });
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(presenceChannel);
+    };
+  }, [currentUser?.id]);
+
   useLayoutEffect(() => {
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
@@ -232,7 +262,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [messages]);
 
-  // Config Sync
   const syncConfigFromUsers = (userList: User[]) => {
     const adminUser = userList.find(u => checkIsAdmin(u.email));
     const mainAdmin = userList.find(u => u.email.toLowerCase() === ADMIN_EMAIL.toLowerCase());
@@ -260,7 +289,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     await updateProfile(updatedUser);
   };
 
-  // Sound Effects
   const playNotificationSound = () => {
     try {
       const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
@@ -487,36 +515,44 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const closePermissionPrompt = () => setShowPermissionPrompt(false);
+  
   const login = async (user: User) => {
     setCurrentUser(user);
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id);
     checkPermissionStatus();
   };
+  
   const loginWithCredentials = async (email: string, pass: string) => {
      const found = users.find(u => u.email.trim().toLowerCase() === email.trim().toLowerCase() && u.password === pass);
      if (found) await login(found);
      else throw new Error("Invalid credentials");
   };
+  
   const signup = async (user: User) => {
     const { error } = await supabase.from('users').insert(mapUserToDB(user));
     if (error) throw error;
     setUsers(prev => [...prev, user]);
     await login(user);
   };
+  
   const logout = () => {
     setCurrentUser(null);
     localStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID);
     setNotifications([]);
+    setOnlineUsers([]);
   };
+  
   const updateProfile = async (updatedUser: User) => {
     const { error } = await supabase.from('users').update(mapUserToDB(updatedUser)).eq('id', updatedUser.id);
     if (error) alert("Failed to update profile");
   };
+  
   const deleteAccount = async () => {
     if (!currentUser) return;
     const { error } = await supabase.from('users').delete().eq('id', currentUser.id);
     if (!error) logout();
   };
+  
   const sendMessage = async (receiverId: string, content: string) => {
     if (!currentUser) return;
     const newMsg: Message = {
@@ -532,36 +568,88 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const { error } = await supabase.from('messages').insert(mapMessageToDB(newMsg));
     if (error) setMessages(prev => prev.filter(m => m.id !== newMsg.id));
   };
+  
   const broadcastMessage = async (content: string) => {
     if (!isAdmin || !currentUser) return;
     await sendMessage(BROADCAST_ID, content);
   };
+  
   const sendFriendRequest = async (targetUserId: string) => {
     if (!currentUser) return;
-    const targetUser = users.find(u => u.id === targetUserId);
-    if (!targetUser || targetUser.requests.includes(currentUser.id)) return;
-    const newRequests = [...targetUser.requests, currentUser.id];
-    await supabase.from('users').update({ requests: newRequests }).eq('id', targetUserId);
+    
+    // 1. Optimistic Update (Immediate UI Feedback)
+    setUsers(prev => prev.map(u => {
+      if (u.id === targetUserId) {
+        if (u.requests.includes(currentUser.id)) return u;
+        return { ...u, requests: [...u.requests, currentUser.id] };
+      }
+      return u;
+    }));
+
+    // 2. Reliable DB Update (Fetch fresh data to avoid race conditions)
+    try {
+      const { data: targetUserRemote } = await supabase.from('users').select('requests').eq('id', targetUserId).single();
+      
+      if (targetUserRemote) {
+        const currentRequests = targetUserRemote.requests || [];
+        if (!currentRequests.includes(currentUser.id)) {
+           await supabase.from('users').update({ 
+             requests: [...currentRequests, currentUser.id] 
+           }).eq('id', targetUserId);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to send request", err);
+      // Optional: Revert optimistic update on failure
+    }
   };
+  
   const acceptFriendRequest = async (requesterId: string) => {
     if (!currentUser) return;
-    const myNewFriends = [...currentUser.friends, requesterId];
-    const myNewRequests = currentUser.requests.filter(r => r !== requesterId);
-    const requester = users.find(u => u.id === requesterId);
-    if (!requester) return;
-    const theirNewFriends = [...requester.friends, currentUser.id];
+
+    // 1. Optimistic Update
+    const updatedCurrentUser = {
+        ...currentUser,
+        friends: [...currentUser.friends, requesterId],
+        requests: currentUser.requests.filter(r => r !== requesterId)
+    };
+    setCurrentUser(updatedCurrentUser);
+    
+    setUsers(prev => prev.map(u => {
+        if (u.id === currentUser.id) return updatedCurrentUser;
+        if (u.id === requesterId) {
+             return { ...u, friends: [...u.friends, currentUser.id] };
+        }
+        return u;
+    }));
+
+    // 2. DB Update
+    const myNewFriends = updatedCurrentUser.friends;
+    const myNewRequests = updatedCurrentUser.requests;
+    
     await supabase.from('users').update({ friends: myNewFriends, requests: myNewRequests }).eq('id', currentUser.id);
-    await supabase.from('users').update({ friends: theirNewFriends }).eq('id', requesterId);
+    
+    // Fetch latest friend's friend list to safely append
+    const { data: requesterRemote } = await supabase.from('users').select('friends').eq('id', requesterId).single();
+    if (requesterRemote) {
+       const theirFriends = requesterRemote.friends || [];
+       if (!theirFriends.includes(currentUser.id)) {
+         await supabase.from('users').update({ friends: [...theirFriends, currentUser.id] }).eq('id', requesterId);
+       }
+    }
   };
+  
   const markNotificationRead = (id: string) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   };
+  
   const markConversationAsRead = async (senderId: string) => {
     if (!currentUser) return;
     setMessages(prev => prev.map(m => (m.senderId === senderId && m.receiverId === currentUser.id && !m.read) ? { ...m, read: true } : m));
     const unreadIds = messages.filter(m => m.senderId === senderId && m.receiverId === currentUser.id && !m.read).map(m => m.id);
     if (unreadIds.length > 0) await supabase.from('messages').update({ read: true }).in('id', unreadIds);
   };
+  
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
   const toggleAnimations = () => setEnableAnimations(prev => !prev);
   const toggleLiquid = () => setEnableLiquid(prev => !prev);
@@ -569,10 +657,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   return (
     <AppContext.Provider value={{
       currentUser, users, messages, notifications, theme, isLoading, enableAnimations, enableLiquid, showPermissionPrompt,
-      appConfig, isAdmin, isOwner,
+      appConfig, isAdmin, isOwner, onlineUsers,
       login, loginWithCredentials, logout, signup, updateProfile, deleteAccount,
       sendMessage, broadcastMessage, sendFriendRequest, acceptFriendRequest, markNotificationRead,
-      toggleTheme, toggleAnimations, toggleLiquid, markConversationAsRead, checkIsAdmin, checkIsOwner, enableNotifications, closePermissionPrompt, updateAppConfig
+      toggleTheme, toggleAnimations, toggleLiquid, markConversationAsRead, checkIsAdmin, checkIsOwner, checkIsOnline, enableNotifications, closePermissionPrompt, updateAppConfig
     }}>
       {children}
     </AppContext.Provider>

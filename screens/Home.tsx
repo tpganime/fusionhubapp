@@ -60,7 +60,7 @@ export const HomeScreen: React.FC = () => {
             <div className={`mb-6 p-5 liquid-card flex items-center justify-between transform-gpu ${enableAnimations ? 'animate-fade-in' : ''}`}>
                 <div className="flex items-center gap-4">
                     <div className="p-3 bg-blue-500/20 rounded-full text-blue-600 dark:text-blue-300 shadow-inner">
-                        <Bell className="w-6 h-6" />
+                        <Bell className="w-6 h-6 animate-bounce-soft" />
                     </div>
                     <div>
                         <h3 className="font-bold text-gray-800 dark:text-gray-100 text-sm">Notifications</h3>
@@ -69,7 +69,7 @@ export const HomeScreen: React.FC = () => {
                 </div>
                 <button 
                     onClick={() => { enableNotifications(); setShowNotifBanner(false); }}
-                    className="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-500/30 active:scale-95 transition-all"
+                    className="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-500/30 active:scale-95 transition-all hover:scale-105"
                 >
                     Allow
                 </button>
@@ -77,7 +77,7 @@ export const HomeScreen: React.FC = () => {
         )}
 
         {/* Greeting Liquid Card */}
-        <div className={`relative overflow-hidden liquid-card p-8 mb-8 transform-gpu ${enableAnimations ? 'animate-fade-in' : ''}`}>
+        <div className={`relative overflow-hidden liquid-card p-8 mb-8 transform-gpu hover:scale-[1.02] transition-transform duration-500 ${enableAnimations ? 'animate-slide-down' : ''}`}>
            {/* Fluid background effect */}
            <div className="absolute -top-20 -right-20 w-64 h-64 bg-gradient-to-br from-purple-200 to-blue-200 dark:from-purple-900/40 dark:to-blue-900/40 rounded-full blur-3xl opacity-60 pointer-events-none animate-blob"></div>
            <div 
@@ -105,7 +105,7 @@ export const HomeScreen: React.FC = () => {
         </div>
 
         {/* Shortcuts Grid - Liquid Tiles */}
-        <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4 pl-2">Apps</h3>
+        <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4 pl-2 animate-fade-in" style={{ animationDelay: '200ms' }}>Apps</h3>
         <div className="grid grid-cols-2 gap-4">
           {HOME_SHORTCUTS.map((shortcut, index) => {
              const isEnabled = appConfig.features.shortcuts[shortcut.name] ?? true;
@@ -117,14 +117,14 @@ export const HomeScreen: React.FC = () => {
                        href={shortcut.url}
                        target="_blank"
                        rel="noopener noreferrer"
-                       className={`group relative overflow-hidden liquid-card p-5 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 transform-gpu ${enableAnimations ? 'animate-fade-in' : ''}`}
-                       style={enableAnimations ? { animationDelay: `${100 + (index * 50)}ms` } : {}}
+                       className={`group relative overflow-hidden liquid-card p-5 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 transform-gpu ${enableAnimations ? 'animate-pop-in opacity-0' : ''}`}
+                       style={enableAnimations ? { animationDelay: `${250 + (index * 100)}ms`, animationFillMode: 'both' } : {}}
                      >
                         <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0 duration-300">
                            <ArrowRight className="w-4 h-4 text-gray-500" />
                         </div>
                         
-                        <div className="mb-4 w-14 h-14 rounded-[1.2rem] bg-gradient-to-br from-white to-white/50 dark:from-white/10 dark:to-white/5 flex items-center justify-center text-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] border border-white/40 group-hover:scale-110 transition-transform duration-300">
+                        <div className="mb-4 w-14 h-14 rounded-[1.2rem] bg-gradient-to-br from-white to-white/50 dark:from-white/10 dark:to-white/5 flex items-center justify-center text-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] border border-white/40 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
                            {shortcut.icon ? (
                                <img src={`https://www.google.com/s2/favicons?domain=${shortcut.icon}&sz=64`} alt="icon" className="w-7 h-7" />
                            ) : (
@@ -132,7 +132,7 @@ export const HomeScreen: React.FC = () => {
                            )}
                         </div>
                         
-                        <h3 className="font-bold text-gray-800 dark:text-white mb-1">{shortcut.name}</h3>
+                        <h3 className="font-bold text-gray-800 dark:text-white mb-1 group-hover:text-blue-600 transition-colors">{shortcut.name}</h3>
                         <p className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-1">{shortcut.description}</p>
                      </a>
                  );
@@ -140,8 +140,8 @@ export const HomeScreen: React.FC = () => {
                  return (
                      <div 
                        key={shortcut.name}
-                       className={`group relative overflow-hidden liquid-card p-5 opacity-60 cursor-not-allowed transform-gpu ${enableAnimations ? 'animate-fade-in' : ''}`}
-                       style={enableAnimations ? { animationDelay: `${100 + (index * 50)}ms` } : {}}
+                       className={`group relative overflow-hidden liquid-card p-5 opacity-60 cursor-not-allowed transform-gpu ${enableAnimations ? 'animate-pop-in opacity-0' : ''}`}
+                       style={enableAnimations ? { animationDelay: `${250 + (index * 100)}ms`, animationFillMode: 'both' } : {}}
                      >
                         <div className="absolute top-3 right-3">
                            <Lock className="w-4 h-4 text-gray-400" />

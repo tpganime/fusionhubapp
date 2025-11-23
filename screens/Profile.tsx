@@ -144,7 +144,7 @@ export const ProfileScreen: React.FC = () => {
                (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400?text=Error';
             }}
             alt="Full Profile" 
-            className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl animate-pop-in" 
+            className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl animate-pop-in cursor-zoom-out" 
             onClick={(e) => e.stopPropagation()}
           />
         </div>

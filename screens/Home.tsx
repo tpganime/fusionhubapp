@@ -115,7 +115,7 @@ export const HomeScreen: React.FC = () => {
                        target="_blank"
                        rel="noopener noreferrer"
                        className={`group relative overflow-hidden liquid-card p-5 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 transform-gpu ${enableAnimations ? 'animate-fade-in' : ''}`}
-                       style={{ animationDelay: `${100 + (index * 50)}ms`, animationFillMode: 'both' }}
+                       style={enableAnimations ? { animationDelay: `${100 + (index * 50)}ms`, animationFillMode: 'both' } : {}}
                      >
                         <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0 duration-300">
                            <ArrowRight className="w-4 h-4 text-gray-500" />
@@ -138,7 +138,7 @@ export const HomeScreen: React.FC = () => {
                      <div 
                        key={shortcut.name}
                        className={`group relative overflow-hidden liquid-card p-5 opacity-60 cursor-not-allowed transform-gpu ${enableAnimations ? 'animate-fade-in' : ''}`}
-                       style={{ animationDelay: `${100 + (index * 50)}ms`, animationFillMode: 'both' }}
+                       style={enableAnimations ? { animationDelay: `${100 + (index * 50)}ms`, animationFillMode: 'both' } : {}}
                      >
                         <div className="absolute top-3 right-3">
                            <Lock className="w-4 h-4 text-gray-400" />

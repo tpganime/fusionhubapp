@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useLayoutEffect, ReactNode, useRef } from 'react';
 import { User, Message, Notification as AppNotification, Gender, AppConfig } from '../types';
 import { supabase } from '../lib/supabase';
 import { ADMIN_EMAIL, OWNER_EMAIL, DEFAULT_CONFIG, BROADCAST_ID } from '../constants';
@@ -108,7 +108,6 @@ const mapUserToDB = (user: User) => ({
 
 const mapMessageFromDB = (dbMsg: any): Message => {
   const ts = Number(dbMsg.timestamp);
-  // Handle both number (BigInt) and ISO String timestamps
   const finalTs = isNaN(ts) ? new Date(dbMsg.timestamp).getTime() : ts;
   
   return {
@@ -126,7 +125,7 @@ const mapMessageToDB = (msg: Message) => ({
   sender_id: msg.senderId,
   receiver_id: msg.receiverId,
   content: msg.content,
-  timestamp: new Date(msg.timestamp).toISOString(), // Send as ISO String for compatibility with timestamptz
+  timestamp: new Date(msg.timestamp).toISOString(),
   read: msg.read
 });
 
@@ -137,28 +136,50 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Initialize state directly from localStorage to prevent overwriting
+  // -- ROBUST INITIALIZATION --
+  // We initialize state by reading localStorage. We also apply the DOM classes 
+  // immediately to prevent FOUC (Flash of Unstyled Content).
+  
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    let initial: 'light' | 'dark' = 'light';
     if (typeof window !== 'undefined') {
-      return (localStorage.getItem(STORAGE_KEYS.THEME) as 'light' | 'dark') || 'light';
+      try {
+        const stored = localStorage.getItem(STORAGE_KEYS.THEME);
+        if (stored === 'dark' || stored === 'light') initial = stored;
+      } catch (e) { console.error(e); }
     }
-    return 'light';
+    // Apply immediately
+    if (typeof document !== 'undefined') {
+        if (initial === 'dark') document.documentElement.classList.add('dark');
+        else document.documentElement.classList.remove('dark');
+    }
+    return initial;
   });
 
   const [enableAnimations, setEnableAnimations] = useState(() => {
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(STORAGE_KEYS.ANIMATIONS);
-      return stored !== null ? stored === 'true' : true;
+      try {
+        const stored = localStorage.getItem(STORAGE_KEYS.ANIMATIONS);
+        return stored !== null ? stored === 'true' : true;
+      } catch(e) { return true; }
     }
     return true;
   });
 
   const [enableLiquid, setEnableLiquid] = useState(() => {
+    let initial = true;
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(STORAGE_KEYS.LIQUID);
-      return stored !== null ? stored === 'true' : true;
+      try {
+        const stored = localStorage.getItem(STORAGE_KEYS.LIQUID);
+        if (stored !== null) initial = stored === 'true';
+      } catch(e) { console.error(e); }
     }
-    return true;
+    // Apply immediately
+    if (typeof document !== 'undefined') {
+        if (initial) document.body.classList.remove('no-liquid');
+        else document.body.classList.add('no-liquid');
+    }
+    return initial;
   });
 
   const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
@@ -173,13 +194,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const isOwner = currentUser ? checkIsOwner(currentUser.email) : false;
   const isAdmin = currentUser ? checkIsAdmin(currentUser.email) : false;
 
-  useEffect(() => {
-    currentUserRef.current = currentUser;
-  }, [currentUser]);
+  useEffect(() => { currentUserRef.current = currentUser; }, [currentUser]);
+  useEffect(() => { usersRef.current = users; }, [users]);
+
+  // Use useLayoutEffect for visual toggles to ensure no flicker on updates
+  useLayoutEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem(STORAGE_KEYS.THEME, theme);
+  }, [theme]);
+
+  useLayoutEffect(() => {
+    if (enableLiquid) {
+      document.body.classList.remove('no-liquid');
+    } else {
+      document.body.classList.add('no-liquid');
+    }
+    localStorage.setItem(STORAGE_KEYS.LIQUID, String(enableLiquid));
+  }, [enableLiquid]);
 
   useEffect(() => {
-    usersRef.current = users;
-  }, [users]);
+    localStorage.setItem(STORAGE_KEYS.ANIMATIONS, String(enableAnimations));
+  }, [enableAnimations]);
 
   useEffect(() => {
     if (users.length > 0) {
@@ -193,31 +232,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [messages]);
 
-  useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    localStorage.setItem(STORAGE_KEYS.THEME, theme);
-  }, [theme]);
-
-  // Liquid Mode Effect
-  useEffect(() => {
-    if (enableLiquid) {
-      document.body.classList.remove('no-liquid');
-    } else {
-      document.body.classList.add('no-liquid');
-    }
-    localStorage.setItem(STORAGE_KEYS.LIQUID, String(enableLiquid));
-  }, [enableLiquid]);
-
-  // Animation Persistence
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.ANIMATIONS, String(enableAnimations));
-  }, [enableAnimations]);
-
-  // -- Config Management --
+  // Config Sync
   const syncConfigFromUsers = (userList: User[]) => {
     const adminUser = userList.find(u => checkIsAdmin(u.email));
     const mainAdmin = userList.find(u => u.email.toLowerCase() === ADMIN_EMAIL.toLowerCase());
@@ -230,7 +245,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           setAppConfig(prev => ({ ...prev, ...parsed }));
         }
       } catch (e) {
-        console.error("Failed to parse app config from admin profile", e);
+        console.error("Failed to parse app config", e);
       }
     }
   };
@@ -251,22 +266,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioContext) return;
       const ctx = new AudioContext();
-      
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
       gain.connect(ctx.destination);
-      
       osc.type = 'sine';
       osc.frequency.setValueAtTime(523.25, ctx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(1046.5, ctx.currentTime + 0.1);
-      
       gain.gain.setValueAtTime(0.1, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
-      
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.6);
-    } catch (e) { console.error("Audio error", e); }
+    } catch (e) {}
   };
 
   const playSendSound = () => {
@@ -274,42 +285,30 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioContext) return;
       const ctx = new AudioContext();
-      
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
       gain.connect(ctx.destination);
-      
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(300, ctx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.1);
-      
       gain.gain.setValueAtTime(0.05, ctx.currentTime);
       gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.1);
-      
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.1);
-    } catch (e) { console.error("Audio error", e); }
+    } catch (e) {}
   };
 
   const triggerNotification = (title: string, body: string, icon?: string) => {
     const isHidden = document.hidden;
     const N = window.Notification as any; 
     const hasPermission = "Notification" in window && N.permission === "granted";
-
     playNotificationSound();
 
     if (isHidden && hasPermission) {
       try {
-        new N(title, {
-          body,
-          icon: icon || '/favicon.ico',
-          badge: '/favicon.ico',
-          silent: true
-        });
-      } catch (e) {
-        console.error("System notification error:", e);
-      }
+        new N(title, { body, icon: icon || '/favicon.ico', silent: true });
+      } catch (e) {}
     }
   };
 
@@ -329,14 +328,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 setUsers(cachedUsersList);
                 syncConfigFromUsers(cachedUsersList);
             }
-          } catch (e) { console.error("Cache parse error users", e); }
+          } catch (e) {}
         }
 
         if (cachedMessagesStr) {
           try {
             const cachedMsgs = JSON.parse(cachedMessagesStr);
             if (cachedMsgs.length > 0) setMessages(cachedMsgs);
-          } catch (e) { console.error("Cache parse error msgs", e); }
+          } catch (e) {}
         }
 
         if (savedId && cachedUsersList.length > 0) {
@@ -347,8 +346,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 checkPermissionStatus();
             }
         }
-
-        // Removed localStorage reads for settings here as they are now handled in useState initialization
 
         const { data: usersData, error: userError } = await supabase.from('users').select('*');
         if (userError) throw userError;
@@ -383,23 +380,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, []);
 
   useEffect(() => {
-    // Realtime Subscription
     const channel = supabase.channel('public:data')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
         const newMsg = mapMessageFromDB(payload.new);
-        
         setMessages(prev => {
             if (prev.some(m => m.id === newMsg.id)) return prev;
             return [...prev, newMsg];
         });
 
-        // Handle Notifications for Received Messages
         if (currentUserRef.current && newMsg.receiverId === currentUserRef.current.id) {
           const sender = usersRef.current.find(u => u.id === newMsg.senderId);
           const senderName = sender ? sender.username : 'Someone';
-          
           playNotificationSound();
-
           const notif: AppNotification = {
             id: Date.now().toString(),
             type: 'message',
@@ -412,14 +404,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           triggerNotification(`Message from ${senderName}`, newMsg.content, sender?.avatar);
         }
 
-        // Handle Broadcasts
         if (newMsg.receiverId === BROADCAST_ID) {
            if (currentUserRef.current && newMsg.senderId === currentUserRef.current.id) return;
            const sender = usersRef.current.find(u => u.id === newMsg.senderId);
            const senderName = sender?.username || "Admin";
-           
            playNotificationSound();
-           
            const notif: AppNotification = {
              id: Date.now().toString(),
              type: 'system',
@@ -488,26 +477,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const enableNotifications = async () => {
-    if (!("Notification" in window)) {
-        alert("This browser does not support notifications.");
-        return;
-    }
-    
-    if (Notification.permission === 'granted') {
-        playNotificationSound();
-        try {
-            new Notification("Test Notification", { body: "Notifications are working!" });
-        } catch(e) {}
-        setShowPermissionPrompt(false);
-        return;
-    }
-
-    if (Notification.permission === 'denied') {
-        alert("Notifications are currently blocked. Please enable them in your browser settings (usually by clicking the lock icon in the address bar).");
-        setShowPermissionPrompt(false);
-        return;
-    }
-
+    if (!("Notification" in window)) return;
     const permission = await window.Notification.requestPermission();
     if (permission === "granted") {
       playNotificationSound();
@@ -517,50 +487,36 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const closePermissionPrompt = () => setShowPermissionPrompt(false);
-
   const login = async (user: User) => {
     setCurrentUser(user);
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id);
     checkPermissionStatus();
   };
-
   const loginWithCredentials = async (email: string, pass: string) => {
      const found = users.find(u => u.email.trim().toLowerCase() === email.trim().toLowerCase() && u.password === pass);
-     if (found) {
-       await login(found);
-     } else {
-       throw new Error("Invalid credentials");
-     }
+     if (found) await login(found);
+     else throw new Error("Invalid credentials");
   };
-
   const signup = async (user: User) => {
     const { error } = await supabase.from('users').insert(mapUserToDB(user));
     if (error) throw error;
     setUsers(prev => [...prev, user]);
     await login(user);
   };
-
   const logout = () => {
     setCurrentUser(null);
     localStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID);
     setNotifications([]);
   };
-
   const updateProfile = async (updatedUser: User) => {
     const { error } = await supabase.from('users').update(mapUserToDB(updatedUser)).eq('id', updatedUser.id);
-    if (error) {
-      console.error("Update failed", error);
-      alert("Failed to update profile");
-      return;
-    }
+    if (error) alert("Failed to update profile");
   };
-
   const deleteAccount = async () => {
     if (!currentUser) return;
     const { error } = await supabase.from('users').delete().eq('id', currentUser.id);
     if (!error) logout();
   };
-
   const sendMessage = async (receiverId: string, content: string) => {
     if (!currentUser) return;
     const newMsg: Message = {
@@ -571,82 +527,44 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       timestamp: Date.now(),
       read: false
     };
-    
-    // Optimistic Update
     setMessages(prev => [...prev, newMsg]);
     playSendSound();
-
     const { error } = await supabase.from('messages').insert(mapMessageToDB(newMsg));
-    if (error) {
-       console.error("Send message failed", error);
-       alert(`Message failed to send: ${error.message}`);
-       setMessages(prev => prev.filter(m => m.id !== newMsg.id));
-    }
+    if (error) setMessages(prev => prev.filter(m => m.id !== newMsg.id));
   };
-
   const broadcastMessage = async (content: string) => {
     if (!isAdmin || !currentUser) return;
     await sendMessage(BROADCAST_ID, content);
   };
-
   const sendFriendRequest = async (targetUserId: string) => {
     if (!currentUser) return;
     const targetUser = users.find(u => u.id === targetUserId);
-    if (!targetUser) return;
-    if (targetUser.requests.includes(currentUser.id)) return;
-
+    if (!targetUser || targetUser.requests.includes(currentUser.id)) return;
     const newRequests = [...targetUser.requests, currentUser.id];
-    const { error } = await supabase.from('users').update({ requests: newRequests }).eq('id', targetUserId);
-    if (error) console.error("Friend request failed", error);
+    await supabase.from('users').update({ requests: newRequests }).eq('id', targetUserId);
   };
-
   const acceptFriendRequest = async (requesterId: string) => {
     if (!currentUser) return;
-
     const myNewFriends = [...currentUser.friends, requesterId];
     const myNewRequests = currentUser.requests.filter(r => r !== requesterId);
-
     const requester = users.find(u => u.id === requesterId);
     if (!requester) return;
     const theirNewFriends = [...requester.friends, currentUser.id];
-
     await supabase.from('users').update({ friends: myNewFriends, requests: myNewRequests }).eq('id', currentUser.id);
     await supabase.from('users').update({ friends: theirNewFriends }).eq('id', requesterId);
   };
-
   const markNotificationRead = (id: string) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   };
-
   const markConversationAsRead = async (senderId: string) => {
     if (!currentUser) return;
-    
-    setMessages(prev => prev.map(m => 
-      (m.senderId === senderId && m.receiverId === currentUser.id && !m.read) 
-        ? { ...m, read: true } 
-        : m
-    ));
-
-    const unreadIds = messages
-       .filter(m => m.senderId === senderId && m.receiverId === currentUser.id && !m.read)
-       .map(m => m.id);
-
-    if (unreadIds.length > 0) {
-       await supabase.from('messages').update({ read: true }).in('id', unreadIds);
-    }
+    setMessages(prev => prev.map(m => (m.senderId === senderId && m.receiverId === currentUser.id && !m.read) ? { ...m, read: true } : m));
+    const unreadIds = messages.filter(m => m.senderId === senderId && m.receiverId === currentUser.id && !m.read).map(m => m.id);
+    if (unreadIds.length > 0) await supabase.from('messages').update({ read: true }).in('id', unreadIds);
   };
-
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
-  };
-
-  const toggleAnimations = () => {
-    setEnableAnimations(prev => !prev);
-  };
-
-  const toggleLiquid = () => {
-    setEnableLiquid(prev => !prev);
-  };
+  const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  const toggleAnimations = () => setEnableAnimations(prev => !prev);
+  const toggleLiquid = () => setEnableLiquid(prev => !prev);
 
   return (
     <AppContext.Provider value={{
@@ -663,8 +581,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
 export const useApp = () => {
   const context = useContext(AppContext);
-  if (context === undefined) {
-    throw new Error('useApp must be used within an AppProvider');
-  }
+  if (context === undefined) throw new Error('useApp must be used within an AppProvider');
   return context;
 };

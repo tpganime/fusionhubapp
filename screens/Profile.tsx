@@ -130,10 +130,10 @@ export const ProfileScreen: React.FC = () => {
       {/* Dynamic Background */}
       <div className="absolute top-0 left-0 right-0 h-[60vh] z-0 overflow-hidden pointer-events-none">
           <div 
-             className="w-full h-full bg-cover bg-center opacity-40 dark:opacity-20 blur-[60px] scale-125 transition-all duration-700 ease-in-out"
-             style={{ backgroundImage: `url(${displayAvatar})` }}
+             className="w-full h-full bg-cover bg-center opacity-60 dark:opacity-30 blur-2xl scale-110 transition-all duration-700 ease-in-out"
+             style={{ backgroundImage: `url("${displayAvatar}")` }}
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-[#F2F2F7]/80 to-[#F2F2F7] dark:from-black/10 dark:via-[#000000]/80 dark:to-[#000000]"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-[#F2F2F7]/70 to-[#F2F2F7] dark:from-black/10 dark:via-[#000000]/70 dark:to-[#000000]"></div>
       </div>
 
       {/* Full Screen Avatar Modal */}
@@ -146,7 +146,7 @@ export const ProfileScreen: React.FC = () => {
           <div className="absolute inset-0 bg-black/90 backdrop-blur-md"></div>
           <div 
             className="absolute inset-0 bg-cover bg-center opacity-30 blur-3xl scale-125 pointer-events-none"
-            style={{ backgroundImage: `url(${displayAvatar})` }}
+            style={{ backgroundImage: `url("${displayAvatar}")` }}
           ></div>
 
           <button 

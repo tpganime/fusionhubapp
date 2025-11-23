@@ -1,17 +1,19 @@
+
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { HOME_SHORTCUTS } from '../constants';
 import { TopBar } from '../components/TopBar';
 import { ComingSoon } from '../components/ComingSoon';
-import { ExternalLink, Lock } from 'lucide-react';
+import { ExternalLink, Lock, Bell } from 'lucide-react';
 
 export const HomeScreen: React.FC = () => {
-  const { currentUser, enableAnimations, appConfig } = useApp();
+  const { currentUser, enableAnimations, appConfig, enableNotifications } = useApp();
   const [timeData, setTimeData] = useState({
     time: '',
     date: '',
     greeting: ''
   });
+  const [showNotifBanner, setShowNotifBanner] = useState(false);
 
   useEffect(() => {
     const updateTime = () => {
@@ -39,6 +41,13 @@ export const HomeScreen: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+     // Check if notifications are default (not yet granted or denied)
+     if ("Notification" in window && window.Notification.permission === 'default') {
+         setShowNotifBanner(true);
+     }
+  }, []);
+
   if (!appConfig.features.home) {
     return <ComingSoon title="Home" />;
   }
@@ -47,6 +56,28 @@ export const HomeScreen: React.FC = () => {
     <div className="h-full overflow-y-auto pb-24 transition-colors duration-300 scrollbar-hide">
       <TopBar />
       <main className="px-6 pt-6">
+        
+        {/* Notification Permission Banner */}
+        {showNotifBanner && (
+            <div className={`mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-2xl flex items-center justify-between shadow-sm transform-gpu ${enableAnimations ? 'animate-pop-in' : ''}`}>
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-800 rounded-full text-blue-600 dark:text-blue-300">
+                        <Bell className="w-5 h-5" />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-gray-800 dark:text-gray-100 text-sm">Enable Notifications</h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Get updates instantly!</p>
+                    </div>
+                </div>
+                <button 
+                    onClick={() => { enableNotifications(); setShowNotifBanner(false); }}
+                    className="px-4 py-2 bg-blue-500 text-white text-xs font-bold rounded-xl shadow-md active:scale-95 transition-all"
+                >
+                    Allow
+                </button>
+            </div>
+        )}
+
         {/* Greeting Card - Elastic Slide In */}
         <div className={`relative overflow-hidden rounded-[2rem] p-6 bg-white dark:bg-dark-surface shadow-sm border border-white/50 dark:border-gray-800 mb-8 transform-gpu ${enableAnimations ? 'animate-elastic-up opacity-0' : ''}`} style={{ animationDelay: '0ms' }}>
            {/* Decorative Gradient Blob */}

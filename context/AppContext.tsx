@@ -122,7 +122,8 @@ const mapMessageToDB = (msg: Message) => ({
   sender_id: msg.senderId,
   receiver_id: msg.receiverId,
   content: msg.content,
-  timestamp: msg.timestamp,
+  // Convert timestamp to ISO string for better DB compatibility (timestamptz)
+  timestamp: new Date(msg.timestamp).toISOString(),
   read: msg.read
 });
 
@@ -203,33 +204,53 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     await updateProfile(updatedUser);
   };
 
-  // Generated "Glass Ping" sound using Web Audio API (No download needed)
+  // Sound Effects
   const playNotificationSound = () => {
     try {
       const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioContext) return;
-      
       const ctx = new AudioContext();
+      
+      // "Ding" sound - Glassy & Pleasant
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      
       osc.connect(gain);
       gain.connect(ctx.destination);
       
-      // Pleasant high-pitched sine wave (Glass ping effect)
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(800, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+      osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+      osc.frequency.exponentialRampToValueAtTime(1046.5, ctx.currentTime + 0.1); // C6
       
-      gain.gain.setValueAtTime(0.05, ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.05);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
       
       osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.4);
-    } catch (e) {
-      console.error("Audio error", e);
-    }
+      osc.stop(ctx.currentTime + 0.6);
+    } catch (e) { console.error("Audio error", e); }
+  };
+
+  const playSendSound = () => {
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      
+      // "Pop" sound - Quick & Subtle
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(300, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.1);
+      
+      gain.gain.setValueAtTime(0.05, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.1);
+      
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.1);
+    } catch (e) { console.error("Audio error", e); }
   };
 
   const triggerNotification = (title: string, body: string, icon?: string) => {
@@ -237,7 +258,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const N = window.Notification as any; 
     const hasPermission = "Notification" in window && N.permission === "granted";
 
-    // Always play sound if message arrives (unless user disabled audio in system, which we can't control)
+    // Always play sound if message arrives (unless user disabled audio in system)
     playNotificationSound();
 
     if (isHidden && hasPermission) {
@@ -340,6 +361,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (currentUserRef.current && newMsg.receiverId === currentUserRef.current.id) {
           const sender = usersRef.current.find(u => u.id === newMsg.senderId);
           const senderName = sender ? sender.username : 'Someone';
+          
+          // Play sound immediately for received message
+          playNotificationSound();
+
           const notif: AppNotification = {
             id: Date.now().toString(),
             type: 'message',
@@ -356,6 +381,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
            if (currentUserRef.current && newMsg.senderId === currentUserRef.current.id) return;
            const sender = usersRef.current.find(u => u.id === newMsg.senderId);
            const senderName = sender?.username || "Admin";
+           
+           playNotificationSound();
+           
            const notif: AppNotification = {
              id: Date.now().toString(),
              type: 'system',
@@ -394,6 +422,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                const newReqId = newReqs.find(id => !oldReqs.includes(id));
                const requester = usersRef.current.find(u => u.id === newReqId);
                if (requester) {
+                 playNotificationSound();
                  const notif: AppNotification = {
                    id: Date.now().toString(),
                    type: 'friend_request',
@@ -438,9 +467,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         return;
     }
 
-    // If denied, we must alert the user because we can't programmatically request again
+    // If denied, alert user
     if (Notification.permission === 'denied') {
-        alert("Notifications are currently blocked. Please enable them in your browser settings (usually in the address bar lock icon).");
+        alert("Notifications are currently blocked. Please enable them in your browser settings (usually by clicking the lock icon in the address bar).");
         setShowPermissionPrompt(false);
         return;
     }
@@ -510,7 +539,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       read: false
     };
     
+    // Optimistic Update
     setMessages(prev => [...prev, newMsg]);
+    playSendSound();
 
     const { error } = await supabase.from('messages').insert(mapMessageToDB(newMsg));
     if (error) {

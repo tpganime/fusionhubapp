@@ -113,7 +113,7 @@ export const AuthScreen: React.FC = () => {
       <div className="absolute -bottom-20 left-20 w-96 h-96 bg-pink-400 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-4000"></div>
 
       {/* Liquid Glass Card */}
-      <div className={`w-full max-w-md liquid-card p-10 z-10 ${enableAnimations ? 'animate-elastic-up' : ''}`}>
+      <div className={`w-full max-w-md liquid-card p-10 z-10 ${enableAnimations ? 'animate-fade-in' : ''}`}>
         <div className="text-center mb-8">
             <h1 className="text-4xl font-black bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent drop-shadow-sm">
             FusionHub
@@ -121,9 +121,6 @@ export const AuthScreen: React.FC = () => {
             <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mt-2">
                 {isLogin ? 'Welcome Back!' : 'Join the Future'}
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-300 mt-1 leading-relaxed">
-                Experience a premium social hub with real-time chat, entertainment shortcuts, and a stunning liquid interface.
-            </p>
         </div>
 
         <form onSubmit={isLogin ? handleLogin : handleSignup} className="space-y-5">

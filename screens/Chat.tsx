@@ -85,7 +85,7 @@ export const ChatScreen: React.FC = () => {
 
   if (!selectedUser) {
     return (
-      <div className="h-full overflow-y-auto pb-32 no-scrollbar">
+      <div className="h-full overflow-y-auto pb-32 no-scrollbar gpu-accelerated">
         <TopBar />
         <main className="px-5 pt-2">
           <h1 className="text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white">Messages</h1>
@@ -108,8 +108,8 @@ export const ChatScreen: React.FC = () => {
                   <button
                     key={user.id}
                     onClick={() => setSelectedUser(user)}
-                    className={`w-full flex items-center p-4 liquid-card hover:bg-white/40 dark:hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-95 transform-gpu ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`}
-                    style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'both' }}
+                    className={`w-full flex items-center p-4 liquid-card hover:bg-white/40 dark:hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-95 transform-gpu will-change-transform ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`}
+                    style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'both' }}
                   >
                     <div className="relative">
                       <img src={user.avatar} alt={user.username} className={`w-14 h-14 rounded-full object-cover border-2 ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-white/50'}`} />
@@ -143,7 +143,7 @@ export const ChatScreen: React.FC = () => {
   const isSelectedUserOnline = checkIsOnline(selectedUser.id);
 
   return (
-    <div className={`h-full flex flex-col no-scrollbar ${enableAnimations ? 'animate-fade-in' : ''}`}>
+    <div className={`h-full flex flex-col no-scrollbar gpu-accelerated ${enableAnimations ? 'animate-fade-in' : ''}`}>
       {/* Liquid Header */}
       <div className="fixed top-4 left-4 right-4 h-16 glass-panel px-4 flex items-center z-40 justify-between">
         <div className="flex items-center gap-3">
@@ -185,7 +185,7 @@ export const ChatScreen: React.FC = () => {
              return (
                <div 
                   key={msg.id} 
-                  className={`flex ${isMe ? 'justify-end' : 'justify-start'} transform-gpu ${shouldAnimate ? 'animate-slide-up opacity-0' : ''}`} 
+                  className={`flex ${isMe ? 'justify-end' : 'justify-start'} transform-gpu will-change-transform ${shouldAnimate ? 'animate-slide-up-heavy opacity-0' : ''}`} 
                   style={{ animationDelay: shouldAnimate ? `${(idx - (conversation.length - 10)) * 50}ms` : '0s', animationFillMode: 'both' }}
                 >
                  <div className={`max-w-[80%] px-5 py-3 text-sm backdrop-blur-md shadow-sm border ${

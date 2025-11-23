@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
 import { ComingSoon } from '../components/ComingSoon';
-import { Camera, Save, ArrowLeft, MessageCircle, UserPlus, Check, Lock, Calendar, Mail, Users as UsersIcon, ShieldCheck, Crown, X, ZoomIn, ZoomOut } from 'lucide-react';
+import { Camera, Save, ArrowLeft, MessageCircle, UserPlus, Check, Lock, Calendar, Mail, Users as UsersIcon, ShieldCheck, Crown, X, ZoomIn, ZoomOut, Link as LinkIcon, Edit3 } from 'lucide-react';
 import { Gender } from '../types';
 import { useParams, useNavigate } from 'react-router-dom';
 
@@ -138,16 +138,13 @@ export const ProfileScreen: React.FC = () => {
   const displayDescription = (profileUser.description && profileUser.description.startsWith('{')) ? "Admin Account" : profileUser.description;
 
   return (
-    <div className="h-full overflow-y-auto pb-32 no-scrollbar relative gpu-accelerated">
+    <div className="h-full overflow-y-auto pb-32 no-scrollbar relative gpu-accelerated bg-gray-50 dark:bg-black">
       
       {/* Heavy Animated Background Layer */}
-      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none bg-gray-50 dark:bg-black">
-          {/* Subtle Ambient Glows */}
-          <div className="absolute top-0 left-0 w-full h-2/3 bg-gradient-to-b from-blue-50 to-transparent dark:from-blue-900/20 dark:to-transparent animate-pulse-slow"></div>
-          
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
           {/* Main Image Layer - Parallax Drift */}
           <div 
-             className={`absolute inset-0 bg-cover bg-center transition-all duration-1000 ease-in-out opacity-25 dark:opacity-40 ${enableAnimations ? 'animate-zoom-pan' : ''}`}
+             className={`absolute inset-0 bg-cover bg-center transition-all duration-1000 ease-in-out opacity-20 dark:opacity-30 ${enableAnimations ? 'animate-zoom-pan' : ''}`}
              style={{ 
                  backgroundImage: `url("${displayAvatar}")`,
                  filter: 'blur(90px) saturate(200%)', 
@@ -155,12 +152,11 @@ export const ProfileScreen: React.FC = () => {
           />
       </div>
 
-      {/* Full Screen Avatar Modal - Smooth Spring Open */}
+      {/* Full Screen Avatar Modal */}
       {showFullAvatar && (
         <div 
           className="fixed inset-0 z-[200] flex items-center justify-center animate-fade-in overflow-hidden"
         >
-          {/* Modal Background Effect */}
           <div className="absolute inset-0 bg-white/90 dark:bg-black/90 backdrop-blur-2xl transition-opacity duration-500" onClick={() => setShowFullAvatar(false)}></div>
           
           <button 
@@ -170,23 +166,13 @@ export const ProfileScreen: React.FC = () => {
             <X className="w-6 h-6" />
           </button>
 
-          {/* Zoom Hint/Icon */}
-          <div className="absolute bottom-10 left-0 right-0 z-[202] flex justify-center pointer-events-none animate-slide-up-heavy" style={{ animationDelay: '200ms' }}>
-             <div className="bg-white/50 dark:bg-black/50 backdrop-blur-md text-black dark:text-white text-xs px-4 py-2 rounded-full flex items-center gap-2 shadow-lg border border-white/20">
-                {isZoomed ? <ZoomOut className="w-4 h-4" /> : <ZoomIn className="w-4 h-4" />}
-                {isZoomed ? "Click to zoom out" : "Click to zoom in"}
-             </div>
-          </div>
-          
           <div 
             className={`relative z-[201] w-full h-full overflow-auto no-scrollbar flex items-center justify-center transition-all duration-500 cubic-bezier(0.25, 1, 0.5, 1) ${isZoomed ? 'cursor-zoom-out items-start' : 'cursor-zoom-in'}`}
             onClick={toggleZoom}
           >
             <img 
               src={displayAvatar} 
-              onError={(e) => {
-                 (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400?text=Error';
-              }}
+              onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400?text=Error'; }}
               alt="Full Profile" 
               className={`transition-all duration-500 cubic-bezier(0.34, 1.56, 0.64, 1) select-none rounded-3xl shadow-2xl ${
                 isZoomed 
@@ -198,254 +184,207 @@ export const ProfileScreen: React.FC = () => {
         </div>
       )}
 
+      {/* Header Area */}
       {isOwnProfile ? (
         <div className="relative z-10">
           <TopBar />
         </div>
       ) : (
-        <div className="fixed top-4 left-4 z-50 animate-slide-down-heavy">
+        <div className="fixed top-4 left-4 right-4 z-50 flex justify-between items-center animate-slide-down-heavy">
            <button 
              onClick={() => navigate(-1)} 
              className="p-2.5 rounded-full glass-panel text-gray-900 dark:text-white hover:bg-white/40 transition-all shadow-lg backdrop-blur-xl border border-white/40 active:scale-90"
            >
              <ArrowLeft className="w-6 h-6" />
            </button>
+           <div className="glass-panel px-4 py-2 font-bold text-sm text-gray-900 dark:text-white truncate max-w-[150px]">
+             {profileUser.username}
+           </div>
         </div>
       )}
 
+      {/* Main Content */}
       <div className="relative pt-24 px-5 z-10">
-         <div className="flex flex-col items-center">
-            {/* Profile Picture Container - Heavy Pop */}
+         
+         {/* Top Section: Avatar + Stats (Instagram Layout) */}
+         <div className="flex items-center gap-6 mb-6">
+            {/* Avatar - Left Side */}
             <div 
-              className={`relative w-40 h-40 mb-4 transform-gpu cursor-pointer group ${enableAnimations ? 'animate-pop-in-elastic' : ''}`}
+              className={`relative flex-shrink-0 w-24 h-24 transform-gpu cursor-pointer group ${enableAnimations ? 'animate-pop-in-elastic' : ''}`}
               onClick={() => !isEditing && setShowFullAvatar(true)}
             >
-               {/* Animated Pulse Glow behind avatar */}
-               <div className="absolute inset-0 bg-gradient-to-tr from-blue-400 to-purple-400 dark:from-blue-600 dark:to-purple-600 rounded-full blur-2xl opacity-50 animate-pulse-slow"></div>
+               {/* Rings/Status */}
+               <div className="absolute inset-0 bg-gradient-to-tr from-blue-400 to-purple-400 dark:from-blue-600 dark:to-purple-600 rounded-full blur-xl opacity-40 animate-pulse-slow"></div>
                
-               {isOwnerUser ? (
-                   <div className="absolute -top-7 left-1/2 -translate-x-1/2 z-30 animate-float pointer-events-none">
-                       <Crown className={`w-12 h-12 text-yellow-500 fill-yellow-200 drop-shadow-lg`} />
-                   </div>
-               ) : isAdminUser ? (
-                   <div className="absolute -top-7 left-1/2 -translate-x-1/2 z-30 animate-float pointer-events-none">
-                       <ShieldCheck className={`w-12 h-12 text-blue-500 fill-blue-100 drop-shadow-lg`} />
-                   </div>
-               ) : null}
-
                <img 
                  src={displayAvatar} 
-                 onError={(e) => {
-                    (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150';
-                 }}
+                 onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150'; }}
                  alt="Profile" 
-                 className={`w-full h-full rounded-full object-cover border-[6px] ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-white dark:border-white/10'} shadow-2xl relative z-10 bg-gray-100 transition-transform duration-700 cubic-bezier(0.34, 1.56, 0.64, 1) group-hover:scale-105 group-hover:rotate-3`} 
+                 className={`w-full h-full rounded-full object-cover border-[3px] ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-white dark:border-white/10'} shadow-xl relative z-10 bg-gray-100`} 
                />
-               
+
+               {isOwnerUser && <div className="absolute -bottom-1 -right-1 bg-yellow-400 p-1 rounded-full z-20 shadow-sm border border-white"><Crown className="w-3 h-3 text-white fill-white" /></div>}
+               {!isOwnerUser && isAdminUser && <div className="absolute -bottom-1 -right-1 bg-blue-500 p-1 rounded-full z-20 shadow-sm border border-white"><ShieldCheck className="w-3 h-3 text-white" /></div>}
+
                {isEditing && (
-                 <label className="absolute bottom-2 right-2 z-20 bg-blue-500 p-2.5 rounded-full text-white shadow-lg cursor-pointer hover:bg-blue-600 transition-all hover:scale-110 border-4 border-white dark:border-gray-800 animate-bounce-soft">
-                   <Camera className="w-5 h-5" />
+                 <label className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 rounded-full cursor-pointer hover:bg-black/50 transition-colors">
+                   <Camera className="w-8 h-8 text-white opacity-80" />
                    <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                  </label>
                )}
             </div>
-            
-            {!isEditing ? (
-              <div className="text-center w-full">
-                {/* Name */}
-                <div className={`transform-gpu ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`} style={{ animationDelay: '150ms', animationFillMode: 'both' }}>
-                    <h2 className="text-3xl font-black text-gray-900 dark:text-white flex items-center justify-center gap-2 flex-wrap mb-1 drop-shadow-sm">
+
+            {/* Right Side: Stats & Username */}
+            <div className={`flex-1 flex flex-col justify-center ${enableAnimations ? 'animate-slide-up-heavy' : ''}`} style={{ animationDelay: '100ms' }}>
+                <h2 className="text-xl font-black text-gray-900 dark:text-white mb-2 truncate flex items-center gap-2">
                     {profileUser.username}
-                    {profileUser.isPrivateProfile && !isOwnProfile && <Lock className="w-5 h-5 text-gray-400" />}
-                    </h2>
-                </div>
+                    {profileUser.isPrivateProfile && !isOwnProfile && <Lock className="w-4 h-4 text-gray-400" />}
+                </h2>
                 
-                {/* Status Badges */}
-                <div className={`flex justify-center gap-2 mb-6 ${enableAnimations ? 'animate-fade-in' : ''}`} style={{ animationDelay: '400ms' }}>
-                   {isOwnerUser && <span className="px-3 py-1 rounded-full bg-yellow-400/20 text-yellow-800 dark:text-yellow-200 text-[10px] font-bold uppercase border border-yellow-500/30 backdrop-blur-md shadow-sm">Owner</span>}
-                   {isAdminUser && <span className="px-3 py-1 rounded-full bg-blue-400/20 text-blue-800 dark:text-blue-200 text-[10px] font-bold uppercase border border-blue-500/30 backdrop-blur-md shadow-sm">Admin</span>}
-                   {isOnline && <span className="px-3 py-1 rounded-full bg-green-500/20 text-green-700 dark:text-green-300 text-[10px] font-bold uppercase border border-green-500/30 backdrop-blur-md flex items-center gap-1.5 shadow-sm"><span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>Online</span>}
+                <div className="flex items-center gap-6">
+                    <div className="text-center">
+                        <span className="block text-lg font-bold text-gray-900 dark:text-white">{profileUser.friends.length}</span>
+                        <span className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wide">Friends</span>
+                    </div>
+                    {/* Placeholder stats to match layout feeling */}
+                    <div className="text-center opacity-40">
+                        <span className="block text-lg font-bold text-gray-900 dark:text-white">0</span>
+                        <span className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wide">Posts</span>
+                    </div>
+                    <div className="text-center opacity-40">
+                        <span className="block text-lg font-bold text-gray-900 dark:text-white">0</span>
+                        <span className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wide">Following</span>
+                    </div>
                 </div>
-
-                {/* Bio - Slide Up */}
-                <div 
-                    className={`relative inline-block px-6 py-4 rounded-3xl bg-white/60 dark:bg-white/5 backdrop-blur-md border border-white/60 dark:border-white/10 mb-8 shadow-sm hover:scale-[1.02] transition-transform duration-500 max-w-sm transform-gpu ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`}
-                    style={{ animationDelay: '300ms', animationFillMode: 'both' }}
-                >
-                  <p className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed font-medium">
-                    {displayDescription || "No bio set"}
-                  </p>
-                </div>
-                
-                {/* Stats Container - Heavy Pop */}
-                <div 
-                   className={`flex items-center justify-center mb-10 transform-gpu ${enableAnimations ? 'animate-pop-in-elastic opacity-0' : ''}`}
-                   style={{ animationDelay: '450ms', animationFillMode: 'both' }}
-                >
-                   <div className="px-10 py-5 rounded-[2rem] bg-white/70 dark:bg-white/5 border border-white/50 dark:border-white/10 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.1)] backdrop-blur-xl transition-transform hover:scale-105 duration-300">
-                     <span className="block text-4xl font-black text-gray-900 dark:text-white bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 tracking-tight">{profileUser.friends.length}</span>
-                     <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1 block">Friends</span>
-                   </div>
-                </div>
-
-                {!isOwnProfile && (
-                  <div 
-                    className={`flex gap-3 justify-center w-full max-w-sm mx-auto mb-8 transform-gpu ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`}
-                    style={{ animationDelay: '600ms', animationFillMode: 'both' }}
-                  >
-                     <button 
-                         onClick={() => navigate('/chat', { state: { targetUser: profileUser } })}
-                         disabled={(!canViewDetails && !profileUser.allowPrivateChat)}
-                         className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100 hover:shadow-blue-500/50 hover:scale-105 duration-300"
-                     >
-                         <MessageCircle className="w-5 h-5" /> Message
-                     </button>
-                     
-                     {isFriend ? (
-                         <button className="flex-1 py-4 rounded-2xl bg-green-500/20 text-green-700 dark:text-green-400 border border-green-500/30 font-bold flex items-center justify-center gap-2 backdrop-blur-md shadow-sm">
-                             <Check className="w-5 h-5" /> Friends
-                         </button>
-                     ) : (
-                         <button 
-                             onClick={() => sendFriendRequest(profileUser.id)}
-                             disabled={isRequested}
-                             className={`flex-1 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all border ${
-                                 isRequested 
-                                 ? 'bg-gray-100/50 dark:bg-gray-800/50 text-gray-500 border-transparent cursor-default backdrop-blur-sm' 
-                                 : 'bg-white/80 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 text-gray-900 dark:text-white hover:scale-105 border-white/60 dark:border-white/10 shadow-lg'
-                             }`}
-                         >
-                             {isRequested ? 'Requested' : <><UserPlus className="w-5 h-5" /> Add Friend</>}
-                         </button>
-                     )}
-                  </div>
-                )}
-
-                {isOwnProfile && (
-                   <button 
-                     onClick={() => setIsEditing(true)}
-                     className={`px-10 py-3.5 rounded-full text-sm font-bold text-gray-700 dark:text-white bg-white/70 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 border border-white/50 dark:border-white/10 transition-all mb-4 backdrop-blur-md hover:scale-105 shadow-md transform-gpu ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`}
-                     style={{ animationDelay: '600ms', animationFillMode: 'both' }}
-                   >
-                     Edit Profile
-                   </button>
-                )}
-              </div>
-            ) : null}
+            </div>
          </div>
-      </div>
 
-      {!isEditing && canViewDetails && (
-        <div className={`mx-5 mt-2 bg-white/60 dark:bg-white/5 p-6 rounded-[2.5rem] space-y-6 relative z-10 transform-gpu backdrop-blur-2xl border border-white/50 dark:border-white/10 shadow-xl ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`} style={{ animationDelay: '700ms', animationFillMode: 'both' }}>
-           <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4 ml-1">About</h3>
-           
-           <div className="flex items-center gap-5 group p-2 rounded-3xl hover:bg-white/40 dark:hover:bg-white/5 transition-colors duration-300">
-              <div className="w-14 h-14 rounded-2xl bg-pink-500/10 flex items-center justify-center text-pink-600 dark:text-pink-400 border border-pink-500/20 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-sm">
-                 <Calendar className="w-7 h-7" />
-              </div>
-              <div>
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider mb-0.5">Birthdate</p>
-                <p className="text-gray-900 dark:text-white font-bold text-lg">{profileUser.birthdate || 'Not specified'}</p>
-              </div>
-           </div>
+         {/* Bio Section */}
+         <div className={`mb-6 space-y-2 ${enableAnimations ? 'animate-slide-up-heavy' : ''}`} style={{ animationDelay: '200ms' }}>
+            <div className="font-bold text-sm text-gray-800 dark:text-gray-200">
+               {profileUser.username} {/* Using username as Name as per schema, or could add Name field */}
+            </div>
+            {isOnline && <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 dark:text-green-400 text-[10px] font-bold border border-green-500/20 mb-1"><span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>Online</span>}
+            
+            <p className="text-sm text-gray-800 dark:text-gray-300 whitespace-pre-line leading-relaxed">
+               {displayDescription || "No bio yet."}
+            </p>
+            
+            {/* Dummy Link to look like photo */}
+            {/* In real app, user object would have website field */}
+            <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400 text-sm font-medium">
+                <LinkIcon className="w-3.5 h-3.5" />
+                <span className="hover:underline cursor-pointer">fusionhub.app/{profileUser.username}</span>
+            </div>
+         </div>
 
-           <div className="flex items-center gap-5 group p-2 rounded-3xl hover:bg-white/40 dark:hover:bg-white/5 transition-colors duration-300">
-              <div className="w-14 h-14 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400 border border-purple-500/20 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-sm">
-                 <UsersIcon className="w-7 h-7" />
-              </div>
-              <div>
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider mb-0.5">Gender</p>
-                <p className="text-gray-900 dark:text-white font-bold text-lg">{profileUser.gender || 'Not specified'}</p>
-              </div>
-           </div>
+         {/* Action Buttons */}
+         {!isEditing && (
+            <div className={`flex gap-3 mb-8 ${enableAnimations ? 'animate-slide-up-heavy' : ''}`} style={{ animationDelay: '300ms' }}>
+                {isOwnProfile ? (
+                    <button 
+                      onClick={() => setIsEditing(true)}
+                      className="flex-1 py-2 rounded-lg bg-gray-200 dark:bg-white/10 text-gray-900 dark:text-white font-bold text-sm hover:bg-gray-300 dark:hover:bg-white/20 transition-colors"
+                    >
+                      Edit Profile
+                    </button>
+                ) : (
+                    <>
+                         <button 
+                             onClick={() => navigate('/chat', { state: { targetUser: profileUser } })}
+                             disabled={(!canViewDetails && !profileUser.allowPrivateChat)}
+                             className="flex-1 py-2 rounded-lg bg-blue-500 text-white font-bold text-sm hover:bg-blue-600 transition-colors shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:shadow-none"
+                         >
+                             Message
+                         </button>
+                         {isFriend ? (
+                            <button className="flex-1 py-2 rounded-lg bg-gray-200 dark:bg-white/10 text-gray-900 dark:text-white font-bold text-sm cursor-default">
+                                Following
+                            </button>
+                         ) : (
+                            <button 
+                                onClick={() => sendFriendRequest(profileUser.id)}
+                                disabled={isRequested}
+                                className={`flex-1 py-2 rounded-lg font-bold text-sm transition-colors ${isRequested ? 'bg-gray-100 dark:bg-white/5 text-gray-500' : 'bg-gray-200 dark:bg-white/10 text-gray-900 dark:text-white hover:bg-gray-300'}`}
+                            >
+                                {isRequested ? 'Requested' : 'Follow'}
+                            </button>
+                         )}
+                    </>
+                )}
+            </div>
+         )}
 
-           {isOwnProfile && (
-             <div className="flex items-center gap-5 group p-2 rounded-3xl hover:bg-white/40 dark:hover:bg-white/5 transition-colors duration-300">
-                <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400 border border-blue-500/20 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-sm">
-                   <Mail className="w-7 h-7" />
+         {/* Editing Form */}
+         {isEditing && (
+            <div className={`p-5 rounded-2xl bg-white/50 dark:bg-white/5 border border-white/40 dark:border-white/10 backdrop-blur-md mb-8 ${enableAnimations ? 'animate-slide-up-heavy' : ''}`}>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Username</label>
+                    <input 
+                        type="text" 
+                        value={username} 
+                        onChange={e => setUsername(e.target.value)} 
+                        className="w-full p-3 bg-white/50 dark:bg-black/30 rounded-xl border border-gray-200 dark:border-white/10 mt-1 focus:border-blue-500 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase ml-1">Bio</label>
+                    <textarea 
+                        value={description} 
+                        onChange={e => setDescription(e.target.value)} 
+                        className="w-full p-3 bg-white/50 dark:bg-black/30 rounded-xl border border-gray-200 dark:border-white/10 mt-1 h-24 resize-none focus:border-blue-500 outline-none"
+                        placeholder="Write something..."
+                    />
+                  </div>
+                  <div className="flex gap-4">
+                     <button onClick={() => setIsEditing(false)} className="flex-1 py-3 text-sm font-bold text-gray-500">Cancel</button>
+                     <button onClick={handleSave} className="flex-1 py-3 text-sm font-bold bg-blue-500 text-white rounded-xl shadow-lg shadow-blue-500/30">Save</button>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider mb-0.5">Email</p>
-                  <p className="text-gray-900 dark:text-white font-bold text-lg break-all">{profileUser.email}</p>
-                </div>
+            </div>
+         )}
+
+         {/* Details / Content Grid */}
+         {canViewDetails && !isEditing && (
+            <div className={`grid grid-cols-1 gap-4 ${enableAnimations ? 'animate-slide-up-heavy' : ''}`} style={{ animationDelay: '400ms' }}>
+               {/* Just display some info blocks to look like content */}
+               <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/40 dark:bg-white/5 border border-white/40 dark:border-white/10 backdrop-blur-sm">
+                   <div className="w-10 h-10 rounded-full bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center text-pink-500"><Calendar className="w-5 h-5" /></div>
+                   <div>
+                       <p className="text-[10px] text-gray-500 font-bold uppercase">Born</p>
+                       <p className="text-sm font-semibold text-gray-900 dark:text-white">{profileUser.birthdate || 'N/A'}</p>
+                   </div>
+               </div>
+               
+               <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/40 dark:bg-white/5 border border-white/40 dark:border-white/10 backdrop-blur-sm">
+                   <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-500"><UsersIcon className="w-5 h-5" /></div>
+                   <div>
+                       <p className="text-[10px] text-gray-500 font-bold uppercase">Gender</p>
+                       <p className="text-sm font-semibold text-gray-900 dark:text-white">{profileUser.gender || 'N/A'}</p>
+                   </div>
+               </div>
+               
+               {isOwnProfile && (
+                   <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/40 dark:bg-white/5 border border-white/40 dark:border-white/10 backdrop-blur-sm">
+                       <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-500"><Mail className="w-5 h-5" /></div>
+                       <div>
+                           <p className="text-[10px] text-gray-500 font-bold uppercase">Email</p>
+                           <p className="text-sm font-semibold text-gray-900 dark:text-white break-all">{profileUser.email}</p>
+                       </div>
+                   </div>
+               )}
+            </div>
+         )}
+         
+         {!canViewDetails && !isEditing && (
+             <div className={`mt-8 text-center p-8 rounded-3xl border border-dashed border-gray-300 dark:border-gray-700 ${enableAnimations ? 'animate-slide-up-heavy' : ''}`}>
+                 <Lock className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                 <p className="text-sm text-gray-500 font-medium">This account is private.</p>
+                 <p className="text-xs text-gray-400">Follow to see their content.</p>
              </div>
-           )}
-        </div>
-      )}
-
-      {!isEditing && !canViewDetails && (
-        <div className={`mx-5 mt-4 p-12 text-center relative z-10 backdrop-blur-xl bg-white/60 dark:bg-white/5 rounded-[2.5rem] border border-white/50 dark:border-white/10 shadow-xl transform-gpu ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`} style={{ animationDelay: '600ms', animationFillMode: 'both' }}>
-            <div className="w-24 h-24 bg-gray-100 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-                <Lock className="w-10 h-10 text-gray-400 animate-bounce-soft" />
-            </div>
-            <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200">Private Profile</h3>
-            <p className="text-base text-gray-500 mt-2 max-w-[240px] mx-auto leading-relaxed">You must be friends with {profileUser.username} to see their details.</p>
-        </div>
-      )}
-
-      {isEditing && (
-        <div className="mx-5 mt-4 p-6 relative z-10 animate-slide-up-heavy backdrop-blur-2xl bg-white/90 dark:bg-dark-surface/90 rounded-[2.5rem] border border-white/50 dark:border-white/10 shadow-2xl">
-            <div className="space-y-6">
-              <div>
-                <label className="text-xs font-bold text-gray-500 uppercase ml-1 tracking-wider">Username</label>
-                <input 
-                    type="text" 
-                    value={username} 
-                    onChange={e => setUsername(e.target.value)} 
-                    className="w-full p-4 bg-white/50 dark:bg-black/30 rounded-xl border border-gray-200 dark:border-white/10 mt-2 font-medium focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                />
-              </div>
-              
-              <div>
-                <label className="text-xs font-bold text-gray-500 uppercase ml-1 tracking-wider">Bio {isAdminUser && "(Locked)"}</label>
-                <textarea 
-                    value={description} 
-                    onChange={e => setDescription(e.target.value)} 
-                    className="w-full p-4 bg-white/50 dark:bg-black/30 rounded-xl border border-gray-200 dark:border-white/10 mt-2 h-32 resize-none font-medium focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                    placeholder="Tell us about yourself..."
-                    disabled={isAdminUser} 
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase ml-1 tracking-wider">Birthdate</label>
-                  <input 
-                      type="date" 
-                      value={birthdate} 
-                      onChange={e => setBirthdate(e.target.value)} 
-                      className="w-full p-4 bg-white/50 dark:bg-black/30 rounded-xl border border-gray-200 dark:border-white/10 mt-2 font-medium outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase ml-1 tracking-wider">Gender</label>
-                  <select 
-                    value={gender} 
-                    onChange={e => setGender(e.target.value as Gender)}
-                    className="w-full p-4 bg-white/50 dark:bg-black/30 rounded-xl border border-gray-200 dark:border-white/10 mt-2 font-medium bg-transparent outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                  >
-                    {Object.values(Gender).map(g => <option key={g} value={g} className="text-black">{g}</option>)}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-4 mt-8">
-              <button 
-                onClick={() => setIsEditing(false)}
-                className="flex-1 py-4 rounded-2xl font-bold bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleSave}
-                className="flex-1 py-4 rounded-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all hover:shadow-blue-500/40"
-              >
-                <Save className="w-4 h-4" /> Save
-              </button>
-            </div>
-        </div>
-      )}
+         )}
+      </div>
     </div>
   );
 };

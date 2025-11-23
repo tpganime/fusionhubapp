@@ -22,7 +22,6 @@ export const SearchScreen: React.FC = () => {
 
   const isFriend = (userId: string) => currentUser?.friends.includes(userId);
   const isRequestSent = (user: any) => {
-      // Ensure we check against an array, defaulting to empty if undefined
       const reqs = user.requests || [];
       return reqs.includes(currentUser?.id);
   };
@@ -38,7 +37,7 @@ export const SearchScreen: React.FC = () => {
   };
 
   return (
-    <div className="h-full overflow-y-auto pb-32 no-scrollbar">
+    <div className="h-full overflow-y-auto pb-32 no-scrollbar gpu-accelerated">
       <TopBar />
       <main className="px-5 pt-2">
         <h1 className="text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white">Discover</h1>
@@ -72,8 +71,8 @@ export const SearchScreen: React.FC = () => {
               <div 
                 key={user.id} 
                 onClick={() => navigate(`/user/${user.id}`)}
-                className={`liquid-card p-4 flex items-center justify-between transition-all hover:bg-white/40 dark:hover:bg-white/10 cursor-pointer group hover:scale-[1.02] transform-gpu ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`}
-                style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'both' }}
+                className={`liquid-card p-4 flex items-center justify-between transition-all hover:bg-white/40 dark:hover:bg-white/10 cursor-pointer group hover:scale-[1.02] transform-gpu will-change-transform ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`}
+                style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'both' }}
               >
                 <div className="flex items-center space-x-4">
                   <div className="relative">

@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>FusionHub</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
         darkMode: 'class',
@@ -23,8 +23,8 @@
               blob: "blob 15s infinite alternate cubic-bezier(0.4, 0, 0.2, 1)",
               "fade-in": "fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) both",
               // Heavy fluid animations
-              "slide-up-heavy": "slideUpHeavy 1.2s cubic-bezier(0.22, 1, 0.36, 1) both",
-              "slide-down-heavy": "slideDownHeavy 1.2s cubic-bezier(0.22, 1, 0.36, 1) both",
+              "slide-up-heavy": "slideUpHeavy 1.0s cubic-bezier(0.2, 1, 0.2, 1) both",
+              "slide-down-heavy": "slideDownHeavy 1.0s cubic-bezier(0.2, 1, 0.2, 1) both",
               "pop-in-elastic": "popInElastic 1s cubic-bezier(0.34, 1.56, 0.64, 1) both",
               "zoom-pan": "zoomPan 20s ease-in-out infinite alternate",
               "pulse-slow": "pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
@@ -48,11 +48,11 @@
               },
               // Deeper translation for heavier feel
               slideUpHeavy: {
-                "0%": { opacity: "0", transform: "translate3d(0, 60px, 0) scale(0.96)" },
+                "0%": { opacity: "0", transform: "translate3d(0, 40px, 0) scale(0.98)" },
                 "100%": { opacity: "1", transform: "translate3d(0, 0, 0) scale(1)" },
               },
               slideDownHeavy: {
-                 "0%": { opacity: "0", transform: "translate3d(0, -60px, 0) scale(0.96)" },
+                 "0%": { opacity: "0", transform: "translate3d(0, -40px, 0) scale(0.98)" },
                  "100%": { opacity: "1", transform: "translate3d(0, 0, 0) scale(1)" },
               },
               popInElastic: {
@@ -161,7 +161,7 @@
       }
       
       .liquid-card:active {
-        transform: scale(0.96);
+        transform: scale(0.98);
       }
       
       .dark .liquid-card {
@@ -225,6 +225,7 @@
         transform: translate3d(0, 0, 0);
         backface-visibility: hidden;
         perspective: 1000px;
+        will-change: transform, opacity;
       }
     </style>
 <script type="importmap">

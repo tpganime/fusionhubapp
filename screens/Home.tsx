@@ -20,7 +20,7 @@ export const HomeScreen: React.FC = () => {
       const now = new Date();
       const options: Intl.DateTimeFormatOptions = { timeZone: 'Asia/Kolkata' };
       
-      const timeStr = now.toLocaleTimeString('en-IN', { ...options, hour: '2-digit', minute: '2-digit' });
+      const timeStr = now.toLocaleTimeString('en-IN', { ...options, hour: '2-digit', minute: '2-digit' }).toLowerCase();
       const dateStr = now.toLocaleDateString('en-IN', { ...options, weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
       
       const istString = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
@@ -48,14 +48,28 @@ export const HomeScreen: React.FC = () => {
     <div className="h-full overflow-y-auto pb-24 transition-colors duration-300 scrollbar-hide">
       <TopBar />
       <main className="px-6 pt-6">
-        {/* Greeting Section */}
-        <div className={`mb-8 ${enableAnimations ? 'animate-slide-in-right' : ''}`}>
-           <p className="text-gray-500 dark:text-gray-400 font-medium text-sm mb-1">{timeData.date}</p>
-           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
-             {timeData.greeting}, <br />
-             <span className="text-blue-600 dark:text-blue-400">{currentUser?.username}</span>
-           </h1>
-           <p className="text-xl font-medium text-gray-400 dark:text-gray-500 mt-2">{timeData.time}</p>
+        {/* Greeting Card */}
+        <div className={`relative overflow-hidden rounded-[2rem] p-6 bg-white dark:bg-dark-surface shadow-sm border border-white/50 dark:border-gray-800 mb-8 ${enableAnimations ? 'animate-slide-in-right' : ''}`}>
+           {/* Decorative Gradient Blob */}
+           <div className="absolute -top-10 -right-10 w-48 h-48 bg-gradient-to-br from-blue-100 via-purple-100 to-transparent dark:from-blue-900/30 dark:via-purple-900/30 dark:to-transparent rounded-full blur-3xl pointer-events-none"></div>
+
+           <div className="relative z-10">
+             <h2 className="text-xl font-bold text-gray-700 dark:text-gray-300">
+               {timeData.greeting},
+             </h2>
+             <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-6">
+               {currentUser?.username}
+             </h1>
+             
+             <div className="mt-4">
+                <p className="text-5xl font-light text-gray-800 dark:text-white tracking-tight">
+                  {timeData.time}
+                </p>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-2">
+                  {timeData.date}
+                </p>
+             </div>
+           </div>
         </div>
 
         {/* Shortcuts Grid */}

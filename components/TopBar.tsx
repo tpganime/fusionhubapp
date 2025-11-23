@@ -6,7 +6,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Notification } from '../types';
 
 export const TopBar: React.FC = () => {
-  const { currentUser, notifications, acceptFriendRequest, markNotificationRead, checkIsAdmin, checkIsOwner } = useApp();
+  const { currentUser, notifications, acceptFriendRequest, markNotificationRead, checkIsAdmin, checkIsOwner, enableAnimations } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
   const [showNotifs, setShowNotifs] = useState(false);
@@ -31,7 +31,7 @@ export const TopBar: React.FC = () => {
 
   return (
     <>
-      <div className="fixed top-4 left-4 right-4 h-16 px-5 flex items-center justify-between z-40 glass-panel shadow-lg">
+      <div className={`fixed top-4 left-4 right-4 h-16 px-5 flex items-center justify-between z-40 glass-panel shadow-lg ${enableAnimations ? 'animate-fade-in-up' : ''}`}>
         {/* Left Side: Brand with New SVG Logo */}
         <div className="flex items-center gap-3">
            <svg 
@@ -73,7 +73,7 @@ export const TopBar: React.FC = () => {
 
             {/* Notifications Dropdown - Liquid Style */}
             {showNotifs && (
-              <div className="absolute right-0 top-16 w-80 glass-panel p-2 z-50 overflow-hidden animate-fade-in">
+              <div className={`absolute right-0 top-16 w-80 glass-panel p-2 z-50 overflow-hidden ${enableAnimations ? 'animate-pop-in-elastic' : ''}`}>
                  <div className="px-3 py-2 border-b border-gray-200/50 dark:border-gray-700/50 flex justify-between items-center">
                     <h3 className="text-sm font-bold text-gray-800 dark:text-white">Notifications</h3>
                     <span className="text-[10px] bg-white/50 dark:bg-white/10 px-2 py-0.5 rounded-full">{unreadCount} New</span>
@@ -107,13 +107,13 @@ export const TopBar: React.FC = () => {
                                     <div className="flex gap-2 mt-2">
                                         <button 
                                             onClick={(e) => { e.stopPropagation(); handleAccept(n.data.requesterId, n.id); }}
-                                            className="flex-1 bg-blue-500 hover:bg-blue-600 text-white text-[10px] py-1.5 rounded-lg font-bold shadow-md"
+                                            className="flex-1 bg-blue-500 hover:bg-blue-600 text-white text-[10px] py-1.5 rounded-lg font-bold shadow-md active:scale-95 transition-transform"
                                         >
                                             Accept
                                         </button>
                                         <button 
                                             onClick={(e) => { e.stopPropagation(); markNotificationRead(n.id); }}
-                                            className="flex-1 bg-gray-200/50 dark:bg-gray-700/50 hover:bg-gray-200 text-gray-600 dark:text-gray-300 text-[10px] py-1.5 rounded-lg font-bold"
+                                            className="flex-1 bg-gray-200/50 dark:bg-gray-700/50 hover:bg-gray-200 text-gray-600 dark:text-gray-300 text-[10px] py-1.5 rounded-lg font-bold active:scale-95 transition-transform"
                                         >
                                             Ignore
                                         </button>
@@ -147,7 +147,7 @@ export const TopBar: React.FC = () => {
                 </div>
                 {/* Badges */}
                 {isOwnerUser && (
-                   <div className="absolute -bottom-1 -right-1 bg-yellow-400 rounded-full p-0.5 border border-white shadow-sm">
+                   <div className="absolute -bottom-1 -right-1 bg-yellow-400 rounded-full p-0.5 border border-white shadow-sm animate-bounce-soft">
                       <Crown className="w-3 h-3 text-white fill-white" />
                    </div>
                 )}

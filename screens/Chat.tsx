@@ -88,11 +88,11 @@ export const ChatScreen: React.FC = () => {
       <div className="h-full overflow-y-auto pb-32 no-scrollbar gpu-accelerated">
         <TopBar />
         <main className="px-5 pt-2">
-          <h1 className="text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white">Messages</h1>
+          <h1 className={`text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white ${enableAnimations ? 'animate-fade-in-up' : ''}`}>Messages</h1>
           
           <div className="space-y-3">
             {chatUsers.length === 0 ? (
-              <div className="text-center py-10 opacity-50">
+              <div className={`text-center py-10 opacity-50 ${enableAnimations ? 'animate-fade-in' : ''}`}>
                 <p>No active chats.</p>
               </div>
             ) : (
@@ -154,11 +154,11 @@ export const ChatScreen: React.FC = () => {
             onClick={() => navigate(`/user/${selectedUser.id}`)}
             className="flex items-center gap-3 hover:opacity-80 transition-opacity"
             >
-            <div className="relative">
+            <div className={`relative ${enableAnimations ? 'animate-scale-up' : ''}`}>
                 <img src={selectedUser.avatar} alt="avatar" className={`w-10 h-10 rounded-full object-cover border ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-white/50'}`} />
                 {isSelectedUserOnline && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border border-white dark:border-gray-800 shadow-sm animate-pulse"></span>}
             </div>
-            <div className="flex flex-col items-start">
+            <div className={`flex flex-col items-start ${enableAnimations ? 'animate-fade-in-up' : ''}`}>
                 <span className="font-bold text-gray-900 dark:text-white text-sm flex items-center gap-1">
                     {selectedUser.name || selectedUser.username}
                     {isOwnerUser ? <Crown className="w-3 h-3 text-yellow-500 fill-yellow-500" /> : isAdminUser ? <ShieldCheck className="w-3 h-3 text-blue-500" /> : null}
@@ -171,23 +171,24 @@ export const ChatScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Message List with increased bottom padding for input visibility */}
+      {/* Message List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-2 pb-40 pt-24 no-scrollbar">
         {conversation.length === 0 ? (
-           <div className="text-center mt-20 opacity-50">
+           <div className={`text-center mt-20 opacity-50 ${enableAnimations ? 'animate-pop-in-elastic' : ''}`}>
              <div className="w-20 h-20 bg-white/30 rounded-full mx-auto mb-3 flex items-center justify-center text-3xl">👋</div>
              <p className="text-sm text-gray-500 dark:text-gray-400">Say hello to {selectedUser.username}!</p>
            </div>
         ) : (
            conversation.map((msg, idx) => {
              const isMe = msg.senderId === currentUser?.id;
-             const shouldAnimate = enableAnimations && idx >= conversation.length - 10;
+             // Animate only the last few messages or all if initial load
+             const shouldAnimate = enableAnimations && idx >= conversation.length - 15;
              
              return (
                <div 
                   key={msg.id} 
-                  className={`flex ${isMe ? 'justify-end' : 'justify-start'} transform-gpu will-change-transform ${shouldAnimate ? 'animate-slide-up-heavy' : ''}`} 
-                  style={{ animationDelay: shouldAnimate ? `${(idx - (conversation.length - 10)) * 50}ms` : '0s', animationFillMode: 'both' }}
+                  className={`flex ${isMe ? 'justify-end' : 'justify-start'} transform-gpu will-change-transform ${shouldAnimate ? 'animate-slide-up-heavy opacity-0' : ''}`} 
+                  style={{ animationDelay: shouldAnimate ? `${(idx - (conversation.length - 15)) * 30}ms` : '0s', animationFillMode: 'both' }}
                 >
                  <div className={`max-w-[80%] px-5 py-3 text-sm backdrop-blur-md shadow-sm border ${
                    isMe 
@@ -211,8 +212,8 @@ export const ChatScreen: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area - Fixed Z-Index and Removed liquid-card class from form to prevent active scale issues */}
-      <div className="fixed bottom-24 left-0 right-0 px-4 z-[70] pointer-events-none">
+      {/* Input Area */}
+      <div className={`fixed bottom-24 left-0 right-0 px-4 z-[70] pointer-events-none ${enableAnimations ? 'animate-fade-in-up' : ''}`}>
         <form 
           onSubmit={handleSend} 
           className="pointer-events-auto flex items-center gap-2 p-1.5 shadow-2xl sm:max-w-md sm:mx-auto bg-white/40 dark:bg-black/40 backdrop-blur-xl border border-white/30 dark:border-white/10 rounded-[2rem]"
@@ -228,7 +229,7 @@ export const ChatScreen: React.FC = () => {
           <button 
             type="submit" 
             disabled={!inputText.trim()} 
-            className="p-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full text-white shadow-lg disabled:opacity-50 transition-all hover:scale-105 active:scale-95"
+            className="p-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full text-white shadow-lg disabled:opacity-50 transition-all hover:scale-110 active:scale-95"
           >
             <Send className="w-5 h-5 ml-0.5" />
           </button>

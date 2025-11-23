@@ -40,22 +40,22 @@ export const SearchScreen: React.FC = () => {
     <div className="h-full overflow-y-auto pb-32 no-scrollbar gpu-accelerated">
       <TopBar />
       <main className="px-5 pt-2">
-        <h1 className="text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white">Discover</h1>
+        <h1 className={`text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white ${enableAnimations ? 'animate-fade-in-up' : ''}`}>Discover</h1>
         
-        <div className={`relative mb-6 transform-gpu ${enableAnimations ? 'animate-fade-in' : ''}`}>
+        <div className={`relative mb-6 transform-gpu ${enableAnimations ? 'animate-fade-in-up' : ''}`} style={{ animationDelay: '100ms' }}>
           <SearchIcon className="absolute left-5 top-4 text-gray-500 w-5 h-5 z-10" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search people..."
-            className="w-full pl-14 pr-4 py-4 liquid-input text-gray-900 dark:text-white placeholder-gray-500 font-medium shadow-sm"
+            className="w-full pl-14 pr-4 py-4 liquid-input text-gray-900 dark:text-white placeholder-gray-500 font-medium shadow-sm transition-all focus:scale-[1.02]"
           />
         </div>
 
         <div className="space-y-3">
           {query && filteredUsers.length === 0 && (
-            <div className="text-center py-10 opacity-50">
+            <div className={`text-center py-10 opacity-50 ${enableAnimations ? 'animate-fade-in' : ''}`}>
                 <p>No users found.</p>
             </div>
           )}
@@ -71,8 +71,8 @@ export const SearchScreen: React.FC = () => {
               <div 
                 key={user.id} 
                 onClick={() => navigate(`/user/${user.id}`)}
-                className={`liquid-card p-4 flex items-center justify-between transition-all hover:bg-white/40 dark:hover:bg-white/10 cursor-pointer group hover:scale-[1.02] transform-gpu will-change-transform ${enableAnimations ? 'animate-slide-up-heavy' : ''}`}
-                style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'both' }}
+                className={`liquid-card p-4 flex items-center justify-between transition-all hover:bg-white/40 dark:hover:bg-white/10 cursor-pointer group hover:scale-[1.02] transform-gpu will-change-transform ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`}
+                style={{ animationDelay: `${200 + (index * 60)}ms`, animationFillMode: 'both' }}
               >
                 <div className="flex items-center space-x-4">
                   <div className="relative">
@@ -103,7 +103,7 @@ export const SearchScreen: React.FC = () => {
                   {canMessage && (
                     <button
                       onClick={(e) => handleMessage(e, user)}
-                      className="p-2.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-colors border border-blue-500/20"
+                      className="p-2.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-colors border border-blue-500/20 active:scale-95"
                     >
                       <MessageCircle className="w-5 h-5" />
                     </button>
@@ -115,7 +115,7 @@ export const SearchScreen: React.FC = () => {
                     <button 
                       onClick={(e) => handleRequest(e, user.id)}
                       disabled={requested}
-                      className={`p-2.5 rounded-full transition-colors border ${requested ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 border-transparent' : 'bg-gray-100/50 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-white/50 border-gray-200 dark:border-gray-700'}`}
+                      className={`p-2.5 rounded-full transition-colors border active:scale-95 ${requested ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 border-transparent' : 'bg-gray-100/50 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-white/50 border-gray-200 dark:border-gray-700'}`}
                     >
                       {requested ? <Check className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
                     </button>

@@ -188,7 +188,7 @@ export const ProfileScreen: React.FC = () => {
   const displayDescription = (profileUser.description && profileUser.description.startsWith('{')) ? "Admin Account" : profileUser.description;
 
   return (
-    <div className="h-full overflow-y-auto pb-32 no-scrollbar relative gpu-accelerated bg-white dark:bg-black">
+    <div className={`h-full overflow-y-auto pb-32 no-scrollbar relative gpu-accelerated bg-white dark:bg-black ${enableAnimations ? 'animate-fade-in' : ''}`}>
       
       {/* Full Screen Avatar Modal */}
       {showFullAvatar && (
@@ -223,7 +223,7 @@ export const ProfileScreen: React.FC = () => {
       )}
 
       {/* Header Area */}
-      <div className="fixed top-0 left-0 right-0 h-14 bg-white/90 dark:bg-black/90 backdrop-blur-md z-40 flex items-center justify-between px-4 sm:max-w-md sm:mx-auto border-b border-gray-100 dark:border-gray-800">
+      <div className="fixed top-0 left-0 right-0 h-14 bg-white/90 dark:bg-black/90 backdrop-blur-md z-40 flex items-center justify-between px-4 sm:max-w-md sm:mx-auto border-b border-gray-100 dark:border-gray-800 transition-all duration-300">
           <div className="flex items-center gap-1">
              {isOwnProfile && (
                  <div className="flex items-center gap-1">
@@ -250,10 +250,10 @@ export const ProfileScreen: React.FC = () => {
           <div className="flex items-center gap-4">
               {isOwnProfile ? (
                  <>
-                    <button className="text-gray-900 dark:text-white hover:opacity-70"><Settings className="w-6 h-6" onClick={() => navigate('/settings')}/></button>
+                    <button className="text-gray-900 dark:text-white hover:opacity-70 transition-transform active:scale-95"><Settings className="w-6 h-6" onClick={() => navigate('/settings')}/></button>
                  </>
               ) : (
-                  <button className="text-gray-900 dark:text-white hover:opacity-70"><AlignJustify className="w-6 h-6" /></button>
+                  <button className="text-gray-900 dark:text-white hover:opacity-70 transition-transform active:scale-95"><AlignJustify className="w-6 h-6" /></button>
               )}
           </div>
       </div>
@@ -288,7 +288,7 @@ export const ProfileScreen: React.FC = () => {
 
             {/* Time Spent - Right Side of Avatar (Only Own Profile) */}
             {isOwnProfile && !isEditing && (
-                <div className="flex flex-col justify-center pl-2 border-l border-gray-200 dark:border-gray-800 h-16">
+                <div className={`flex flex-col justify-center pl-2 border-l border-gray-200 dark:border-gray-800 h-16 ${enableAnimations ? 'animate-slide-in-right' : ''}`} style={{ animationDelay: '100ms' }}>
                     <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wide mb-1">Total Active Time</span>
                     <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
                         <Activity className="w-4 h-4" />
@@ -299,7 +299,7 @@ export const ProfileScreen: React.FC = () => {
          </div>
 
          {/* Bio Section - Below Avatar */}
-         <div className={`mb-4 ${enableAnimations ? 'animate-slide-up-heavy' : ''}`} style={{ animationDelay: '150ms' }}>
+         <div className={`mb-4 ${enableAnimations ? 'animate-slide-up-heavy' : ''}`} style={{ animationDelay: '200ms' }}>
             <div className="flex flex-col items-start">
                <div className="flex items-center gap-1">
                   <span className="font-bold text-sm text-gray-900 dark:text-white italic">{profileUser.name || profileUser.username}</span>
@@ -327,12 +327,12 @@ export const ProfileScreen: React.FC = () => {
 
          {/* Action Buttons */}
          {!isEditing && (
-            <div className={`flex gap-2 mb-6 ${enableAnimations ? 'animate-slide-up-heavy' : ''}`} style={{ animationDelay: '200ms' }}>
+            <div className={`flex gap-2 mb-6 ${enableAnimations ? 'animate-slide-up-heavy' : ''}`} style={{ animationDelay: '300ms' }}>
                 {isOwnProfile ? (
                     <>
                       <button 
                         onClick={() => setIsEditing(true)}
-                        className="flex-1 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-semibold text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        className="flex-1 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-semibold text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors active:scale-95"
                       >
                         Edit Profile
                       </button>
@@ -340,14 +340,14 @@ export const ProfileScreen: React.FC = () => {
                 ) : (
                     <>
                          {isFriend ? (
-                            <button className="flex-1 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-semibold text-sm">
+                            <button className="flex-1 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-semibold text-sm cursor-default">
                                 Following
                             </button>
                          ) : (
                             <button 
                                 onClick={() => sendFriendRequest(profileUser.id)}
                                 disabled={isRequested}
-                                className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-colors ${isRequested ? 'bg-gray-100 dark:bg-gray-800 text-gray-500' : 'bg-blue-500 text-white shadow-md hover:bg-blue-600'}`}
+                                className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all active:scale-95 ${isRequested ? 'bg-gray-100 dark:bg-gray-800 text-gray-500' : 'bg-blue-500 text-white shadow-md hover:bg-blue-600'}`}
                             >
                                 {isRequested ? 'Requested' : 'Follow'}
                             </button>
@@ -355,7 +355,7 @@ export const ProfileScreen: React.FC = () => {
                          <button 
                              onClick={() => navigate('/chat', { state: { targetUser: profileUser } })}
                              disabled={(!canViewDetails && !profileUser.allowPrivateChat)}
-                             className="flex-1 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-semibold text-sm hover:bg-gray-200 transition-colors"
+                             className="flex-1 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-semibold text-sm hover:bg-gray-200 transition-colors active:scale-95"
                          >
                              Message
                          </button>
@@ -374,7 +374,7 @@ export const ProfileScreen: React.FC = () => {
                         type="text" 
                         value={name} 
                         onChange={e => setName(e.target.value)} 
-                        className="w-full p-2 bg-white dark:bg-black rounded-lg border border-gray-200 dark:border-gray-700 mt-1 focus:border-blue-500 outline-none text-gray-900 dark:text-white"
+                        className="w-full p-2 bg-white dark:bg-black rounded-lg border border-gray-200 dark:border-gray-700 mt-1 focus:border-blue-500 outline-none text-gray-900 dark:text-white transition-shadow focus:shadow-md"
                     />
                   </div>
                   <div>
@@ -383,7 +383,7 @@ export const ProfileScreen: React.FC = () => {
                         type="text" 
                         value={username} 
                         onChange={e => setUsername(e.target.value)} 
-                        className="w-full p-2 bg-white dark:bg-black rounded-lg border border-gray-200 dark:border-gray-700 mt-1 focus:border-blue-500 outline-none text-gray-900 dark:text-white"
+                        className="w-full p-2 bg-white dark:bg-black rounded-lg border border-gray-200 dark:border-gray-700 mt-1 focus:border-blue-500 outline-none text-gray-900 dark:text-white transition-shadow focus:shadow-md"
                     />
                   </div>
                   <div>
@@ -391,13 +391,13 @@ export const ProfileScreen: React.FC = () => {
                     <textarea 
                         value={description} 
                         onChange={e => setDescription(e.target.value)} 
-                        className="w-full p-2 bg-white dark:bg-black rounded-lg border border-gray-200 dark:border-gray-700 mt-1 h-20 resize-none focus:border-blue-500 outline-none text-gray-900 dark:text-white"
+                        className="w-full p-2 bg-white dark:bg-black rounded-lg border border-gray-200 dark:border-gray-700 mt-1 h-20 resize-none focus:border-blue-500 outline-none text-gray-900 dark:text-white transition-shadow focus:shadow-md"
                         placeholder="Write something..."
                     />
                   </div>
                   <div className="flex gap-4">
                      <button onClick={() => setIsEditing(false)} className="flex-1 py-2 text-sm font-bold text-gray-500">Cancel</button>
-                     <button onClick={handleSave} className="flex-1 py-2 text-sm font-bold bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600">Save Changes</button>
+                     <button onClick={handleSave} className="flex-1 py-2 text-sm font-bold bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600 active:scale-95 transition-all">Save Changes</button>
                   </div>
                 </div>
             </div>
@@ -405,8 +405,8 @@ export const ProfileScreen: React.FC = () => {
          
          {/* Private Account Lock */}
          {!canViewDetails && !isEditing && (
-             <div className="mt-12 text-center p-10 border-t border-gray-100 dark:border-gray-800">
-                 <div className="w-16 h-16 rounded-full border-2 border-gray-800 dark:border-gray-200 flex items-center justify-center mx-auto mb-4">
+             <div className={`mt-12 text-center p-10 border-t border-gray-100 dark:border-gray-800 ${enableAnimations ? 'animate-fade-in-up' : ''}`} style={{ animationDelay: '400ms' }}>
+                 <div className="w-16 h-16 rounded-full border-2 border-gray-800 dark:border-gray-200 flex items-center justify-center mx-auto mb-4 animate-bounce-soft">
                      <Lock className="w-8 h-8 text-gray-800 dark:text-gray-200" />
                  </div>
                  <h3 className="font-bold text-gray-900 dark:text-white">This account is private</h3>

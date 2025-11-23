@@ -45,3 +45,15 @@ export interface Notification {
   timestamp: number;
   data?: any;
 }
+
+export interface AppConfig {
+  features: {
+    home: boolean;
+    chat: boolean;
+    search: boolean;
+    profile: boolean;
+    shortcuts: {
+      [key: string]: boolean;
+    };
+  };
+}

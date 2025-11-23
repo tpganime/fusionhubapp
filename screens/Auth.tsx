@@ -53,7 +53,7 @@ export const AuthScreen: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-        await loginWithCredentials(email, password);
+        await loginWithCredentials(email.trim(), password);
         navigate('/home');
     } catch (err: any) {
         setError(err.message || 'Invalid email or password');
@@ -72,7 +72,7 @@ export const AuthScreen: React.FC = () => {
         return;
     }
     
-    if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+    if (users.some(u => u.email.toLowerCase() === email.trim().toLowerCase())) {
         setError('Email already registered');
         return;
     }
@@ -84,7 +84,7 @@ export const AuthScreen: React.FC = () => {
           id: generateUUID(), // Use standard UUID for DB compatibility
           username,
           password,
-          email,
+          email: email.trim(),
           avatar: `https://picsum.photos/200?random=${Date.now()}`,
           isPrivateProfile: false,
           allowPrivateChat: true,

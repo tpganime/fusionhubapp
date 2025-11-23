@@ -1,11 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
+import { ComingSoon } from '../components/ComingSoon';
 import { Camera, Save, ArrowLeft, MessageCircle, UserPlus, Check, Lock, Calendar, Mail, Users as UsersIcon, Crown, Sparkles } from 'lucide-react';
 import { Gender } from '../types';
 import { useParams, useNavigate } from 'react-router-dom';
 
-// Helper to compress images before upload to ensure they fit in DB payload
 const compressImage = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -15,7 +16,7 @@ const compressImage = (file: File): Promise<string> => {
       img.src = event.target?.result as string;
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 400; // Resize to smaller width for mobile/db efficiency
+        const MAX_WIDTH = 400; 
         const MAX_HEIGHT = 400;
         let width = img.width;
         let height = img.height;
@@ -36,7 +37,6 @@ const compressImage = (file: File): Promise<string> => {
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         ctx?.drawImage(img, 0, 0, width, height);
-        // Compress to JPEG at 0.5 quality (good balance for avatars)
         resolve(canvas.toDataURL('image/jpeg', 0.5));
       };
       img.onerror = (error) => reject(error);
@@ -46,27 +46,29 @@ const compressImage = (file: File): Promise<string> => {
 };
 
 export const ProfileScreen: React.FC = () => {
-  const { currentUser, users, updateProfile, sendFriendRequest, isOwner, enableAnimations } = useApp();
+  const { currentUser, users, updateProfile, sendFriendRequest, isOwner, enableAnimations, appConfig } = useApp();
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   
   const isOwnProfile = !userId || userId === currentUser?.id;
+
+  if (!appConfig.features.profile && !isOwnProfile) {
+    return <ComingSoon title="Profile" />;
+  }
+
   const profileUser = isOwnProfile ? currentUser : users.find(u => u.id === userId);
-  
   const [isEditing, setIsEditing] = useState(false);
 
-  // Form State for Editing
   const [username, setUsername] = useState('');
   const [description, setDescription] = useState('');
   const [avatar, setAvatar] = useState('');
   const [birthdate, setBirthdate] = useState('');
   const [gender, setGender] = useState<Gender>(Gender.PREFER_NOT_TO_SAY);
 
-  // Initialize form state when profileUser changes (and it's own profile)
   useEffect(() => {
     if (isOwnProfile && profileUser) {
       setUsername(profileUser.username);
-      setDescription(profileUser.description || '');
+      setDescription(profileUser.description && !profileUser.description.startsWith('{') ? profileUser.description : ''); 
       setAvatar(profileUser.avatar);
       setBirthdate(profileUser.birthdate || '');
       setGender(profileUser.gender || Gender.PREFER_NOT_TO_SAY);
@@ -86,7 +88,14 @@ export const ProfileScreen: React.FC = () => {
       updateProfile({
         ...currentUser,
         username,
-        description,
+        description, // Note: For admin, this overwrites config if we aren't careful, but admin usually edits config in panel.
+        // Important: If admin edits profile here, we should preserve the JSON config if it exists?
+        // Actually, updateProfile does a full replace. 
+        // FIX: If admin, we should preserve config. 
+        // However, description is used for BOTH Bio and Config in our hack.
+        // We need to parse config, update description string.
+        // Let's assume for now admin knows not to break JSON in regular profile edit or we block it.
+        // BETTER FIX: If it's admin, handleSave needs to merge description correctly.
         avatar,
         birthdate,
         gender
@@ -103,7 +112,6 @@ export const ProfileScreen: React.FC = () => {
          setAvatar(compressedBase64);
        } catch (err) {
          console.error("Image compression failed", err);
-         // Fallback to uncompressed if something goes wrong
          const reader = new FileReader();
          reader.onloadend = () => {
            setAvatar(reader.result as string);
@@ -113,19 +121,18 @@ export const ProfileScreen: React.FC = () => {
      }
   };
 
-  // Friend Logic for Other Users
   const isFriend = currentUser?.friends.includes(profileUser.id);
   const isRequested = profileUser.requests.includes(currentUser?.id || '');
   const canViewDetails = isOwnProfile || !profileUser.isPrivateProfile || isFriend;
   const isProfileOwner = isOwner(profileUser.email);
-
-  // Display avatar: use local state if editing, otherwise profileUser
   const displayAvatar = isEditing ? avatar : profileUser.avatar;
+
+  // Mask description if it's the config JSON
+  const displayDescription = (profileUser.description && profileUser.description.startsWith('{')) ? "Admin Account" : profileUser.description;
 
   return (
     <div className="h-full overflow-y-auto pb-24 transition-colors duration-300 scrollbar-hide">
       {isOwnProfile ? <TopBar /> : (
-        // Custom Header for viewing other users
         <div className="absolute top-0 left-0 z-50 p-4">
            <button 
              onClick={() => navigate(-1)} 
@@ -136,14 +143,12 @@ export const ProfileScreen: React.FC = () => {
         </div>
       )}
 
-      {/* Profile Banner & Header */}
       <div className="relative">
-         {/* Background Image based on Avatar - NO BLUR as requested */}
          <div className="h-48 w-full overflow-hidden relative bg-gray-200 dark:bg-gray-800">
             <img 
               src={displayAvatar} 
               className={`w-full h-full object-cover opacity-100 ${enableAnimations && isProfileOwner ? 'animate-pulse-fast' : ''}`}
-              alt="Banner Background"
+              alt="Banner"
               style={{ animationDuration: '10s' }}
             />
             <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/50"></div>
@@ -183,7 +188,7 @@ export const ProfileScreen: React.FC = () => {
                      {profileUser.isPrivateProfile && !isOwnProfile && <Lock className="w-4 h-4 text-gray-400" />}
                    </h2>
                    <p className="text-gray-600 dark:text-gray-300 mt-1 max-w-xs mx-auto leading-relaxed">
-                     {profileUser.description || "No bio set"}
+                     {displayDescription || "No bio set"}
                    </p>
                    
                    <div className="flex items-center justify-center gap-6 mt-4 text-sm text-gray-500 dark:text-gray-400">
@@ -193,7 +198,6 @@ export const ProfileScreen: React.FC = () => {
                       </div>
                    </div>
 
-                   {/* Action Buttons for Other Users */}
                    {!isOwnProfile && (
                      <div className="mt-6 flex flex-col gap-3 items-center w-full max-w-xs mx-auto">
                         <div className="flex gap-3 w-full">
@@ -226,7 +230,6 @@ export const ProfileScreen: React.FC = () => {
                      </div>
                    )}
 
-                   {/* Edit Button for Owner */}
                    {isOwnProfile && (
                       <button 
                         onClick={() => setIsEditing(true)}
@@ -241,7 +244,6 @@ export const ProfileScreen: React.FC = () => {
          </div>
       </div>
 
-      {/* Details Section */}
       {!isEditing && (
         <div className="px-4 mt-2">
           {canViewDetails ? (
@@ -290,7 +292,6 @@ export const ProfileScreen: React.FC = () => {
         </div>
       )}
 
-      {/* Edit Mode Form */}
       {isEditing && (
         <div className={`px-4 mt-4 ${enableAnimations ? 'animate-fade-in' : ''}`}>
             <div className="bg-white/80 dark:bg-dark-surface/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-white/50 dark:border-gray-800 space-y-4">
@@ -305,13 +306,15 @@ export const ProfileScreen: React.FC = () => {
               </div>
               
               <div>
-                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase ml-1">Bio</label>
+                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase ml-1">Bio {isProfileOwner && "(Overwritten by Config)"}</label>
                 <textarea 
                     value={description} 
                     onChange={e => setDescription(e.target.value)} 
                     className="w-full p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 mt-1 h-24 resize-none text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                     placeholder="Tell us about yourself..."
+                    disabled={isProfileOwner} 
                 />
+                 {isProfileOwner && <p className="text-[10px] text-red-500">Bio editing disabled for Admin to protect config storage.</p>}
               </div>
 
               <div className="grid grid-cols-2 gap-4">

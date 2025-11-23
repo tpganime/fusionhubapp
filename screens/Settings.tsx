@@ -1,11 +1,12 @@
+
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lock, Eye, Trash2, LogOut, Shield, ChevronRight, Moon, Sun, Zap } from 'lucide-react';
+import { ArrowLeft, Lock, Eye, Trash2, LogOut, Shield, ChevronRight, Moon, Sun, Zap, LayoutDashboard } from 'lucide-react';
 import { PRIVACY_POLICY_TEXT } from '../constants';
 
 export const SettingsScreen: React.FC = () => {
-  const { currentUser, updateProfile, logout, deleteAccount, theme, toggleTheme, enableAnimations, toggleAnimations } = useApp();
+  const { currentUser, updateProfile, logout, deleteAccount, theme, toggleTheme, enableAnimations, toggleAnimations, isAdmin } = useApp();
   const navigate = useNavigate();
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
 
@@ -58,6 +59,22 @@ export const SettingsScreen: React.FC = () => {
 
       <main className="p-4 space-y-6 max-w-md mx-auto pb-24">
         
+        {/* Admin Section */}
+        {isAdmin && (
+          <section>
+            <h3 className="text-xs font-bold text-gray-400 uppercase mb-2 ml-3">Admin</h3>
+            <div className="bg-white/70 dark:bg-dark-surface rounded-2xl shadow-sm border border-white/50 dark:border-gray-800 overflow-hidden">
+               <button onClick={() => navigate('/admin')} className="w-full p-4 flex items-center justify-between hover:bg-white/80 dark:hover:bg-white/5 transition-colors group">
+                 <div className="flex items-center gap-3">
+                   <div className="p-2 bg-gradient-to-r from-red-500 to-orange-500 rounded-lg text-white shadow-md group-hover:scale-110 transition-transform"><LayoutDashboard className="w-5 h-5" /></div>
+                   <span className="font-bold text-gray-900 dark:text-white">Admin Panel</span>
+                 </div>
+                 <ChevronRight className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+          </section>
+        )}
+
         {/* Appearance */}
         <section>
           <h3 className="text-xs font-bold text-gray-400 uppercase mb-2 ml-3">Appearance</h3>
@@ -153,7 +170,7 @@ export const SettingsScreen: React.FC = () => {
           </div>
         </section>
 
-        <p className="text-center text-xs text-gray-400 mt-8">FusionHub v1.4.0</p>
+        <p className="text-center text-xs text-gray-400 mt-8">FusionHub v1.5.0</p>
 
       </main>
     </div>

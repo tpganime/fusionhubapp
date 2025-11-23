@@ -1,6 +1,8 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
-import { User, Message, Notification as AppNotification, Gender } from '../types';
+import { User, Message, Notification as AppNotification, Gender, AppConfig } from '../types';
 import { supabase } from '../lib/supabase';
+import { ADMIN_EMAIL, DEFAULT_CONFIG, BROADCAST_ID } from '../constants';
 
 interface AppContextType {
   currentUser: User | null;
@@ -10,6 +12,9 @@ interface AppContextType {
   theme: 'light' | 'dark';
   isLoading: boolean;
   enableAnimations: boolean;
+  showPermissionPrompt: boolean;
+  appConfig: AppConfig;
+  isAdmin: boolean;
   login: (user: User) => Promise<void>;
   loginWithCredentials: (email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -17,6 +22,7 @@ interface AppContextType {
   updateProfile: (updatedUser: User) => Promise<void>;
   deleteAccount: () => Promise<void>;
   sendMessage: (receiverId: string, content: string) => Promise<void>;
+  broadcastMessage: (content: string) => Promise<void>;
   sendFriendRequest: (targetUserId: string) => Promise<void>;
   acceptFriendRequest: (requesterId: string) => Promise<void>;
   markNotificationRead: (id: string) => void;
@@ -24,6 +30,9 @@ interface AppContextType {
   toggleAnimations: () => void;
   markConversationAsRead: (senderId: string) => void;
   isOwner: (email: string) => boolean;
+  enableNotifications: () => Promise<void>;
+  closePermissionPrompt: () => void;
+  updateAppConfig: (newConfig: AppConfig) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -36,11 +45,8 @@ const STORAGE_KEYS = {
   CACHE_MESSAGES: 'fh_cache_messages_v1'
 };
 
-const OWNER_EMAIL = 'chaudharytanmay664@gmail.com';
+const NOTIFICATION_SOUND_URL = 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3';
 
-// -- Helpers --
-
-// Robust UUID generator that works in all environments
 const generateUUID = () => {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
@@ -99,7 +105,6 @@ const mapUserToDB = (user: User) => ({
 
 const mapMessageFromDB = (dbMsg: any): Message => {
   const ts = Number(dbMsg.timestamp);
-  // Handle both numeric timestamps (bigint) and ISO strings (timestamptz)
   const finalTs = isNaN(ts) ? new Date(dbMsg.timestamp).getTime() : ts;
   
   return {
@@ -107,7 +112,7 @@ const mapMessageFromDB = (dbMsg: any): Message => {
     senderId: dbMsg.sender_id,
     receiverId: dbMsg.receiver_id,
     content: dbMsg.content,
-    timestamp: isNaN(finalTs) ? Date.now() : finalTs, // Fallback to now if parsing fails completely
+    timestamp: isNaN(finalTs) ? Date.now() : finalTs,
     read: !!dbMsg.read
   };
 };
@@ -129,10 +134,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [isLoading, setIsLoading] = useState(true);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [enableAnimations, setEnableAnimations] = useState(true);
+  const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
+  const [appConfig, setAppConfig] = useState<AppConfig>(DEFAULT_CONFIG);
 
-  // Refs to access state inside subscription callbacks
   const currentUserRef = useRef<User | null>(null);
   const usersRef = useRef<User[]>([]);
+
+  const isAdmin = currentUser?.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
 
   useEffect(() => {
     currentUserRef.current = currentUser;
@@ -142,7 +150,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     usersRef.current = users;
   }, [users]);
 
-  // Cache persistence - Update LocalStorage when state changes
   useEffect(() => {
     if (users.length > 0) {
       localStorage.setItem(STORAGE_KEYS.CACHE_USERS, JSON.stringify(users));
@@ -155,7 +162,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [messages]);
 
-  // Apply Theme
   useEffect(() => {
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
@@ -165,21 +171,60 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     localStorage.setItem(STORAGE_KEYS.THEME, theme);
   }, [theme]);
 
-  // Notification Helper (Sound Removed)
+  // -- Config Management --
+  // We use the Admin User's description field to store the global app config JSON.
+  // This is a workaround to enable remote configuration without creating new DB tables.
+  const syncConfigFromUsers = (userList: User[]) => {
+    const adminUser = userList.find(u => u.email.toLowerCase() === ADMIN_EMAIL.toLowerCase());
+    if (adminUser && adminUser.description && adminUser.description.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(adminUser.description);
+        // Validate minimal structure
+        if (parsed.features) {
+          setAppConfig(prev => ({ ...prev, ...parsed }));
+        }
+      } catch (e) {
+        console.error("Failed to parse app config from admin profile", e);
+      }
+    }
+  };
+
+  const updateAppConfig = async (newConfig: AppConfig) => {
+    if (!isAdmin || !currentUser) return;
+    
+    // Optimistic update
+    setAppConfig(newConfig);
+
+    const configString = JSON.stringify(newConfig);
+    const updatedUser = { ...currentUser, description: configString };
+    
+    await updateProfile(updatedUser);
+  };
+
+  const playNotificationSound = () => {
+    try {
+      const audio = new Audio(NOTIFICATION_SOUND_URL);
+      audio.volume = 0.5;
+      audio.play().catch(e => console.log("Audio play failed", e));
+    } catch (e) {
+      console.error("Audio error", e);
+    }
+  };
+
   const triggerNotification = (title: string, body: string, icon?: string) => {
     const isHidden = document.hidden;
-    // Access global Notification object safely using a type assertion or window property
     const N = window.Notification as any; 
     const hasPermission = "Notification" in window && N.permission === "granted";
 
+    playNotificationSound();
+
     if (isHidden && hasPermission) {
-      // Background: Use system notification logic, but silent
       try {
         new N(title, {
           body,
           icon: icon || '/favicon.ico',
           badge: '/favicon.ico',
-          silent: true 
+          silent: true
         });
       } catch (e) {
         console.error("System notification error:", e);
@@ -187,17 +232,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
-  const requestNotificationPermission = async () => {
-    if ("Notification" in window && window.Notification.permission !== "granted") {
-      await window.Notification.requestPermission();
-    }
-  };
-
-  // Load Initial Data
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // --- 0. CACHE LOADING (Fast Load) ---
         const cachedUsersStr = localStorage.getItem(STORAGE_KEYS.CACHE_USERS);
         const cachedMessagesStr = localStorage.getItem(STORAGE_KEYS.CACHE_MESSAGES);
         const savedId = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
@@ -207,7 +244,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (cachedUsersStr) {
           try {
             cachedUsersList = JSON.parse(cachedUsersStr);
-            if (cachedUsersList.length > 0) setUsers(cachedUsersList);
+            if (cachedUsersList.length > 0) {
+                setUsers(cachedUsersList);
+                syncConfigFromUsers(cachedUsersList);
+            }
           } catch (e) { console.error("Cache parse error users", e); }
         }
 
@@ -218,43 +258,38 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           } catch (e) { console.error("Cache parse error msgs", e); }
         }
 
-        // Instant Login if cached
         if (savedId && cachedUsersList.length > 0) {
             const found = cachedUsersList.find(u => u.id === savedId);
             if (found) {
                 setCurrentUser(found);
-                setIsLoading(false); // STOP LOADING IMMEDIATELY IF CACHE HIT
-                requestNotificationPermission();
+                setIsLoading(false);
+                checkPermissionStatus();
             }
         }
 
-        // --- Load Settings ---
         const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME) as 'light' | 'dark';
         if (savedTheme) setTheme(savedTheme);
 
         const savedAnim = localStorage.getItem(STORAGE_KEYS.ANIMATIONS);
         if (savedAnim !== null) setEnableAnimations(savedAnim === 'true');
 
-        // --- 1. FETCH FRESH DATA (Background Sync) ---
         const { data: usersData, error: userError } = await supabase.from('users').select('*');
         if (userError) throw userError;
         const mappedUsers = usersData.map(mapUserFromDB);
-        setUsers(mappedUsers); // This will trigger the cache useEffect
+        setUsers(mappedUsers);
+        syncConfigFromUsers(mappedUsers);
         
-        // --- 2. Fetch Fresh Messages ---
         const { data: msgsData, error: msgError } = await supabase.from('messages').select('*');
         if (msgError) throw msgError;
         const mappedMsgs = msgsData.map(mapMessageFromDB);
-        setMessages(mappedMsgs); // This will trigger the cache useEffect
+        setMessages(mappedMsgs);
 
-        // --- 3. Re-Verify Login with Fresh Data ---
         if (savedId) {
           const found = mappedUsers.find(u => u.id === savedId);
           if (found) {
-            setCurrentUser(found); // Update current user with fresh data
-            requestNotificationPermission();
+            setCurrentUser(found);
+            checkPermissionStatus();
           } else if (!cachedUsersList.length) {
-            // If we didn't have cache and user not found in fresh data
             setIsLoading(false);
           }
         } else {
@@ -263,32 +298,27 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       } catch (err) {
         console.error("Initialization error:", err);
-        setIsLoading(false); // Ensure we stop loading on error
+        setIsLoading(false);
       }
     };
 
     fetchData();
   }, []);
 
-  // Realtime Subscriptions
   useEffect(() => {
     const channel = supabase.channel('public:data')
-      // Listen for new messages
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
         const newMsg = mapMessageFromDB(payload.new);
         
-        // Avoid duplicates (optimistic UI might have already added it)
         setMessages(prev => {
             if (prev.some(m => m.id === newMsg.id)) return prev;
             return [...prev, newMsg];
         });
 
-        // Handle Notifications for Messages
+        // Handle Personal Messages
         if (currentUserRef.current && newMsg.receiverId === currentUserRef.current.id) {
           const sender = usersRef.current.find(u => u.id === newMsg.senderId);
           const senderName = sender ? sender.username : 'Someone';
-
-          // App Internal Notification
           const notif: AppNotification = {
             id: Date.now().toString(),
             type: 'message',
@@ -298,32 +328,46 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             data: { targetUser: sender, avatar: sender?.avatar }
           };
           setNotifications(prev => [notif, ...prev]);
-
-          // Trigger System Notification (Silent)
           triggerNotification(`Message from ${senderName}`, newMsg.content, sender?.avatar);
         }
+
+        // Handle Broadcast Messages
+        if (newMsg.receiverId === BROADCAST_ID && (!currentUserRef.current || newMsg.senderId !== currentUserRef.current.id)) {
+           const sender = usersRef.current.find(u => u.id === newMsg.senderId);
+           const senderName = sender?.username || "Admin";
+           const notif: AppNotification = {
+             id: Date.now().toString(),
+             type: 'system',
+             content: `📢 ${senderName}: ${newMsg.content}`,
+             read: false,
+             timestamp: Date.now(),
+             data: {}
+           };
+           setNotifications(prev => [notif, ...prev]);
+           triggerNotification(`Announcement from ${senderName}`, newMsg.content);
+        }
       })
-      // Listen for message updates (e.g., read receipts)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload) => {
         const updatedMsg = mapMessageFromDB(payload.new);
-        // Update local state to reflect read status change or other updates
         setMessages(prev => prev.map(m => m.id === updatedMsg.id ? updatedMsg : m));
       })
-      // Listen for user updates
       .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, (payload) => {
         if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
           const updatedUser = mapUserFromDB(payload.new);
           
           setUsers(prev => {
              const exists = prev.find(u => u.id === updatedUser.id);
+             // Update config if Admin user updated
+             if (updatedUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+                syncConfigFromUsers(exists ? prev.map(u => u.id === updatedUser.id ? updatedUser : u) : [...prev, updatedUser]);
+             }
              if (exists) return prev.map(u => u.id === updatedUser.id ? updatedUser : u);
              return [...prev, updatedUser];
           });
 
           if (currentUserRef.current && updatedUser.id === currentUserRef.current.id) {
             setCurrentUser(updatedUser);
-            
-            // Check for new friend requests
+            // Check for friend requests
             const oldReqs = currentUserRef.current.requests || [];
             const newReqs = updatedUser.requests || [];
             if (newReqs.length > oldReqs.length) {
@@ -352,15 +396,33 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
   }, []);
 
+  const checkPermissionStatus = () => {
+    if ("Notification" in window && window.Notification.permission === "default") {
+      setShowPermissionPrompt(true);
+    }
+  };
+
+  const enableNotifications = async () => {
+    if ("Notification" in window) {
+      const permission = await window.Notification.requestPermission();
+      if (permission === "granted") {
+        playNotificationSound();
+        new Notification("Notifications Enabled", { body: "You will now receive alerts!", icon: '/favicon.ico' });
+      }
+      setShowPermissionPrompt(false);
+    }
+  };
+
+  const closePermissionPrompt = () => setShowPermissionPrompt(false);
 
   const login = async (user: User) => {
     setCurrentUser(user);
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id);
-    requestNotificationPermission();
+    checkPermissionStatus();
   };
 
   const loginWithCredentials = async (email: string, pass: string) => {
-     const found = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === pass);
+     const found = users.find(u => u.email.trim().toLowerCase() === email.trim().toLowerCase() && u.password === pass);
      if (found) {
        await login(found);
      } else {
@@ -371,7 +433,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const signup = async (user: User) => {
     const { error } = await supabase.from('users').insert(mapUserToDB(user));
     if (error) throw error;
-    // Realtime will update users list, but we can set optimistically
     setUsers(prev => [...prev, user]);
     await login(user);
   };
@@ -408,26 +469,27 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       read: false
     };
     
-    // Optimistic update
     setMessages(prev => [...prev, newMsg]);
 
     const { error } = await supabase.from('messages').insert(mapMessageToDB(newMsg));
     if (error) {
        console.error("Send message failed", error);
-       // Rollback
        setMessages(prev => prev.filter(m => m.id !== newMsg.id));
     }
   };
 
+  const broadcastMessage = async (content: string) => {
+    if (!isAdmin || !currentUser) return;
+    await sendMessage(BROADCAST_ID, content);
+  };
+
   const sendFriendRequest = async (targetUserId: string) => {
     if (!currentUser) return;
-    
     const targetUser = users.find(u => u.id === targetUserId);
     if (!targetUser) return;
     if (targetUser.requests.includes(currentUser.id)) return;
 
     const newRequests = [...targetUser.requests, currentUser.id];
-    
     const { error } = await supabase.from('users').update({ requests: newRequests }).eq('id', targetUserId);
     if (error) console.error("Friend request failed", error);
   };
@@ -435,16 +497,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const acceptFriendRequest = async (requesterId: string) => {
     if (!currentUser) return;
 
-    // 1. Add requester to my friends
     const myNewFriends = [...currentUser.friends, requesterId];
     const myNewRequests = currentUser.requests.filter(r => r !== requesterId);
 
-    // 2. Add me to requester's friends
     const requester = users.find(u => u.id === requesterId);
     if (!requester) return;
     const theirNewFriends = [...requester.friends, currentUser.id];
 
-    // Perform updates
     await supabase.from('users').update({ friends: myNewFriends, requests: myNewRequests }).eq('id', currentUser.id);
     await supabase.from('users').update({ friends: theirNewFriends }).eq('id', requesterId);
   };
@@ -456,14 +515,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const markConversationAsRead = async (senderId: string) => {
     if (!currentUser) return;
     
-    // Optimistic Local Update
     setMessages(prev => prev.map(m => 
       (m.senderId === senderId && m.receiverId === currentUser.id && !m.read) 
         ? { ...m, read: true } 
         : m
     ));
 
-    // DB Update to trigger realtime event for sender
     const unreadIds = messages
        .filter(m => m.senderId === senderId && m.receiverId === currentUser.id && !m.read)
        .map(m => m.id);
@@ -473,10 +530,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
-  };
-
+  const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
   const toggleAnimations = () => {
     setEnableAnimations(prev => {
       const newVal = !prev;
@@ -485,7 +539,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   };
 
-  const isOwner = (email: string) => email.toLowerCase() === OWNER_EMAIL.toLowerCase();
+  const isOwner = (email: string) => email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
 
   return (
     <AppContext.Provider value={{
@@ -496,6 +550,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       theme,
       isLoading,
       enableAnimations,
+      showPermissionPrompt,
+      appConfig,
+      isAdmin,
       login,
       loginWithCredentials,
       logout,
@@ -503,13 +560,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       updateProfile,
       deleteAccount,
       sendMessage,
+      broadcastMessage,
       sendFriendRequest,
       acceptFriendRequest,
       markNotificationRead,
       toggleTheme,
       toggleAnimations,
       markConversationAsRead,
-      isOwner
+      isOwner,
+      enableNotifications,
+      closePermissionPrompt,
+      updateAppConfig
     }}>
       {children}
     </AppContext.Provider>

@@ -1,11 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { HOME_SHORTCUTS } from '../constants';
 import { TopBar } from '../components/TopBar';
+import { ComingSoon } from '../components/ComingSoon';
 import { ExternalLink } from 'lucide-react';
 
 export const HomeScreen: React.FC = () => {
-  const { currentUser, enableAnimations } = useApp();
+  const { currentUser, enableAnimations, appConfig } = useApp();
   const [timeData, setTimeData] = useState({
     time: '',
     date: '',
@@ -21,7 +23,6 @@ export const HomeScreen: React.FC = () => {
       const timeStr = now.toLocaleTimeString('en-IN', { ...options, hour: '2-digit', minute: '2-digit' });
       const dateStr = now.toLocaleDateString('en-IN', { ...options, weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
       
-      // Greeting logic based on IST hour
       const istString = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
       const istDate = new Date(istString);
       const hour = istDate.getHours();
@@ -42,6 +43,16 @@ export const HomeScreen: React.FC = () => {
     const timer = setInterval(updateTime, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  if (!appConfig.features.home) {
+    return <ComingSoon title="Home" />;
+  }
+
+  // Filter shortcuts based on config
+  const activeShortcuts = HOME_SHORTCUTS.map(s => ({
+    ...s,
+    isEnabled: appConfig.features.shortcuts[s.name] ?? true
+  }));
 
   return (
     <div className="h-full overflow-y-auto pb-32 transition-colors duration-300 scrollbar-hide">
@@ -76,28 +87,39 @@ export const HomeScreen: React.FC = () => {
              Quick Access
           </h2>
           <div className="grid grid-cols-2 gap-4">
-            {HOME_SHORTCUTS.map((shortcut, index) => (
-              <a 
+            {activeShortcuts.map((shortcut, index) => (
+              <div 
                 key={index}
-                href={shortcut.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`group relative flex flex-col p-4 rounded-2xl bg-white/60 dark:bg-dark-surface/80 backdrop-blur-md shadow-sm hover:shadow-lg border border-white dark:border-gray-700 transition-all duration-300 hover:-translate-y-1 ${enableAnimations ? 'animate-zoom-rotate' : ''}`}
+                className={`relative ${enableAnimations ? 'animate-zoom-rotate' : ''}`}
                 style={{ animationDelay: `${0.1 + (index * 0.05)}s`, animationFillMode: 'both' }}
               >
-                <div className="flex justify-between items-start mb-3">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform duration-300">
-                     {shortcut.icon && shortcut.icon.includes('.') ? (
-                         <img src={`https://www.google.com/s2/favicons?domain=${shortcut.icon}&sz=64`} className="w-6 h-6" alt={shortcut.name} />
-                     ) : (
-                        <span className="text-gray-600 dark:text-gray-300 font-bold">{shortcut.name.charAt(0)}</span>
-                     )}
+                {!shortcut.isEnabled && (
+                   <div className="absolute inset-0 z-20 bg-gray-200/50 dark:bg-black/60 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/20">
+                     <span className="text-xs font-bold bg-black/80 text-white px-2 py-1 rounded-full">Coming Soon</span>
+                   </div>
+                )}
+                
+                <a 
+                  href={shortcut.isEnabled ? shortcut.url : '#'}
+                  target={shortcut.isEnabled ? "_blank" : undefined}
+                  rel="noopener noreferrer"
+                  onClick={(e) => !shortcut.isEnabled && e.preventDefault()}
+                  className={`group relative flex flex-col p-4 rounded-2xl bg-white/60 dark:bg-dark-surface/80 backdrop-blur-md shadow-sm border border-white dark:border-gray-700 transition-all duration-300 ${shortcut.isEnabled ? 'hover:shadow-lg hover:-translate-y-1' : 'opacity-60 cursor-not-allowed'}`}
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform duration-300">
+                      {shortcut.icon && shortcut.icon.includes('.') ? (
+                          <img src={`https://www.google.com/s2/favicons?domain=${shortcut.icon}&sz=64`} className="w-6 h-6" alt={shortcut.name} />
+                      ) : (
+                          <span className="text-gray-600 dark:text-gray-300 font-bold">{shortcut.name.charAt(0)}</span>
+                      )}
+                    </div>
+                    <ExternalLink className="w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:text-blue-500 transition-colors" />
                   </div>
-                  <ExternalLink className="w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:text-blue-500 transition-colors" />
-                </div>
-                <h3 className="font-semibold text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{shortcut.name}</h3>
-                {shortcut.description && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">{shortcut.description}</p>}
-              </a>
+                  <h3 className="font-semibold text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{shortcut.name}</h3>
+                  {shortcut.description && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">{shortcut.description}</p>}
+                </a>
+              </div>
             ))}
           </div>
         </div>

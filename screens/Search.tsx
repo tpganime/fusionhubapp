@@ -1,13 +1,19 @@
+
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
+import { ComingSoon } from '../components/ComingSoon';
 import { Search as SearchIcon, UserPlus, Check, MessageCircle, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const SearchScreen: React.FC = () => {
-  const { users, currentUser, sendFriendRequest, enableAnimations, isOwner } = useApp();
+  const { users, currentUser, sendFriendRequest, enableAnimations, isOwner, appConfig } = useApp();
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
+
+  if (!appConfig.features.search) {
+    return <ComingSoon title="Search" />;
+  }
 
   const filteredUsers = users.filter(u => 
     u.id !== currentUser?.id && 
@@ -18,7 +24,7 @@ export const SearchScreen: React.FC = () => {
   const [requested, setRequested] = useState<string[]>([]); 
 
   const handleRequest = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation(); // Prevent navigating to profile
+    e.stopPropagation();
     sendFriendRequest(id);
     setRequested(prev => [...prev, id]);
   };

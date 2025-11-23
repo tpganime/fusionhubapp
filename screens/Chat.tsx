@@ -1,31 +1,41 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
+import { ComingSoon } from '../components/ComingSoon';
 import { User, Message } from '../types';
-import { Send, ArrowLeft, CheckCheck, Sparkles } from 'lucide-react';
+import { Send, ArrowLeft, CheckCheck, Sparkles, AlertTriangle } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { BROADCAST_ID } from '../constants';
 
 export const ChatScreen: React.FC = () => {
-  const { currentUser, users, messages, sendMessage, markConversationAsRead, enableAnimations, isOwner } = useApp();
+  const { currentUser, users, messages, sendMessage, markConversationAsRead, enableAnimations, isOwner, appConfig } = useApp();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Handle incoming navigation from Search or Profile
   useEffect(() => {
     if (location.state?.targetUser) {
       setSelectedUser(location.state.targetUser);
-      // Clear location state to avoid sticking
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
 
-  // Get list of friends or people with chat history
+  if (!appConfig.features.chat) {
+    return <ComingSoon title="Chat" />;
+  }
+
+  // Get list of friends or people with chat history, EXCLUDING System Broadcasts from the list logic usually, but here we might want to see them?
+  // Actually, let's filter system messages separately or just show them in notifications.
+  // We'll stick to user-to-user for the list, but maybe show a "System" entry if we wanted. For now, system msgs are notifications only.
   const chatUsers = users.filter(u => 
     u.id !== currentUser?.id && 
-    (currentUser?.friends.includes(u.id) || messages.some(m => (m.senderId === u.id && m.receiverId === currentUser?.id) || (m.senderId === currentUser?.id && m.receiverId === u.id)))
+    (currentUser?.friends.includes(u.id) || messages.some(m => 
+        m.receiverId !== BROADCAST_ID && // Exclude broadcast msgs from determining chat list
+        ((m.senderId === u.id && m.receiverId === currentUser?.id) || (m.senderId === currentUser?.id && m.receiverId === u.id))
+    ))
   );
 
   const getConversation = (userId: string) => {
@@ -36,13 +46,10 @@ export const ChatScreen: React.FC = () => {
     ).sort((a, b) => a.timestamp - b.timestamp);
   };
 
-  // Calculate conversation for current selected user
   const conversation = selectedUser ? getConversation(selectedUser.id) : [];
 
-  // Mark messages as read when conversation is active
   useEffect(() => {
     if (selectedUser && currentUser) {
-      // Only call if there are unread messages to avoid loops/renders
       const hasUnread = messages.some(m => 
         m.senderId === selectedUser.id && 
         m.receiverId === currentUser.id && 
@@ -54,7 +61,6 @@ export const ChatScreen: React.FC = () => {
     }
   }, [selectedUser, messages, currentUser, markConversationAsRead]);
 
-  // Scroll to bottom only when conversation length changes (new message), not on read status change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [conversation.length, selectedUser?.id]);
@@ -67,13 +73,15 @@ export const ChatScreen: React.FC = () => {
     }
   };
 
-  // -- Chat List View --
   if (!selectedUser) {
     return (
       <div className="h-full overflow-y-auto pb-24 transition-colors duration-300 scrollbar-hide">
         <TopBar />
         <main className="px-4 pt-2">
           <h1 className={`text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white ${enableAnimations ? 'animate-slide-in-right' : ''}`}>Chats</h1>
+          
+          {/* System Broadcast Preview (Fake entry if there are broadcasts? No, notifications handle that) */}
+          
           <div className="space-y-2">
             {chatUsers.length === 0 ? (
               <div className="text-center py-10 text-gray-400 dark:text-gray-600">
@@ -82,7 +90,6 @@ export const ChatScreen: React.FC = () => {
               </div>
             ) : (
               chatUsers.map((user, index) => {
-                // Find last message
                 const userMsgs = getConversation(user.id);
                 const lastMsg = userMsgs[userMsgs.length - 1];
                 const hasUnread = lastMsg && lastMsg.senderId === user.id && !lastMsg.read;
@@ -122,10 +129,8 @@ export const ChatScreen: React.FC = () => {
     );
   }
 
-  // -- Chat Detail View --
   return (
     <div className={`h-full flex flex-col transition-colors duration-300 ${enableAnimations ? 'animate-fade-in' : ''}`}>
-      {/* Chat Header */}
       <div className="h-16 glass-panel dark:bg-dark-surface/80 flex items-center px-4 shadow-sm z-20 dark:border-gray-800">
         <button onClick={() => setSelectedUser(null)} className="p-2 -ml-2 mr-2 rounded-full hover:bg-gray-200/50 dark:hover:bg-white/10 text-gray-900 dark:text-white">
           <ArrowLeft className="w-6 h-6" />
@@ -142,7 +147,6 @@ export const ChatScreen: React.FC = () => {
         </button>
       </div>
 
-      {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-24 scrollbar-hide">
         {conversation.length === 0 ? (
            <div className="text-center mt-10">
@@ -176,7 +180,6 @@ export const ChatScreen: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area (Sticky above bottom nav) */}
       <div className={`fixed bottom-20 left-0 right-0 px-4 z-30 pointer-events-none ${enableAnimations ? 'animate-slide-up' : ''}`}>
         <form onSubmit={handleSend} className="pointer-events-auto flex items-center gap-2 bg-white/80 dark:bg-dark-surface/80 backdrop-blur-xl p-2 rounded-full shadow-lg border border-white/50 dark:border-gray-700 sm:max-w-md sm:mx-auto">
           <input

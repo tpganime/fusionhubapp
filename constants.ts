@@ -1,4 +1,24 @@
-import { AppShortcut } from './types';
+
+import { AppShortcut, AppConfig } from './types';
+
+export const ADMIN_EMAIL = 'fusionhub122@gmail.com';
+export const BROADCAST_ID = '00000000-0000-0000-0000-000000000000';
+
+export const DEFAULT_CONFIG: AppConfig = {
+  features: {
+    home: true,
+    chat: true,
+    search: true,
+    profile: true,
+    shortcuts: {
+      "Anime": true,
+      "Music": true,
+      "Game server 1": true,
+      "Game server 2": true,
+      "Watch together": true
+    }
+  }
+};
 
 export const HOME_SHORTCUTS: AppShortcut[] = [
   { name: "Anime", url: "https://www.hindianimezone.in/", icon: "hindianimezone.in", description: "Stream Anime" },

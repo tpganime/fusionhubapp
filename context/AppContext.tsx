@@ -320,9 +320,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     // Apply opacity
     document.documentElement.style.setProperty('--glass-opacity', glassOpacity.toString());
     
-    // Apply dynamic blur: if opacity is 0 (fully clear), remove blur completely
-    const blurValue = glassOpacity <= 0.02 ? '0px' : '20px';
-    document.documentElement.style.setProperty('--glass-blur', blurValue);
+    // Apply dynamic blur filter:
+    // If glassOpacity is close to 0 (Clear), we remove blur to reduce lag and make it "like photo"
+    // 0.05 corresponds to 95% transparency on the slider.
+    if (glassOpacity <= 0.05) {
+        document.documentElement.style.setProperty('--glass-filter', 'none');
+    } else {
+        document.documentElement.style.setProperty('--glass-filter', 'blur(20px) saturate(180%)');
+    }
 
     localStorage.setItem(STORAGE_KEYS.GLASS_OPACITY, glassOpacity.toString());
   }, [glassOpacity]);
@@ -671,10 +676,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       timestamp: Date.now(),
       read: false
     };
+    
+    // Optimistic Update
     setMessages(prev => [...prev, newMsg]);
     playSendSound();
-    const { error } = await supabase.from('messages').insert(mapMessageToDB(newMsg));
-    if (error) setMessages(prev => prev.filter(m => m.id !== newMsg.id));
+    
+    try {
+        const { error } = await supabase.from('messages').insert(mapMessageToDB(newMsg));
+        if (error) {
+            console.error("Message send failed", error);
+            // Revert optimistic update
+            setMessages(prev => prev.filter(m => m.id !== newMsg.id));
+        }
+    } catch(e) {
+        console.error("Message send error", e);
+        setMessages(prev => prev.filter(m => m.id !== newMsg.id));
+    }
   };
   
   const broadcastMessage = async (content: string) => {

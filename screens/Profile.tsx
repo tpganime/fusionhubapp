@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
 import { ComingSoon } from '../components/ComingSoon';
-import { Camera, ArrowLeft, Lock, Link as LinkIcon, ShieldCheck, Crown, X, Settings, MessageCircle, ChevronDown, AlignJustify, Copy, Share2, ExternalLink, Clock } from 'lucide-react';
+import { Camera, ArrowLeft, Lock, Link as LinkIcon, ShieldCheck, Crown, X, Settings, MessageCircle, ChevronDown, AlignJustify, Copy, Share2, ExternalLink, Clock, Activity } from 'lucide-react';
 import { Gender } from '../types';
 import { useParams, useNavigate } from 'react-router-dom';
 
@@ -51,6 +51,19 @@ export const ProfileScreen: React.FC = () => {
   const navigate = useNavigate();
   
   const isOwnProfile = !userId || userId === currentUser?.id;
+
+  // Local state for time display to trigger re-renders
+  const [timeSpent, setTimeSpent] = useState("0m");
+
+  useEffect(() => {
+      if (isOwnProfile) {
+          const interval = setInterval(() => {
+              setTimeSpent(getTimeSpent());
+          }, 60000); // Update every minute
+          setTimeSpent(getTimeSpent());
+          return () => clearInterval(interval);
+      }
+  }, [isOwnProfile, getTimeSpent]);
 
   if (!appConfig.features.profile && !isOwnProfile) {
     return <ComingSoon title="Profile" />;
@@ -152,11 +165,6 @@ export const ProfileScreen: React.FC = () => {
      } else {
          handleCopyLink();
      }
-  };
-
-  const handleTimeSpent = () => {
-      // Use real tracking
-      alert(`Total Active Time: ${getTimeSpent()}\n(Tracked locally across sessions)`);
   };
 
   const isFriend = currentUser?.friends.includes(profileUser.id);
@@ -267,6 +275,17 @@ export const ProfileScreen: React.FC = () => {
                    )}
                 </div>
             </div>
+
+            {/* Time Spent - Right Side of Avatar (Only Own Profile) */}
+            {isOwnProfile && !isEditing && (
+                <div className="flex flex-col justify-center pl-2 border-l border-gray-200 dark:border-gray-800 h-16">
+                    <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wide mb-1">Total Active Time</span>
+                    <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                        <Activity className="w-4 h-4" />
+                        <span className="text-xl font-black tracking-tight">{timeSpent}</span>
+                    </div>
+                </div>
+            )}
          </div>
 
          {/* Bio Section - Below Avatar */}
@@ -306,12 +325,6 @@ export const ProfileScreen: React.FC = () => {
                         className="flex-1 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-semibold text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                       >
                         Edit Profile
-                      </button>
-                      <button 
-                        onClick={handleTimeSpent}
-                        className="flex-1 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-semibold text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-1"
-                      >
-                        <Clock className="w-3 h-3" /> Time Spent
                       </button>
                     </>
                 ) : (

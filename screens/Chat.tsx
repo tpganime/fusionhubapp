@@ -210,8 +210,8 @@ export const ChatScreen: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Liquid Input Area */}
-      <div className="fixed bottom-24 left-0 right-0 px-4 z-30 pointer-events-none">
+      {/* Liquid Input Area - Z-Index increased to 60 to avoid being covered by BottomNav */}
+      <div className="fixed bottom-24 left-0 right-0 px-4 z-[60] pointer-events-none">
         <form onSubmit={handleSend} className="pointer-events-auto flex items-center gap-2 liquid-card p-1.5 shadow-2xl sm:max-w-md sm:mx-auto">
           <input
             type="text"

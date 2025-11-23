@@ -18,29 +18,29 @@ const NotificationModal: React.FC = () => {
   if (!showPermissionPrompt) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white/90 dark:bg-dark-surface/90 backdrop-blur-xl p-6 rounded-3xl shadow-2xl max-w-sm w-full border border-white/50 dark:border-gray-700 transform transition-all scale-100 animate-elastic-up">
-        <div className="flex justify-center mb-4">
-           <div className="p-4 bg-blue-100 dark:bg-blue-900/30 rounded-full text-blue-500 animate-bounce">
-              <Bell className="w-8 h-8 fill-blue-500" />
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white/95 dark:bg-dark-surface/95 backdrop-blur-xl p-6 rounded-3xl shadow-2xl max-w-sm w-full border border-white/50 dark:border-gray-700 transform transition-all scale-100 animate-elastic-up">
+        <div className="flex justify-center mb-5">
+           <div className="p-4 bg-gradient-to-tr from-blue-400 to-blue-600 rounded-2xl shadow-lg shadow-blue-500/40 animate-pulse-slow">
+              <Bell className="w-8 h-8 text-white fill-white" />
            </div>
         </div>
-        <h3 className="text-xl font-bold text-center text-gray-900 dark:text-white mb-2">Enable Notifications?</h3>
-        <p className="text-center text-gray-500 dark:text-gray-400 mb-6 text-sm">
-          Stay connected! Get instant alerts for new messages and friend requests.
+        <h3 className="text-xl font-bold text-center text-gray-900 dark:text-white mb-2">Enable Notifications</h3>
+        <p className="text-center text-gray-500 dark:text-gray-400 mb-6 text-sm leading-relaxed">
+          Don't miss out! Get instant alerts for new messages, friend requests, and updates.
         </p>
-        <div className="flex gap-3">
-           <button 
-             onClick={closePermissionPrompt}
-             className="flex-1 py-3 rounded-xl font-semibold bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors"
-           >
-             Later
-           </button>
+        <div className="flex flex-col gap-3">
            <button 
              onClick={enableNotifications}
-             className="flex-1 py-3 rounded-xl font-semibold bg-blue-500 text-white shadow-lg shadow-blue-500/30 hover:bg-blue-600 transition-all active:scale-95"
+             className="w-full py-3.5 rounded-xl font-bold bg-blue-600 text-white shadow-lg shadow-blue-500/30 hover:bg-blue-700 transition-all active:scale-95"
            >
-             Allow
+             Allow Notifications
+           </button>
+           <button 
+             onClick={closePermissionPrompt}
+             className="w-full py-3 rounded-xl font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+           >
+             Maybe Later
            </button>
         </div>
       </div>

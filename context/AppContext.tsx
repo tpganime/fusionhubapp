@@ -47,8 +47,6 @@ const STORAGE_KEYS = {
   CACHE_MESSAGES: 'fh_cache_messages_v1'
 };
 
-const NOTIFICATION_SOUND_URL = 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3';
-
 const generateUUID = () => {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
@@ -178,18 +176,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [theme]);
 
   // -- Config Management --
-  // We use the Admin User's description field to store the global app config JSON.
-  // We check both Admin and Owner for config storage, prioritizing Admin.
   const syncConfigFromUsers = (userList: User[]) => {
     const adminUser = userList.find(u => checkIsAdmin(u.email));
-    // Prioritize the main Admin email for config if it exists
     const mainAdmin = userList.find(u => u.email.toLowerCase() === ADMIN_EMAIL.toLowerCase());
     const targetUser = mainAdmin || adminUser;
 
     if (targetUser && targetUser.description && targetUser.description.startsWith('{')) {
       try {
         const parsed = JSON.parse(targetUser.description);
-        // Validate minimal structure
         if (parsed.features) {
           setAppConfig(prev => ({ ...prev, ...parsed }));
         }
@@ -201,25 +195,38 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const updateAppConfig = async (newConfig: AppConfig) => {
     if (!isAdmin || !currentUser) return;
-    
-    // Optimistic update
     setAppConfig(newConfig);
-
     const configString = JSON.stringify(newConfig);
     const updatedUser = { ...currentUser, description: configString };
-    
-    // We update local state immediately so UI reflects change
     setCurrentUser(updatedUser);
     setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
-    
     await updateProfile(updatedUser);
   };
 
+  // Generated "Glass Ping" sound using Web Audio API (No download needed)
   const playNotificationSound = () => {
     try {
-      const audio = new Audio(NOTIFICATION_SOUND_URL);
-      audio.volume = 0.5;
-      audio.play().catch(e => console.log("Audio play failed", e));
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContext) return;
+      
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      // Pleasant high-pitched sine wave (Glass ping effect)
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(800, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+      
+      gain.gain.setValueAtTime(0.05, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+      
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.4);
     } catch (e) {
       console.error("Audio error", e);
     }
@@ -230,6 +237,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const N = window.Notification as any; 
     const hasPermission = "Notification" in window && N.permission === "granted";
 
+    // Always play sound if message arrives (unless user disabled audio in system, which we can't control)
     playNotificationSound();
 
     if (isHidden && hasPermission) {
@@ -238,7 +246,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           body,
           icon: icon || '/favicon.ico',
           badge: '/favicon.ico',
-          silent: true
+          silent: true // We play our own sound
         });
       } catch (e) {
         console.error("System notification error:", e);
@@ -329,7 +337,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             return [...prev, newMsg];
         });
 
-        // Handle Personal Messages
         if (currentUserRef.current && newMsg.receiverId === currentUserRef.current.id) {
           const sender = usersRef.current.find(u => u.id === newMsg.senderId);
           const senderName = sender ? sender.username : 'Someone';
@@ -345,10 +352,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           triggerNotification(`Message from ${senderName}`, newMsg.content, sender?.avatar);
         }
 
-        // Handle Broadcast Messages
         if (newMsg.receiverId === BROADCAST_ID) {
            if (currentUserRef.current && newMsg.senderId === currentUserRef.current.id) return;
-
            const sender = usersRef.current.find(u => u.id === newMsg.senderId);
            const senderName = sender?.username || "Admin";
            const notif: AppNotification = {
@@ -370,10 +375,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, (payload) => {
         if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
           const updatedUser = mapUserFromDB(payload.new);
-          
           setUsers(prev => {
              const exists = prev.find(u => u.id === updatedUser.id);
-             // Update config if Admin user updated
              if (checkIsAdmin(updatedUser.email)) {
                 const newList = exists ? prev.map(u => u.id === updatedUser.id ? updatedUser : u) : [...prev, updatedUser];
                 syncConfigFromUsers(newList);
@@ -385,7 +388,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
           if (currentUserRef.current && updatedUser.id === currentUserRef.current.id) {
             setCurrentUser(updatedUser);
-            // Check for friend requests
             const oldReqs = currentUserRef.current.requests || [];
             const newReqs = updatedUser.requests || [];
             if (newReqs.length > oldReqs.length) {
@@ -421,14 +423,35 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const enableNotifications = async () => {
-    if ("Notification" in window) {
-      const permission = await window.Notification.requestPermission();
-      if (permission === "granted") {
-        playNotificationSound();
-        new Notification("Notifications Enabled", { body: "You will now receive alerts!", icon: '/favicon.ico' });
-      }
-      setShowPermissionPrompt(false);
+    if (!("Notification" in window)) {
+        alert("This browser does not support notifications.");
+        return;
     }
+    
+    // If already granted, just test it
+    if (Notification.permission === 'granted') {
+        playNotificationSound();
+        try {
+            new Notification("Test Notification", { body: "Notifications are working!" });
+        } catch(e) {}
+        setShowPermissionPrompt(false);
+        return;
+    }
+
+    // If denied, we must alert the user because we can't programmatically request again
+    if (Notification.permission === 'denied') {
+        alert("Notifications are currently blocked. Please enable them in your browser settings (usually in the address bar lock icon).");
+        setShowPermissionPrompt(false);
+        return;
+    }
+
+    // Request permission
+    const permission = await window.Notification.requestPermission();
+    if (permission === "granted") {
+      playNotificationSound();
+      new Notification("Notifications Enabled", { body: "You will now receive alerts!", icon: '/favicon.ico' });
+    }
+    setShowPermissionPrompt(false);
   };
 
   const closePermissionPrompt = () => setShowPermissionPrompt(false);
@@ -487,7 +510,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       read: false
     };
     
-    // We update local state for messages sent by us immediately
     setMessages(prev => [...prev, newMsg]);
 
     const { error } = await supabase.from('messages').insert(mapMessageToDB(newMsg));

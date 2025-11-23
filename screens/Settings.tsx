@@ -2,13 +2,16 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lock, Eye, Trash2, LogOut, Shield, ChevronRight, Moon, Sun, Zap, LayoutDashboard } from 'lucide-react';
+import { ArrowLeft, Lock, Eye, Trash2, LogOut, Shield, ChevronRight, Moon, Sun, Zap, LayoutDashboard, Bell } from 'lucide-react';
 import { PRIVACY_POLICY_TEXT } from '../constants';
 
 export const SettingsScreen: React.FC = () => {
-  const { currentUser, updateProfile, logout, deleteAccount, theme, toggleTheme, enableAnimations, toggleAnimations, isAdmin } = useApp();
+  const { currentUser, updateProfile, logout, deleteAccount, theme, toggleTheme, enableAnimations, toggleAnimations, isAdmin, enableNotifications } = useApp();
   const navigate = useNavigate();
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
+  
+  // Check notification permission state to show correct toggle state
+  const isNotificationGranted = "Notification" in window && window.Notification.permission === 'granted';
 
   if (!currentUser) return null;
 
@@ -91,7 +94,7 @@ export const SettingsScreen: React.FC = () => {
                  <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                </label>
             </div>
-            <div className="p-4 flex items-center justify-between">
+            <div className="p-4 flex items-center justify-between border-b border-gray-50 dark:border-gray-800">
                <div className="flex items-center gap-3">
                  <div className="p-2 bg-pink-100 dark:bg-pink-900 rounded-lg text-pink-600 dark:text-pink-300"><Zap className="w-5 h-5" /></div>
                  <span className="font-medium text-gray-900 dark:text-white">Animations</span>
@@ -100,6 +103,24 @@ export const SettingsScreen: React.FC = () => {
                  <input type="checkbox" checked={enableAnimations} onChange={toggleAnimations} className="sr-only peer" />
                  <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-pink-300 dark:peer-focus:ring-pink-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-600"></div>
                </label>
+            </div>
+             {/* Notifications Toggle */}
+            <div className="p-4 flex items-center justify-between">
+               <div className="flex items-center gap-3">
+                 <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg text-blue-600 dark:text-blue-300"><Bell className="w-5 h-5" /></div>
+                 <div className="flex flex-col">
+                   <span className="font-medium text-gray-900 dark:text-white">Notifications</span>
+                   <span className="text-xs text-gray-500">{isNotificationGranted ? 'Enabled' : 'Tap to enable'}</span>
+                 </div>
+               </div>
+               <button 
+                  onClick={enableNotifications}
+                  className={`relative inline-flex items-center cursor-pointer ${isNotificationGranted ? 'opacity-100' : 'opacity-60'}`}
+               >
+                 <div className={`w-11 h-6 rounded-full transition-colors ${isNotificationGranted ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}>
+                    <div className={`absolute top-[2px] left-[2px] bg-white border border-gray-300 rounded-full h-5 w-5 transition-transform ${isNotificationGranted ? 'translate-x-full border-transparent' : ''}`}></div>
+                 </div>
+               </button>
             </div>
           </div>
         </section>

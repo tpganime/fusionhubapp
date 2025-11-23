@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
-import { Search as SearchIcon, UserPlus, Check, MessageCircle } from 'lucide-react';
+import { Search as SearchIcon, UserPlus, Check, MessageCircle, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const SearchScreen: React.FC = () => {
-  const { users, currentUser, sendFriendRequest } = useApp();
+  const { users, currentUser, sendFriendRequest, enableAnimations, isOwner } = useApp();
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
 
@@ -32,9 +32,9 @@ export const SearchScreen: React.FC = () => {
     <div className="h-full overflow-y-auto pb-24 transition-colors duration-300 scrollbar-hide">
       <TopBar />
       <main className="px-4 pt-4">
-        <h1 className="text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white">Search</h1>
+        <h1 className={`text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white ${enableAnimations ? 'animate-slide-in-right' : ''}`}>Search</h1>
         
-        <div className="relative mb-6">
+        <div className={`relative mb-6 ${enableAnimations ? 'animate-elastic-up' : ''}`}>
           <SearchIcon className="absolute left-4 top-3.5 text-gray-400 w-5 h-5" />
           <input
             type="text"
@@ -50,20 +50,30 @@ export const SearchScreen: React.FC = () => {
             <p className="text-center text-gray-500 mt-10">No users found.</p>
           )}
           
-          {filteredUsers.map(user => {
+          {filteredUsers.map((user, index) => {
             const canMessage = isFriend(user.id) || user.allowPrivateChat;
+            const isUserOwner = isOwner(user.email);
             
             return (
               <div 
                 key={user.id} 
                 onClick={() => navigate(`/user/${user.id}`)}
-                className="bg-white/70 dark:bg-dark-surface/70 backdrop-blur-sm p-4 rounded-2xl shadow-sm border border-white/50 dark:border-gray-700 flex items-center justify-between transition-all hover:bg-white/90 dark:hover:bg-dark-surface/90 cursor-pointer group"
+                className={`bg-white/70 dark:bg-dark-surface/70 backdrop-blur-sm p-4 rounded-2xl shadow-sm border ${isUserOwner ? 'border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.3)]' : 'border-white/50 dark:border-gray-700'} flex items-center justify-between transition-all hover:bg-white/90 dark:hover:bg-dark-surface/90 cursor-pointer group hover:scale-[1.02] ${enableAnimations ? 'animate-slide-up' : ''}`}
+                style={{ animationDelay: `${index * 0.05}s`, animationFillMode: 'both' }}
               >
                 <div className="flex items-center space-x-3">
-                  <img src={user.avatar} alt={user.username} className="w-12 h-12 rounded-full object-cover border border-gray-100 dark:border-gray-700" />
+                  <div className="relative">
+                      <img src={user.avatar} alt={user.username} className={`w-12 h-12 rounded-full object-cover border ${isUserOwner ? 'border-yellow-400' : 'border-gray-100 dark:border-gray-700'}`} />
+                      {isUserOwner && (
+                        <div className="absolute -top-2 -right-2 bg-yellow-400 rounded-full p-1 shadow-sm animate-bounce">
+                          <Sparkles className="w-3 h-3 text-white" />
+                        </div>
+                      )}
+                  </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors flex items-center gap-2">
                       {user.username}
+                      {isUserOwner && <span className="text-[10px] bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full font-bold">OWNER</span>}
                     </h3>
                     <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1 max-w-[150px]">
                         {user.description || "No bio"}

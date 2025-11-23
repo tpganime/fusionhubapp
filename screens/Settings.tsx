@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lock, Eye, Trash2, LogOut, Shield, ChevronRight, Moon, Sun } from 'lucide-react';
+import { ArrowLeft, Lock, Eye, Trash2, LogOut, Shield, ChevronRight, Moon, Sun, Zap } from 'lucide-react';
 import { PRIVACY_POLICY_TEXT } from '../constants';
 
 export const SettingsScreen: React.FC = () => {
-  const { currentUser, updateProfile, logout, deleteAccount, theme, toggleTheme } = useApp();
+  const { currentUser, updateProfile, logout, deleteAccount, theme, toggleTheme, enableAnimations, toggleAnimations } = useApp();
   const navigate = useNavigate();
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
 
@@ -48,7 +48,7 @@ export const SettingsScreen: React.FC = () => {
   }
 
   return (
-    <div className="h-full overflow-y-auto transition-colors duration-300 scrollbar-hide">
+    <div className={`h-full overflow-y-auto transition-colors duration-300 scrollbar-hide ${enableAnimations ? 'animate-fade-in' : ''}`}>
       <div className="sticky top-0 bg-white/60 dark:bg-dark-surface/80 backdrop-blur-md border-b border-white/50 dark:border-gray-800 p-4 flex items-center z-50">
         <button onClick={() => navigate('/profile')} className="p-2 -ml-2 rounded-full hover:bg-white/40 dark:hover:bg-white/10 text-gray-900 dark:text-white">
           <ArrowLeft className="w-6 h-6" />
@@ -62,7 +62,7 @@ export const SettingsScreen: React.FC = () => {
         <section>
           <h3 className="text-xs font-bold text-gray-400 uppercase mb-2 ml-3">Appearance</h3>
           <div className="bg-white/70 dark:bg-dark-surface rounded-2xl shadow-sm border border-white/50 dark:border-gray-800 overflow-hidden">
-             <div className="p-4 flex items-center justify-between">
+             <div className="p-4 flex items-center justify-between border-b border-gray-50 dark:border-gray-800">
                <div className="flex items-center gap-3">
                  <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-indigo-900 text-indigo-300' : 'bg-yellow-100 text-yellow-600'}`}>
                     {theme === 'dark' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
@@ -72,6 +72,16 @@ export const SettingsScreen: React.FC = () => {
                <label className="relative inline-flex items-center cursor-pointer">
                  <input type="checkbox" checked={theme === 'dark'} onChange={toggleTheme} className="sr-only peer" />
                  <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+               </label>
+            </div>
+            <div className="p-4 flex items-center justify-between">
+               <div className="flex items-center gap-3">
+                 <div className="p-2 bg-pink-100 dark:bg-pink-900 rounded-lg text-pink-600 dark:text-pink-300"><Zap className="w-5 h-5" /></div>
+                 <span className="font-medium text-gray-900 dark:text-white">Animations</span>
+               </div>
+               <label className="relative inline-flex items-center cursor-pointer">
+                 <input type="checkbox" checked={enableAnimations} onChange={toggleAnimations} className="sr-only peer" />
+                 <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-pink-300 dark:peer-focus:ring-pink-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-600"></div>
                </label>
             </div>
           </div>
@@ -143,7 +153,7 @@ export const SettingsScreen: React.FC = () => {
           </div>
         </section>
 
-        <p className="text-center text-xs text-gray-400 mt-8">FusionHub v1.3.4</p>
+        <p className="text-center text-xs text-gray-400 mt-8">FusionHub v1.4.0</p>
 
       </main>
     </div>

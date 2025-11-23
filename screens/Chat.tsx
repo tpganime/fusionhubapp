@@ -2,11 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
 import { User, Message } from '../types';
-import { Send, ArrowLeft, CheckCheck } from 'lucide-react';
+import { Send, ArrowLeft, CheckCheck, Sparkles } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 export const ChatScreen: React.FC = () => {
-  const { currentUser, users, messages, sendMessage, markConversationAsRead } = useApp();
+  const { currentUser, users, messages, sendMessage, markConversationAsRead, enableAnimations, isOwner } = useApp();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -73,7 +73,7 @@ export const ChatScreen: React.FC = () => {
       <div className="h-full overflow-y-auto pb-24 transition-colors duration-300 scrollbar-hide">
         <TopBar />
         <main className="px-4 pt-2">
-          <h1 className="text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white">Chats</h1>
+          <h1 className={`text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white ${enableAnimations ? 'animate-slide-in-right' : ''}`}>Chats</h1>
           <div className="space-y-2">
             {chatUsers.length === 0 ? (
               <div className="text-center py-10 text-gray-400 dark:text-gray-600">
@@ -81,25 +81,31 @@ export const ChatScreen: React.FC = () => {
                 <p className="text-sm">Go to Search to find people!</p>
               </div>
             ) : (
-              chatUsers.map(user => {
+              chatUsers.map((user, index) => {
                 // Find last message
                 const userMsgs = getConversation(user.id);
                 const lastMsg = userMsgs[userMsgs.length - 1];
                 const hasUnread = lastMsg && lastMsg.senderId === user.id && !lastMsg.read;
+                const isUserOwner = isOwner(user.email);
 
                 return (
                   <button
                     key={user.id}
                     onClick={() => setSelectedUser(user)}
-                    className="w-full flex items-center p-3 bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white dark:border-gray-800 hover:bg-white dark:hover:bg-white/5 transition-colors"
+                    className={`w-full flex items-center p-3 bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white dark:border-gray-800 hover:bg-white dark:hover:bg-white/5 transition-all hover:scale-[1.02] ${enableAnimations ? 'animate-slide-up' : ''}`}
+                    style={{ animationDelay: `${index * 0.05}s`, animationFillMode: 'both' }}
                   >
                     <div className="relative">
-                      <img src={user.avatar} alt={user.username} className="w-12 h-12 rounded-full object-cover border border-gray-200 dark:border-gray-700" />
-                      {hasUnread && <span className="absolute top-0 right-0 w-3 h-3 bg-blue-500 rounded-full border-2 border-white dark:border-dark-surface"></span>}
+                      <img src={user.avatar} alt={user.username} className={`w-12 h-12 rounded-full object-cover border ${isUserOwner ? 'border-yellow-400' : 'border-gray-200 dark:border-gray-700'}`} />
+                      {hasUnread && <span className="absolute top-0 right-0 w-3 h-3 bg-blue-500 rounded-full border-2 border-white dark:border-dark-surface animate-pulse"></span>}
+                      {isUserOwner && <div className="absolute -bottom-1 -right-1 bg-yellow-400 rounded-full p-[2px]"><Sparkles className="w-3 h-3 text-white" /></div>}
                     </div>
                     <div className="ml-3 text-left flex-1 min-w-0">
                       <div className="flex justify-between items-center">
-                        <h3 className={`font-semibold truncate ${hasUnread ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>{user.username}</h3>
+                        <h3 className={`font-semibold truncate flex items-center gap-1 ${hasUnread ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>
+                            {user.username}
+                            {isUserOwner && <span className="text-[10px] text-yellow-500">👑</span>}
+                        </h3>
                         {lastMsg && <span className="text-[10px] text-gray-400">{new Date(lastMsg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>}
                       </div>
                       <p className={`text-xs truncate ${hasUnread ? 'font-semibold text-gray-800 dark:text-gray-200' : 'text-gray-500 dark:text-gray-400'}`}>
@@ -118,7 +124,7 @@ export const ChatScreen: React.FC = () => {
 
   // -- Chat Detail View --
   return (
-    <div className="h-full flex flex-col transition-colors duration-300">
+    <div className={`h-full flex flex-col transition-colors duration-300 ${enableAnimations ? 'animate-fade-in' : ''}`}>
       {/* Chat Header */}
       <div className="h-16 glass-panel dark:bg-dark-surface/80 flex items-center px-4 shadow-sm z-20 dark:border-gray-800">
         <button onClick={() => setSelectedUser(null)} className="p-2 -ml-2 mr-2 rounded-full hover:bg-gray-200/50 dark:hover:bg-white/10 text-gray-900 dark:text-white">
@@ -128,8 +134,11 @@ export const ChatScreen: React.FC = () => {
           onClick={() => navigate(`/user/${selectedUser.id}`)}
           className="flex items-center flex-1 hover:opacity-80 transition-opacity"
         >
-          <img src={selectedUser.avatar} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
-          <span className="ml-3 font-semibold text-gray-900 dark:text-white">{selectedUser.username}</span>
+          <img src={selectedUser.avatar} alt="avatar" className={`w-8 h-8 rounded-full object-cover ${isOwner(selectedUser.email) ? 'border-2 border-yellow-400' : ''}`} />
+          <span className="ml-3 font-semibold text-gray-900 dark:text-white flex items-center gap-1">
+              {selectedUser.username}
+              {isOwner(selectedUser.email) && <Sparkles className="w-3 h-3 text-yellow-500" />}
+          </span>
         </button>
       </div>
 
@@ -141,10 +150,10 @@ export const ChatScreen: React.FC = () => {
              <p className="text-xs text-gray-400">Start a conversation with {selectedUser.username}</p>
            </div>
         ) : (
-           conversation.map(msg => {
+           conversation.map((msg, idx) => {
              const isMe = msg.senderId === currentUser?.id;
              return (
-               <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+               <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} ${enableAnimations ? 'animate-slide-up' : ''}`} style={{ animationDelay: enableAnimations ? `${idx * 0.02}s` : '0s' }}>
                  <div className={`max-w-[75%] px-4 py-2 rounded-2xl text-sm ${
                    isMe 
                      ? 'bg-blue-500 text-white rounded-br-none' 
@@ -168,7 +177,7 @@ export const ChatScreen: React.FC = () => {
       </div>
 
       {/* Input Area (Sticky above bottom nav) */}
-      <div className="fixed bottom-20 left-0 right-0 px-4 z-30 pointer-events-none">
+      <div className={`fixed bottom-20 left-0 right-0 px-4 z-30 pointer-events-none ${enableAnimations ? 'animate-slide-up' : ''}`}>
         <form onSubmit={handleSend} className="pointer-events-auto flex items-center gap-2 bg-white/80 dark:bg-dark-surface/80 backdrop-blur-xl p-2 rounded-full shadow-lg border border-white/50 dark:border-gray-700 sm:max-w-md sm:mx-auto">
           <input
             type="text"
@@ -177,7 +186,7 @@ export const ChatScreen: React.FC = () => {
             placeholder="Type a message..."
             className="flex-1 bg-transparent px-4 py-2 focus:outline-none text-sm text-gray-900 dark:text-white placeholder-gray-500"
           />
-          <button type="submit" disabled={!inputText.trim()} className="p-2 bg-blue-500 rounded-full text-white hover:bg-blue-600 disabled:opacity-50 transition-colors">
+          <button type="submit" disabled={!inputText.trim()} className="p-2 bg-blue-500 rounded-full text-white hover:bg-blue-600 disabled:opacity-50 transition-colors transform active:scale-90 duration-100">
             <Send className="w-5 h-5" />
           </button>
         </form>

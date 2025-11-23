@@ -5,7 +5,7 @@ import { TopBar } from '../components/TopBar';
 import { ExternalLink } from 'lucide-react';
 
 export const HomeScreen: React.FC = () => {
-  const { currentUser } = useApp();
+  const { currentUser, enableAnimations } = useApp();
   const [timeData, setTimeData] = useState({
     time: '',
     date: '',
@@ -47,12 +47,12 @@ export const HomeScreen: React.FC = () => {
     <div className="h-full overflow-y-auto pb-32 transition-colors duration-300 scrollbar-hide">
       <TopBar />
       
-      <main className="px-4 pt-4 space-y-6 animate-fade-in">
+      <main className={`px-4 pt-4 space-y-6 ${enableAnimations ? 'animate-fade-in' : ''}`}>
         
         {/* Header Card */}
-        <div className="relative overflow-hidden rounded-3xl bg-white/80 dark:bg-dark-surface shadow-xl p-6 border border-white/50 dark:border-gray-700 group hover:shadow-2xl transition-all duration-500 backdrop-blur-sm">
-          <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-blue-200 via-purple-100 to-transparent dark:from-blue-900 dark:via-purple-900 dark:to-transparent rounded-bl-full opacity-60 transition-transform duration-700 group-hover:scale-110"></div>
-          <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-pink-100 dark:bg-pink-900 rounded-full mix-blend-multiply filter blur-xl opacity-50 animate-blob"></div>
+        <div className={`relative overflow-hidden rounded-3xl bg-white/80 dark:bg-dark-surface shadow-xl p-6 border border-white/50 dark:border-gray-700 group hover:shadow-2xl transition-all duration-500 backdrop-blur-sm ${enableAnimations ? 'animate-elastic-up' : ''}`}>
+          <div className={`absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-blue-200 via-purple-100 to-transparent dark:from-blue-900 dark:via-purple-900 dark:to-transparent rounded-bl-full opacity-60 transition-transform duration-700 group-hover:scale-110 ${enableAnimations ? 'animate-blob' : ''}`}></div>
+          <div className={`absolute -bottom-10 -left-10 w-32 h-32 bg-pink-100 dark:bg-pink-900 rounded-full mix-blend-multiply filter blur-xl opacity-50 ${enableAnimations ? 'animate-blob' : ''}`} style={{ animationDelay: '2s' }}></div>
           
           <div className="relative z-10">
              <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-1 drop-shadow-sm">
@@ -70,7 +70,7 @@ export const HomeScreen: React.FC = () => {
         </div>
 
         {/* Shortcuts Grid */}
-        <div>
+        <div className={enableAnimations ? 'animate-slide-up' : ''} style={{ animationDelay: '0.1s' }}>
           <h2 className="text-lg font-bold text-gray-700 dark:text-gray-300 mb-4 px-1 flex items-center gap-2">
              <span className="w-1 h-5 bg-blue-500 rounded-full"></span>
              Quick Access
@@ -82,7 +82,8 @@ export const HomeScreen: React.FC = () => {
                 href={shortcut.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group relative flex flex-col p-4 rounded-2xl bg-white/60 dark:bg-dark-surface/80 backdrop-blur-md shadow-sm hover:shadow-lg border border-white dark:border-gray-700 transition-all duration-300 hover:-translate-y-1"
+                className={`group relative flex flex-col p-4 rounded-2xl bg-white/60 dark:bg-dark-surface/80 backdrop-blur-md shadow-sm hover:shadow-lg border border-white dark:border-gray-700 transition-all duration-300 hover:-translate-y-1 ${enableAnimations ? 'animate-zoom-rotate' : ''}`}
+                style={{ animationDelay: `${0.1 + (index * 0.05)}s`, animationFillMode: 'both' }}
               >
                 <div className="flex justify-between items-start mb-3">
                   <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform duration-300">
@@ -102,7 +103,7 @@ export const HomeScreen: React.FC = () => {
         </div>
 
         {/* Footer Message */}
-        <div className="p-6 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg relative overflow-hidden">
+        <div className={`p-6 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg relative overflow-hidden ${enableAnimations ? 'animate-slide-up' : ''}`} style={{ animationDelay: '0.3s' }}>
            <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
            <p className="text-sm font-medium opacity-90 relative z-10 text-center">"Connect, Play, and Explore together."</p>
         </div>

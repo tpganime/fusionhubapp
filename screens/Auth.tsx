@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
@@ -18,7 +17,7 @@ const generateUUID = () => {
 
 export const AuthScreen: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const { loginWithCredentials, signup, users, isLoading, currentUser } = useApp();
+  const { loginWithCredentials, signup, users, isLoading, currentUser, enableAnimations } = useApp();
   const navigate = useNavigate();
 
   // Form States
@@ -118,7 +117,7 @@ export const AuthScreen: React.FC = () => {
       <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-purple-300 rounded-full mix-blend-multiply filter blur-2xl opacity-70 animate-blob animation-delay-2000 dark:opacity-40 dark:mix-blend-normal dark:bg-purple-900"></div>
       <div className="absolute -bottom-8 left-20 w-64 h-64 bg-pink-300 rounded-full mix-blend-multiply filter blur-2xl opacity-70 animate-blob animation-delay-4000 dark:opacity-40 dark:mix-blend-normal dark:bg-pink-900"></div>
 
-      <div className="w-full max-w-md glass-panel dark:bg-dark-surface/60 p-8 rounded-3xl shadow-2xl z-10 border border-white/30 dark:border-white/10">
+      <div className={`w-full max-w-md glass-panel dark:bg-dark-surface/60 p-8 rounded-3xl shadow-2xl z-10 border border-white/30 dark:border-white/10 ${enableAnimations ? 'animate-elastic-up' : ''}`}>
         <h1 className="text-3xl font-bold text-center mb-2 text-black">
           FusionHub
         </h1>
@@ -134,7 +133,7 @@ export const AuthScreen: React.FC = () => {
                   type="text"
                   value={username}
                   onChange={(e) => handleCheckUsername(e.target.value)}
-                  className={`w-full p-3 rounded-xl border ${usernameAvailable === false ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : 'border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-black/20'} focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all text-gray-900 dark:text-white placeholder-gray-400`}
+                  className={`w-full p-3 rounded-xl border ${usernameAvailable === false ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : 'border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-red-900/0'} focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all text-gray-900 dark:text-white placeholder-gray-400`}
                   placeholder="Choose a username"
                   required={!isLogin}
                 />

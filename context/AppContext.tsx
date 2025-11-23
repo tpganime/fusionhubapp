@@ -1,14 +1,15 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
-import { User, Message, Notification, Gender } from '../types';
+import { User, Message, Notification as AppNotification, Gender } from '../types';
 import { supabase } from '../lib/supabase';
 
 interface AppContextType {
   currentUser: User | null;
   users: User[];
   messages: Message[];
-  notifications: Notification[];
+  notifications: AppNotification[];
   theme: 'light' | 'dark';
   isLoading: boolean;
+  enableAnimations: boolean;
   login: (user: User) => Promise<void>;
   loginWithCredentials: (email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -20,15 +21,22 @@ interface AppContextType {
   acceptFriendRequest: (requesterId: string) => Promise<void>;
   markNotificationRead: (id: string) => void;
   toggleTheme: () => void;
+  toggleAnimations: () => void;
   markConversationAsRead: (senderId: string) => void;
+  isOwner: (email: string) => boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
   THEME: 'fh_theme_v1',
-  CURRENT_USER_ID: 'fh_current_user_id_v1'
+  CURRENT_USER_ID: 'fh_current_user_id_v1',
+  ANIMATIONS: 'fh_animations_v1',
+  CACHE_USERS: 'fh_cache_users_v1',
+  CACHE_MESSAGES: 'fh_cache_messages_v1'
 };
+
+const OWNER_EMAIL = 'chaudharytanmay664@gmail.com';
 
 // -- Helpers --
 
@@ -117,9 +125,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [users, setUsers] = useState<User[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [enableAnimations, setEnableAnimations] = useState(true);
 
   // Refs to access state inside subscription callbacks
   const currentUserRef = useRef<User | null>(null);
@@ -132,6 +141,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     usersRef.current = users;
   }, [users]);
+
+  // Cache persistence - Update LocalStorage when state changes
+  useEffect(() => {
+    if (users.length > 0) {
+      localStorage.setItem(STORAGE_KEYS.CACHE_USERS, JSON.stringify(users));
+    }
+  }, [users]);
+
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem(STORAGE_KEYS.CACHE_MESSAGES, JSON.stringify(messages));
+    }
+  }, [messages]);
 
   // Apply Theme
   useEffect(() => {
@@ -146,12 +168,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Notification Helper (Sound Removed)
   const triggerNotification = (title: string, body: string, icon?: string) => {
     const isHidden = document.hidden;
-    const hasPermission = "Notification" in window && Notification.permission === "granted";
+    // Access global Notification object safely using a type assertion or window property
+    const N = window.Notification as any; 
+    const hasPermission = "Notification" in window && N.permission === "granted";
 
     if (isHidden && hasPermission) {
       // Background: Use system notification logic, but silent
       try {
-        new Notification(title, {
+        new N(title, {
           body,
           icon: icon || '/favicon.ico',
           badge: '/favicon.ico',
@@ -164,45 +188,82 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const requestNotificationPermission = async () => {
-    if ("Notification" in window && Notification.permission !== "granted") {
-      await Notification.requestPermission();
+    if ("Notification" in window && window.Notification.permission !== "granted") {
+      await window.Notification.requestPermission();
     }
   };
 
   // Load Initial Data
   useEffect(() => {
     const fetchData = async () => {
-      setIsLoading(true);
       try {
-        // 1. Fetch Users
-        const { data: usersData, error: userError } = await supabase.from('users').select('*');
-        if (userError) throw userError;
-        const mappedUsers = usersData.map(mapUserFromDB);
-        setUsers(mappedUsers);
-        
-        // 2. Fetch Messages
-        const { data: msgsData, error: msgError } = await supabase.from('messages').select('*');
-        if (msgError) throw msgError;
-        setMessages(msgsData.map(mapMessageFromDB));
-
-        // 3. Auto Login
+        // --- 0. CACHE LOADING (Fast Load) ---
+        const cachedUsersStr = localStorage.getItem(STORAGE_KEYS.CACHE_USERS);
+        const cachedMessagesStr = localStorage.getItem(STORAGE_KEYS.CACHE_MESSAGES);
         const savedId = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
-        if (savedId) {
-          const found = mappedUsers.find(u => u.id === savedId);
-          if (found) {
-            setCurrentUser(found);
-            requestNotificationPermission();
-          }
+        
+        let cachedUsersList: User[] = [];
+
+        if (cachedUsersStr) {
+          try {
+            cachedUsersList = JSON.parse(cachedUsersStr);
+            if (cachedUsersList.length > 0) setUsers(cachedUsersList);
+          } catch (e) { console.error("Cache parse error users", e); }
         }
 
-        // 4. Load Theme
+        if (cachedMessagesStr) {
+          try {
+            const cachedMsgs = JSON.parse(cachedMessagesStr);
+            if (cachedMsgs.length > 0) setMessages(cachedMsgs);
+          } catch (e) { console.error("Cache parse error msgs", e); }
+        }
+
+        // Instant Login if cached
+        if (savedId && cachedUsersList.length > 0) {
+            const found = cachedUsersList.find(u => u.id === savedId);
+            if (found) {
+                setCurrentUser(found);
+                setIsLoading(false); // STOP LOADING IMMEDIATELY IF CACHE HIT
+                requestNotificationPermission();
+            }
+        }
+
+        // --- Load Settings ---
         const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME) as 'light' | 'dark';
         if (savedTheme) setTheme(savedTheme);
 
+        const savedAnim = localStorage.getItem(STORAGE_KEYS.ANIMATIONS);
+        if (savedAnim !== null) setEnableAnimations(savedAnim === 'true');
+
+        // --- 1. FETCH FRESH DATA (Background Sync) ---
+        const { data: usersData, error: userError } = await supabase.from('users').select('*');
+        if (userError) throw userError;
+        const mappedUsers = usersData.map(mapUserFromDB);
+        setUsers(mappedUsers); // This will trigger the cache useEffect
+        
+        // --- 2. Fetch Fresh Messages ---
+        const { data: msgsData, error: msgError } = await supabase.from('messages').select('*');
+        if (msgError) throw msgError;
+        const mappedMsgs = msgsData.map(mapMessageFromDB);
+        setMessages(mappedMsgs); // This will trigger the cache useEffect
+
+        // --- 3. Re-Verify Login with Fresh Data ---
+        if (savedId) {
+          const found = mappedUsers.find(u => u.id === savedId);
+          if (found) {
+            setCurrentUser(found); // Update current user with fresh data
+            requestNotificationPermission();
+          } else if (!cachedUsersList.length) {
+            // If we didn't have cache and user not found in fresh data
+            setIsLoading(false);
+          }
+        } else {
+            setIsLoading(false);
+        }
+
       } catch (err) {
         console.error("Initialization error:", err);
-      } finally {
-        setIsLoading(false);
+        setIsLoading(false); // Ensure we stop loading on error
       }
     };
 
@@ -228,7 +289,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           const senderName = sender ? sender.username : 'Someone';
 
           // App Internal Notification
-          const notif: Notification = {
+          const notif: AppNotification = {
             id: Date.now().toString(),
             type: 'message',
             content: `New message from ${senderName}`,
@@ -269,7 +330,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                const newReqId = newReqs.find(id => !oldReqs.includes(id));
                const requester = usersRef.current.find(u => u.id === newReqId);
                if (requester) {
-                 const notif: Notification = {
+                 const notif: AppNotification = {
                    id: Date.now().toString(),
                    type: 'friend_request',
                    content: `${requester.username} sent you a friend request`,
@@ -416,6 +477,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
+  const toggleAnimations = () => {
+    setEnableAnimations(prev => {
+      const newVal = !prev;
+      localStorage.setItem(STORAGE_KEYS.ANIMATIONS, String(newVal));
+      return newVal;
+    });
+  };
+
+  const isOwner = (email: string) => email.toLowerCase() === OWNER_EMAIL.toLowerCase();
+
   return (
     <AppContext.Provider value={{
       currentUser,
@@ -424,6 +495,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       notifications,
       theme,
       isLoading,
+      enableAnimations,
       login,
       loginWithCredentials,
       logout,
@@ -435,7 +507,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       acceptFriendRequest,
       markNotificationRead,
       toggleTheme,
-      markConversationAsRead
+      toggleAnimations,
+      markConversationAsRead,
+      isOwner
     }}>
       {children}
     </AppContext.Provider>

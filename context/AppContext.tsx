@@ -554,9 +554,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const updatedMsg = mapMessageFromDB(payload.new);
         setMessages(prev => prev.map(m => m.id === updatedMsg.id ? updatedMsg : m));
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, (payload) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, async (payload) => {
         if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
           const updatedUser = mapUserFromDB(payload.new);
+          
           setUsers(prev => {
              const exists = prev.find(u => u.id === updatedUser.id);
              if (checkIsAdmin(updatedUser.email)) {
@@ -569,28 +570,55 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           });
 
           if (currentUserRef.current && updatedUser.id === currentUserRef.current.id) {
-            // Keep local overrides if any, but update fields
-            setCurrentUser(updatedUser);
-            
+            // Check for new friend request by comparing old state in ref with new state
             const oldReqs = currentUserRef.current.requests || [];
             const newReqs = updatedUser.requests || [];
+            
             if (newReqs.length > oldReqs.length) {
                const newReqId = newReqs.find(id => !oldReqs.includes(id));
-               const requester = usersRef.current.find(u => u.id === newReqId);
-               if (requester) {
-                 playNotificationSound();
-                 const notif: AppNotification = {
-                   id: Date.now().toString(),
-                   type: 'friend_request',
-                   content: `${requester.username} sent you a friend request`,
-                   read: false,
-                   timestamp: Date.now(),
-                   data: { requesterId: requester.id, avatar: requester.avatar }
-                 };
-                 setNotifications(prev => [notif, ...prev]);
-                 triggerNotification('New Friend Request', `${requester.username} wants to be friends`, requester.avatar);
+               
+               if (newReqId) {
+                   let requester = usersRef.current.find(u => u.id === newReqId);
+                   
+                   // Fallback: If requester is not in local cache (race condition or new user), fetch them
+                   if (!requester) {
+                       try {
+                           const { data } = await supabase.from('users').select('*').eq('id', newReqId).single();
+                           if (data) requester = mapUserFromDB(data);
+                       } catch (e) { console.error("Error fetching requester details", e); }
+                   }
+
+                   const requesterName = requester?.username || 'Someone';
+
+                   playNotificationSound();
+                   const notifId = `fr_${Date.now()}_${newReqId}`;
+                   
+                   const notif: AppNotification = {
+                     id: notifId,
+                     type: 'friend_request',
+                     content: `${requesterName} sent you a friend request`,
+                     read: false,
+                     timestamp: Date.now(),
+                     data: { requesterId: newReqId, avatar: requester?.avatar }
+                   };
+                   
+                   setNotifications(prev => {
+                        // Prevent duplicate notifications for the same request within 5 seconds
+                        const isDuplicate = prev.some(n => 
+                            n.type === 'friend_request' && 
+                            n.data?.requesterId === newReqId && 
+                            (Date.now() - n.timestamp < 5000)
+                        );
+                        if (isDuplicate) return prev;
+                        return [notif, ...prev];
+                   });
+
+                   triggerNotification('New Friend Request', `${requesterName} wants to be friends`, requester?.avatar);
                }
             }
+            
+            // Update current user state
+            setCurrentUser(updatedUser);
           }
         }
       })

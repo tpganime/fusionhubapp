@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lock, Eye, Trash2, LogOut, Shield, ChevronRight, Moon, Sun, Zap, LayoutDashboard, Bell, Droplets, Sliders, Power, Gauge } from 'lucide-react';
+import { ArrowLeft, Lock, Eye, Trash2, LogOut, Shield, ChevronRight, Moon, Sun, Zap, LayoutDashboard, Bell, Droplets, Sliders, Power, Gauge, ArrowRight } from 'lucide-react';
 import { PRIVACY_POLICY_TEXT } from '../constants';
 import { LiquidSlider } from '../components/LiquidSlider';
 import { LiquidToggle } from '../components/LiquidToggle';
@@ -30,21 +30,20 @@ export const SettingsScreen: React.FC = () => {
   };
 
   const handleDelete = () => {
-    if (window.confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
+    if (window.confirm("Are you sure you want to delete your account?")) {
       deleteAccount();
       navigate('/');
     }
   };
 
   const handleDeactivate = () => {
-      if (window.confirm("Are you sure you want to deactivate? Your profile will be hidden until you log in again.")) {
+      if (window.confirm("Deactivate your account?")) {
           deactivateAccount();
           navigate('/');
       }
   };
 
   const transparencyValue = Math.round((1.0 - glassOpacity) * 100);
-
   const handleTransparencyChange = (val: number) => {
       const newOpacity = 1.0 - (val / 100.0);
       setGlassOpacity(Math.max(0, Math.min(1, newOpacity)));
@@ -59,19 +58,12 @@ export const SettingsScreen: React.FC = () => {
           </button>
           <h2 className="text-lg font-bold ml-2 text-gray-900 dark:text-white">Privacy Policy</h2>
         </div>
-        <div className={`p-6 liquid-card mx-4 mb-20 whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300 leading-relaxed ${enableAnimations ? 'animate-slide-up-fade' : ''}`}>
+        <div className={`p-6 liquid-card mx-4 mb-20 whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300 leading-relaxed`}>
           {PRIVACY_POLICY_TEXT}
         </div>
       </div>
     );
   }
-
-  const getAnimStyle = (index: number) => {
-      return enableAnimations ? {
-          animationDelay: `${index * 80}ms`,
-          animationFillMode: 'both' as const
-      } : {};
-  };
 
   return (
     <div className={`h-full overflow-y-auto pb-32 no-scrollbar ${enableAnimations ? 'animate-fade-in' : ''}`}>
@@ -85,12 +77,12 @@ export const SettingsScreen: React.FC = () => {
       <main className="px-5 space-y-6 max-w-md mx-auto">
         
         {isAdmin && (
-          <section className={`${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`} style={getAnimStyle(0)}>
-            <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 ml-2 tracking-wider">Admin</h3>
+          <section>
+            <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 ml-2 tracking-wider">Admin</h3>
             <div className="liquid-card overflow-hidden">
                <button onClick={() => navigate('/admin')} className="w-full p-5 flex items-center justify-between hover:bg-white/20 transition-colors group">
                  <div className="flex items-center gap-4">
-                   <div className="p-2.5 bg-gradient-to-br from-red-500 to-orange-500 rounded-xl text-white shadow-lg group-hover:scale-110 transition-transform"><LayoutDashboard className="w-5 h-5" /></div>
+                   <div className="p-2.5 bg-gradient-to-br from-red-500 to-orange-500 rounded-xl text-white shadow-lg"><LayoutDashboard className="w-5 h-5" /></div>
                    <span className="font-bold text-gray-900 dark:text-white">Admin Panel</span>
                  </div>
                  <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -99,14 +91,12 @@ export const SettingsScreen: React.FC = () => {
           </section>
         )}
 
-        <section className={`${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`} style={getAnimStyle(1)}>
-          <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 ml-2 tracking-wider">Appearance</h3>
+        <section>
+          <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 ml-2 tracking-wider">Appearance</h3>
           <div className="liquid-card overflow-hidden divide-y divide-gray-200/30 dark:divide-white/10">
-             
-             {/* Dark Mode */}
              <div className="p-5 flex items-center justify-between">
                <div className="flex items-center gap-4">
-                 <div className={`p-2.5 rounded-xl shadow-md transition-colors ${theme === 'dark' ? 'bg-indigo-900 text-indigo-300' : 'bg-yellow-100 text-yellow-600'}`}>
+                 <div className={`p-2.5 rounded-xl shadow-md ${theme === 'dark' ? 'bg-indigo-900 text-indigo-300' : 'bg-yellow-100 text-yellow-600'}`}>
                     {theme === 'dark' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
                  </div>
                  <span className="font-bold text-gray-900 dark:text-white text-sm">Dark Mode</span>
@@ -114,7 +104,6 @@ export const SettingsScreen: React.FC = () => {
                <LiquidToggle checked={theme === 'dark'} onChange={toggleTheme} />
             </div>
 
-            {/* Liquid Glass */}
             <div className="p-5 flex items-center justify-between">
                <div className="flex items-center gap-4">
                  <div className="p-2.5 bg-cyan-100 dark:bg-cyan-900/50 rounded-xl text-cyan-600 dark:text-cyan-300 shadow-md"><Droplets className="w-5 h-5" /></div>
@@ -129,14 +118,13 @@ export const SettingsScreen: React.FC = () => {
                        <div className="p-2.5 bg-gray-100 dark:bg-gray-800 rounded-xl text-gray-600 dark:text-gray-300 shadow-md"><Sliders className="w-5 h-5" /></div>
                        <div className="flex flex-col flex-1">
                           <span className="font-bold text-gray-900 dark:text-white text-sm">Transparency</span>
-                          <span className="text-[10px] text-gray-500 dark:text-gray-400">{transparencyValue}% {transparencyValue === 100 ? '(Clear)' : ''}</span>
+                          <span className="text-[10px] text-gray-500 dark:text-gray-400">{transparencyValue}%</span>
                        </div>
                    </div>
                    <LiquidSlider value={transparencyValue} onChange={handleTransparencyChange} />
                </div>
             )}
 
-            {/* Animations Toggle */}
             <div className="p-5 flex items-center justify-between">
                <div className="flex items-center gap-4">
                  <div className="p-2.5 bg-pink-100 dark:bg-pink-900/50 rounded-xl text-pink-600 dark:text-pink-300 shadow-md"><Zap className="w-5 h-5" /></div>
@@ -153,17 +141,7 @@ export const SettingsScreen: React.FC = () => {
                    </div>
                    <div className="flex gap-2 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
                       {(['fast', 'balanced', 'relaxed'] as const).map((speed) => (
-                        <button
-                          key={speed}
-                          onClick={() => setAnimationSpeed(speed)}
-                          className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all capitalize ${
-                            animationSpeed === speed 
-                              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' 
-                              : 'text-gray-500 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50'
-                          }`}
-                        >
-                          {speed}
-                        </button>
+                        <button key={speed} onClick={() => setAnimationSpeed(speed)} className={`flex-1 py-1.5 text-xs font-bold rounded-lg capitalize ${animationSpeed === speed ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500'}`}>{speed}</button>
                       ))}
                    </div>
                </div>
@@ -172,37 +150,15 @@ export const SettingsScreen: React.FC = () => {
             <div className="p-5 flex items-center justify-between">
                <div className="flex items-center gap-4">
                  <div className="p-2.5 bg-blue-100 dark:bg-blue-900/50 rounded-xl text-blue-600 dark:text-blue-300 shadow-md"><Bell className="w-5 h-5" /></div>
-                 <div className="flex flex-col">
-                   <span className="font-bold text-gray-900 dark:text-white text-sm">Notifications</span>
-                 </div>
+                 <span className="font-bold text-gray-900 dark:text-white text-sm">Notifications</span>
                </div>
                <LiquidToggle checked={isNotificationGranted} onChange={enableNotifications} />
             </div>
           </div>
         </section>
 
-        <section className={`${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`} style={getAnimStyle(2)}>
-          <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 ml-2 tracking-wider">Privacy</h3>
-          <div className="liquid-card overflow-hidden divide-y divide-gray-200/30 dark:divide-white/10">
-            <div className="p-5 flex items-center justify-between">
-               <div className="flex items-center gap-4">
-                 <div className="p-2.5 bg-purple-100 dark:bg-purple-900/50 rounded-xl text-purple-600 dark:text-purple-300 shadow-md"><Eye className="w-5 h-5" /></div>
-                 <span className="font-bold text-gray-900 dark:text-white text-sm">Private Profile</span>
-               </div>
-               <LiquidToggle checked={currentUser.isPrivateProfile} onChange={togglePrivateProfile} />
-            </div>
-            <div className="p-5 flex items-center justify-between">
-               <div className="flex items-center gap-4">
-                 <div className="p-2.5 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl text-indigo-600 dark:text-indigo-300 shadow-md"><Lock className="w-5 h-5" /></div>
-                 <span className="font-bold text-gray-900 dark:text-white text-sm">Allow DM</span>
-               </div>
-               <LiquidToggle checked={currentUser.allowPrivateChat} onChange={togglePrivateChat} />
-            </div>
-          </div>
-        </section>
-
-        <section className={`${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`} style={getAnimStyle(3)}>
-          <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 ml-2 tracking-wider">Legal</h3>
+        <section>
+          <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 ml-2 tracking-wider">Legal</h3>
           <div className="liquid-card overflow-hidden">
             <button onClick={() => setShowPrivacyPolicy(true)} className="w-full p-5 flex items-center justify-between hover:bg-white/20 transition-colors">
                <div className="flex items-center gap-4">
@@ -214,31 +170,36 @@ export const SettingsScreen: React.FC = () => {
           </div>
         </section>
 
-        <section className={`${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`} style={getAnimStyle(4)}>
+        <section>
           <h3 className="text-xs font-bold text-red-500/70 uppercase mb-3 ml-2 tracking-wider">Danger Zone</h3>
           <div className="liquid-card overflow-hidden divide-y divide-gray-200/30 dark:divide-white/10">
-            <button onClick={handleLogout} className="w-full p-5 flex items-center justify-between text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors">
-               <div className="flex items-center gap-4">
-                 <div className="p-2.5 bg-orange-100 dark:bg-orange-900/30 rounded-xl"><LogOut className="w-5 h-5" /></div>
-                 <span className="font-bold">Log Out</span>
-               </div>
-            </button>
-            <button onClick={handleDeactivate} className="w-full p-5 flex items-center justify-between text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800/20 transition-colors">
+            <button onClick={handleDeactivate} className="w-full p-5 flex items-center justify-between text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800/20">
                <div className="flex items-center gap-4">
                  <div className="p-2.5 bg-gray-200 dark:bg-gray-800 rounded-xl"><Power className="w-5 h-5" /></div>
-                 <span className="font-bold">Deactivate Account</span>
+                 <span className="font-bold">Deactivate</span>
                </div>
             </button>
-            <button onClick={handleDelete} className="w-full p-5 flex items-center justify-between text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+            <button onClick={handleDelete} className="w-full p-5 flex items-center justify-between text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
                <div className="flex items-center gap-4">
                  <div className="p-2.5 bg-red-100 dark:bg-red-900/30 rounded-xl"><Trash2 className="w-5 h-5" /></div>
-                 <span className="font-bold">Delete Account</span>
+                 <span className="font-bold">Delete</span>
                </div>
             </button>
           </div>
         </section>
 
-        <p className={`text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-8 opacity-50 ${enableAnimations ? 'animate-fade-in' : ''}`} style={{ animationDelay: '800ms' }}>FusionHub v1.3.4 LIQUID</p>
+        {/* New Glass Capsule Log Out Button */}
+        <button 
+          onClick={handleLogout}
+          className="w-full py-4 mt-8 flex items-center justify-between px-6 rounded-full border border-white/40 dark:border-white/10 bg-white/30 dark:bg-white/5 backdrop-blur-xl shadow-lg hover:bg-white/40 transition-all active:scale-95 group"
+        >
+           <span className="text-lg font-bold text-gray-800 dark:text-white">Log Out</span>
+           <div className="p-1.5 bg-white/50 dark:bg-white/10 rounded-full group-hover:translate-x-1 transition-transform">
+              <ArrowRight className="w-5 h-5 text-gray-800 dark:text-white" />
+           </div>
+        </button>
+
+        <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-8 opacity-50">FusionHub v1.3.4 LIQUID</p>
 
       </main>
     </div>

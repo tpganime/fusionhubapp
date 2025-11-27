@@ -1,6 +1,5 @@
 
 import React, { useRef, useEffect, useState } from 'react';
-import gsap from 'gsap';
 
 interface LiquidToggleProps {
   checked: boolean;
@@ -9,25 +8,20 @@ interface LiquidToggleProps {
 
 export const LiquidToggle: React.FC<LiquidToggleProps> = ({ checked, onChange }) => {
   const toggleRef = useRef<HTMLButtonElement>(null);
-  // We use a local state to track animation completion slightly disconnected from 'checked'
-  // to allow the animation to play out
+  
+  // We use CSS transitions on the variable instead of GSAP
+  // The CSS in index.html already handles the transition of --complete if defined correctly
   
   useEffect(() => {
     if (!toggleRef.current) return;
     
-    // Animate --complete CSS variable
-    gsap.to(toggleRef.current, {
-      '--complete': checked ? 100 : 0,
-      duration: 0.6,
-      ease: 'elastic.out(1, 0.5)',
-    });
-
-    // Trigger 'active' state animation momentarily for the stretch effect
+    // Trigger 'active' state animation momentarily for the stretch effect via data attribute
     toggleRef.current.dataset.active = "true";
-    setTimeout(() => {
+    const timer = setTimeout(() => {
         if (toggleRef.current) toggleRef.current.dataset.active = "false";
-    }, 200);
+    }, 300);
 
+    return () => clearTimeout(timer);
   }, [checked]);
 
   return (
@@ -36,7 +30,11 @@ export const LiquidToggle: React.FC<LiquidToggleProps> = ({ checked, onChange })
       className="liquid-toggle" 
       onClick={onChange}
       aria-pressed={checked}
-      style={{ '--complete': checked ? 100 : 0 } as React.CSSProperties}
+      style={{ 
+        '--complete': checked ? 100 : 0,
+        // Inline transition to ensure the variable animates smoothly without GSAP
+        transition: '--complete 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)' 
+      } as React.CSSProperties}
     >
         <div className="knockout">
           <div className="indicator indicator--masked">

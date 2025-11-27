@@ -1,4 +1,3 @@
-
 FUSIONHUB ANDROID APP SETUP GUIDE
 
 1. Open Android Studio and create a new project.

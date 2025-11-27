@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Bell, User as UserIcon, Settings, MessageCircle, Shield, Crown } from 'lucide-react';
 import { useApp } from '../context/AppContext';

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, useLayoutEffect, ReactNode, useRef } from 'react';
 import { User, Message, Notification as AppNotification, Gender, AppConfig, AnimationSpeed } from '../types';
 import { supabase } from '../lib/supabase';

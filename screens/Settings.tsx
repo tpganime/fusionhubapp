@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
@@ -121,8 +120,8 @@ export const SettingsScreen: React.FC = () => {
                  <span className="font-bold text-gray-900 dark:text-white text-sm">Dark Mode</span>
                </div>
                <label className="relative inline-flex items-center cursor-pointer">
-                 <input type="checkbox" checked={theme === 'dark'} onChange={toggleTheme} className="sr-only peer" />
-                 <div className="w-12 h-7 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 shadow-inner"></div>
+                 <input type="checkbox" checked={theme === 'dark'} onChange={toggleTheme} className="sr-only peer toggle-checkbox" />
+                 <div className="toggle-label"></div>
                </label>
             </div>
 
@@ -133,8 +132,8 @@ export const SettingsScreen: React.FC = () => {
                  <span className="font-bold text-gray-900 dark:text-white text-sm">Liquid Glass</span>
                </div>
                <label className="relative inline-flex items-center cursor-pointer">
-                 <input type="checkbox" checked={enableLiquid} onChange={toggleLiquid} className="sr-only peer" />
-                 <div className="w-12 h-7 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500 shadow-inner"></div>
+                 <input type="checkbox" checked={enableLiquid} onChange={toggleLiquid} className="sr-only peer toggle-checkbox" />
+                 <div className="toggle-label"></div>
                </label>
             </div>
             
@@ -167,8 +166,8 @@ export const SettingsScreen: React.FC = () => {
                  <span className="font-bold text-gray-900 dark:text-white text-sm">Animations</span>
                </div>
                <label className="relative inline-flex items-center cursor-pointer">
-                 <input type="checkbox" checked={enableAnimations} onChange={toggleAnimations} className="sr-only peer" />
-                 <div className="w-12 h-7 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-500 shadow-inner"></div>
+                 <input type="checkbox" checked={enableAnimations} onChange={toggleAnimations} className="sr-only peer toggle-checkbox" />
+                 <div className="toggle-label"></div>
                </label>
             </div>
 
@@ -209,7 +208,7 @@ export const SettingsScreen: React.FC = () => {
                   onClick={enableNotifications}
                   className={`relative inline-flex items-center cursor-pointer transition-opacity ${isNotificationGranted ? 'opacity-100' : 'opacity-70'}`}
                >
-                 <div className={`w-12 h-7 rounded-full transition-colors shadow-inner ${isNotificationGranted ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}>
+                 <div className={`w-12 h-7 rounded-full transition-colors shadow-inner relative overflow-hidden ${isNotificationGranted ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}>
                     <div className={`absolute top-[3px] left-[3px] bg-white border border-gray-200 rounded-full h-5 w-5 transition-transform shadow-sm ${isNotificationGranted ? 'translate-x-full border-transparent' : ''}`}></div>
                  </div>
                </button>
@@ -227,8 +226,8 @@ export const SettingsScreen: React.FC = () => {
                  <span className="font-bold text-gray-900 dark:text-white text-sm">Private Profile</span>
                </div>
                <label className="relative inline-flex items-center cursor-pointer">
-                 <input type="checkbox" checked={currentUser.isPrivateProfile} onChange={togglePrivateProfile} className="sr-only peer" />
-                 <div className="w-12 h-7 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600 shadow-inner"></div>
+                 <input type="checkbox" checked={currentUser.isPrivateProfile} onChange={togglePrivateProfile} className="sr-only peer toggle-checkbox" />
+                 <div className="toggle-label"></div>
                </label>
             </div>
             <div className="p-5 flex items-center justify-between">
@@ -237,8 +236,8 @@ export const SettingsScreen: React.FC = () => {
                  <span className="font-bold text-gray-900 dark:text-white text-sm">Allow DM</span>
                </div>
                <label className="relative inline-flex items-center cursor-pointer">
-                 <input type="checkbox" checked={currentUser.allowPrivateChat} onChange={togglePrivateChat} className="sr-only peer" />
-                 <div className="w-12 h-7 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 shadow-inner"></div>
+                 <input type="checkbox" checked={currentUser.allowPrivateChat} onChange={togglePrivateChat} className="sr-only peer toggle-checkbox" />
+                 <div className="toggle-label"></div>
                </label>
             </div>
           </div>

@@ -1,4 +1,3 @@
-
 import { AppShortcut, AppConfig } from './types';
 
 export const ADMIN_EMAIL = 'fusionhub122@gmail.com';

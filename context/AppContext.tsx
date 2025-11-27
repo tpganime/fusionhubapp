@@ -4,6 +4,12 @@ import { User, Message, Notification as AppNotification, Gender, AppConfig, Anim
 import { supabase } from '../lib/supabase';
 import { ADMIN_EMAIL, OWNER_EMAIL, DEFAULT_CONFIG, BROADCAST_ID } from '../constants';
 
+interface WeeklyStat {
+  day: string;
+  date: string;
+  ms: number;
+}
+
 interface AppContextType {
   currentUser: User | null;
   users: User[];
@@ -46,6 +52,7 @@ interface AppContextType {
   closePermissionPrompt: () => void;
   updateAppConfig: (newConfig: AppConfig) => Promise<void>;
   getTimeSpent: () => string;
+  getWeeklyStats: () => WeeklyStat[];
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -156,7 +163,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   
   const sessionStartRef = useRef(Date.now());
 
-  // ... (keeping state init code same as before, omitted for brevity but assumed present in restoration) ...
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     let initial: 'light' | 'dark' = 'light';
     if (typeof window !== 'undefined') {
@@ -191,7 +197,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => { currentUserRef.current = currentUser; }, [currentUser]);
   useEffect(() => { usersRef.current = users; }, [users]);
 
-  // -- TIME TRACKING WITH 12 AM IST RESET --
+  // -- TIME TRACKING WITH HISTORY ARCHIVING --
   useEffect(() => {
     if (!currentUser) return;
     
@@ -201,33 +207,45 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
 
     sessionStartRef.current = Date.now();
-    const key = `fh_time_spent_${currentUser.id}`;
+    const dailyKey = `fh_time_spent_${currentUser.id}`;
+    const historyKey = `fh_time_history_${currentUser.id}`;
 
     const saveTime = () => {
-       // Check if date changed
        const today = getISTDate();
        const lastReset = localStorage.getItem(STORAGE_KEYS.LAST_RESET);
 
-       if (lastReset !== today) {
-           // It's a new day in India, reset counter
-           localStorage.setItem(key, '0');
+       if (lastReset && lastReset !== today) {
+           // It's a new day, archive yesterday's time before resetting
+           const yesterdayTime = parseInt(localStorage.getItem(dailyKey) || '0', 10);
+           
+           let history: Record<string, number> = {};
+           try { history = JSON.parse(localStorage.getItem(historyKey) || '{}'); } catch(e) {}
+           
+           history[lastReset] = yesterdayTime;
+           localStorage.setItem(historyKey, JSON.stringify(history));
+
+           // Reset counter for new day
+           localStorage.setItem(dailyKey, '0');
            localStorage.setItem(STORAGE_KEYS.LAST_RESET, today);
-           sessionStartRef.current = Date.now(); // Reset session start
+           sessionStartRef.current = Date.now(); 
            return;
        }
 
-       const stored = parseInt(localStorage.getItem(key) || '0', 10);
+       // Normal update for today
+       const stored = parseInt(localStorage.getItem(dailyKey) || '0', 10);
        const currentSession = Date.now() - sessionStartRef.current;
-       localStorage.setItem(key, (stored + currentSession).toString());
+       localStorage.setItem(dailyKey, (stored + currentSession).toString());
        sessionStartRef.current = Date.now(); 
     };
 
     // Initial check on load
     const today = getISTDate();
     const lastReset = localStorage.getItem(STORAGE_KEYS.LAST_RESET);
-    if (lastReset !== today) {
-        localStorage.setItem(key, '0');
+    if (!lastReset) {
         localStorage.setItem(STORAGE_KEYS.LAST_RESET, today);
+    } else if (lastReset !== today) {
+        // Handle case where app was loaded on a new day
+        saveTime(); 
     }
 
     const interval = setInterval(saveTime, 30000);
@@ -255,7 +273,37 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return `${minutes}m`;
   };
 
-  // ... (keeping other context logic mostly same) ...
+  const getWeeklyStats = (): WeeklyStat[] => {
+    if (!currentUser) return [];
+    
+    const historyKey = `fh_time_history_${currentUser.id}`;
+    const dailyKey = `fh_time_spent_${currentUser.id}`;
+    let history: Record<string, number> = {};
+    try { history = JSON.parse(localStorage.getItem(historyKey) || '{}'); } catch(e) {}
+
+    // Add current today time to tracking
+    const today = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }).split(',')[0];
+    const todayStored = parseInt(localStorage.getItem(dailyKey) || '0', 10);
+    const currentSession = Date.now() - sessionStartRef.current;
+    history[today] = todayStored + currentSession;
+
+    const stats: WeeklyStat[] = [];
+    // Last 7 days
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        // Ensure same format logic
+        const dateKey = d.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }).split(',')[0];
+        const dayLabel = d.toLocaleDateString('en-US', { weekday: 'short' }); // Mon, Tue
+        
+        stats.push({
+            day: dayLabel,
+            date: dateKey,
+            ms: history[dateKey] || 0
+        });
+    }
+    return stats;
+  };
 
   const checkIsOwner = (email: string) => email.toLowerCase() === OWNER_EMAIL.toLowerCase();
   const checkIsAdmin = (email: string) => email.toLowerCase() === ADMIN_EMAIL.toLowerCase() || checkIsOwner(email);
@@ -284,8 +332,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     document.documentElement.setAttribute('data-anim-speed', animationSpeed);
   }, [animationSpeed]);
 
-  // Dummy implementations for brevity in this specific update block
-  const enableNotifications = async () => {}; 
+  const enableNotifications = async () => {
+    if (!("Notification" in window)) return;
+    const permission = await window.Notification.requestPermission();
+    setNotificationPermission(permission);
+    if (permission === "granted") {
+      new Notification("Notifications Enabled", { body: "You will now receive alerts!", icon: '/favicon.ico' });
+    }
+    setShowPermissionPrompt(false);
+  }; 
   const closePermissionPrompt = () => setShowPermissionPrompt(false);
   const login = async (user: User) => { setCurrentUser(user); localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id); };
   const loginWithCredentials = async (email: string, pass: string) => {
@@ -295,7 +350,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
   const logout = () => { setCurrentUser(null); localStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID); };
   const signup = async (user: User) => { setUsers(prev => [...prev, user]); await login(user); };
-  const updateProfile = async (u: User) => { setCurrentUser(u); return true; }; // Mock for context update
+  const updateProfile = async (u: User) => { setCurrentUser(u); return true; }; 
   const deleteAccount = async () => { logout(); };
   const deactivateAccount = async () => { logout(); };
   const sendMessage = async () => {};
@@ -311,7 +366,89 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const setGlassOpacityFn = (n: number) => setGlassOpacity(n);
   const updateAppConfig = async () => {};
 
-  // Fetch logic would be here...
+  // -- DATA FETCHING WITH SAFETY TIMEOUT --
+  useEffect(() => {
+    let isMounted = true;
+    
+    // Safety timeout to ensure loading screen doesn't hang forever
+    const safetyTimeout = setTimeout(() => {
+        if (isMounted) {
+            console.warn("Data fetch timed out - forcing app load.");
+            setIsLoading(false);
+        }
+    }, 5000);
+
+    const fetchData = async () => {
+      try {
+        const cachedUsersStr = localStorage.getItem(STORAGE_KEYS.CACHE_USERS);
+        const cachedMessagesStr = localStorage.getItem(STORAGE_KEYS.CACHE_MESSAGES);
+        const savedId = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
+        
+        let cachedUsersList: User[] = [];
+
+        if (cachedUsersStr) {
+          try {
+            cachedUsersList = JSON.parse(cachedUsersStr);
+            if (cachedUsersList.length > 0 && isMounted) {
+                setUsers(cachedUsersList);
+            }
+          } catch (e) {}
+        }
+
+        if (cachedMessagesStr && isMounted) {
+          try {
+            const cachedMsgs = JSON.parse(cachedMessagesStr);
+            if (cachedMsgs.length > 0) setMessages(cachedMsgs);
+          } catch (e) {}
+        }
+
+        if (savedId && cachedUsersList.length > 0 && isMounted) {
+            const found = cachedUsersList.find(u => u.id === savedId);
+            if (found) {
+                setCurrentUser(found);
+                setIsLoading(false);
+                clearTimeout(safetyTimeout); // Clear timeout if cache load success
+            }
+        }
+
+        // Fetch from Supabase
+        const { data: usersData, error: userError } = await supabase.from('users').select('*');
+        if (userError) throw userError;
+        
+        if (isMounted) {
+            const mappedUsers = usersData.map(mapUserFromDB);
+            setUsers(mappedUsers);
+            
+            const { data: msgsData, error: msgError } = await supabase.from('messages').select('*').order('timestamp', { ascending: false }).limit(100);
+            if (!msgError) {
+                const mappedMsgs = msgsData.map(mapMessageFromDB).reverse();
+                setMessages(mappedMsgs);
+            }
+
+            if (savedId) {
+                const found = mappedUsers.find(u => u.id === savedId);
+                if (found) {
+                    setCurrentUser(found);
+                }
+            }
+            
+            setIsLoading(false);
+            clearTimeout(safetyTimeout);
+        }
+
+      } catch (err) {
+        console.error("Initialization error:", err);
+        if (isMounted) setIsLoading(false);
+      }
+    };
+
+    fetchData();
+    
+    return () => { 
+        isMounted = false; 
+        clearTimeout(safetyTimeout); 
+    };
+  }, []);
 
   return (
     <AppContext.Provider value={{
@@ -319,7 +456,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       appConfig, isAdmin, isOwner, onlineUsers,
       login, loginWithCredentials, logout, signup, updateProfile, deleteAccount, deactivateAccount,
       sendMessage, broadcastMessage, sendFriendRequest, acceptFriendRequest, markNotificationRead,
-      toggleTheme, toggleAnimations, setAnimationSpeed: setAnimationSpeedFn, toggleLiquid, setGlassOpacity: setGlassOpacityFn, markConversationAsRead, checkIsAdmin, checkIsOwner, checkIsOnline, enableNotifications, closePermissionPrompt, updateAppConfig, getTimeSpent
+      toggleTheme, toggleAnimations, setAnimationSpeed: setAnimationSpeedFn, toggleLiquid, setGlassOpacity: setGlassOpacityFn, markConversationAsRead, checkIsAdmin, checkIsOwner, checkIsOnline, enableNotifications, closePermissionPrompt, updateAppConfig, getTimeSpent, getWeeklyStats
     }}>
       {children}
     </AppContext.Provider>

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
 import { ComingSoon } from '../components/ComingSoon';
-import { Camera, ArrowLeft, Lock, Link as LinkIcon, ShieldCheck, Crown, X, Settings, MessageCircle, ChevronDown, AlignJustify, Copy, Share2, Activity, Calendar } from 'lucide-react';
+import { Camera, ArrowLeft, Lock, Link as LinkIcon, ShieldCheck, Crown, X, Settings, MessageCircle, ChevronDown, AlignJustify, Copy, Share2, Activity, Calendar, BarChart3 } from 'lucide-react';
 import { Gender } from '../types';
 import { useParams, useNavigate } from 'react-router-dom';
 
@@ -46,19 +46,20 @@ const compressImage = (file: File): Promise<string> => {
 };
 
 export const ProfileScreen: React.FC = () => {
-  const { currentUser, users, updateProfile, sendFriendRequest, checkIsAdmin, checkIsOwner, enableAnimations, appConfig, getTimeSpent } = useApp();
+  const { currentUser, users, updateProfile, sendFriendRequest, checkIsAdmin, checkIsOwner, enableAnimations, appConfig, getTimeSpent, getWeeklyStats } = useApp();
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   
   const isOwnProfile = !userId || userId === currentUser?.id;
 
   const [timeSpent, setTimeSpent] = useState("0m");
+  const [showStatsModal, setShowStatsModal] = useState(false);
 
   useEffect(() => {
       if (isOwnProfile) {
           const interval = setInterval(() => {
               setTimeSpent(getTimeSpent());
-          }, 60000); 
+          }, 30000); 
           setTimeSpent(getTimeSpent());
           return () => clearInterval(interval);
       }
@@ -177,9 +178,22 @@ export const ProfileScreen: React.FC = () => {
   const displayAvatar = isEditing ? avatar : profileUser.avatar;
   const displayDescription = (profileUser.description && profileUser.description.startsWith('{')) ? "Admin Account" : profileUser.description;
 
+  // Stats for Modal
+  const weeklyStats = isOwnProfile ? getWeeklyStats() : [];
+  const maxTime = Math.max(...weeklyStats.map(s => s.ms), 1); // Avoid div by zero
+
+  const formatMs = (ms: number) => {
+      if (ms === 0) return '0m';
+      const m = Math.floor(ms / 60000);
+      const h = Math.floor(m / 60);
+      const min = m % 60;
+      return h > 0 ? `${h}h ${min}m` : `${min}m`;
+  };
+
   return (
     <div className={`h-full overflow-y-auto pb-32 no-scrollbar relative gpu-accelerated bg-white dark:bg-black ${enableAnimations ? 'animate-fade-in' : ''}`}>
       
+      {/* Full Avatar Modal */}
       {showFullAvatar && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center animate-fade-in overflow-hidden">
           <div className="absolute inset-0 bg-white/90 dark:bg-black/90 backdrop-blur-2xl transition-opacity duration-500" onClick={() => setShowFullAvatar(false)}></div>
@@ -187,6 +201,47 @@ export const ProfileScreen: React.FC = () => {
           <div className={`relative z-[201] w-full h-full overflow-auto no-scrollbar flex items-center justify-center ${isZoomed ? 'cursor-zoom-out items-start' : 'cursor-zoom-in'}`} onClick={toggleZoom}>
             <img src={displayAvatar} alt="Full Profile" className={`rounded-3xl shadow-2xl ${isZoomed ? 'min-w-[100vw] w-auto h-auto max-w-none' : 'max-w-[95%] max-h-[85vh] object-contain animate-pop-in'}`} />
           </div>
+        </div>
+      )}
+
+      {/* Stats Modal */}
+      {showStatsModal && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={() => setShowStatsModal(false)}></div>
+            <div className="relative bg-white dark:bg-gray-900 w-full max-w-sm rounded-3xl shadow-2xl p-6 border border-gray-200 dark:border-gray-700 animate-pop-in">
+                <button className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => setShowStatsModal(false)}>
+                    <X className="w-5 h-5 text-gray-500" />
+                </button>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-blue-500" /> Weekly Activity
+                </h3>
+                
+                {/* Bar Chart */}
+                <div className="flex items-end justify-between h-40 gap-2 mb-2">
+                    {weeklyStats.map((stat, i) => {
+                        const heightPercent = (stat.ms / maxTime) * 100;
+                        const isToday = i === 6;
+                        return (
+                            <div key={i} className="flex-1 flex flex-col items-center group">
+                                <div className="w-full relative flex items-end justify-center h-full rounded-t-lg bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                                    <div 
+                                      className={`w-full ${isToday ? 'bg-blue-500' : 'bg-blue-300 dark:bg-blue-700'} rounded-t-md transition-all duration-1000 ease-out`}
+                                      style={{ height: `${heightPercent}%` }}
+                                    ></div>
+                                    {/* Tooltip */}
+                                    <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 transition-opacity bg-black text-white text-[10px] px-1.5 py-0.5 rounded pointer-events-none whitespace-nowrap z-10">
+                                        {formatMs(stat.ms)}
+                                    </div>
+                                </div>
+                                <span className={`text-[10px] mt-2 font-medium ${isToday ? 'text-blue-500' : 'text-gray-400'}`}>
+                                    {stat.day}
+                                </span>
+                            </div>
+                        )
+                    })}
+                </div>
+                <p className="text-center text-xs text-gray-400 mt-4">Total active time for the last 7 days.</p>
+            </div>
         </div>
       )}
 
@@ -238,6 +293,9 @@ export const ProfileScreen: React.FC = () => {
                <p className="text-sm text-blue-600 dark:text-blue-400 font-medium mb-1">
                   {isAdminUser ? (isOwnerUser ? "FusionHub Owner" : "FusionHub Admin") : "Member"}
                </p>
+               {isOwnProfile && (
+                   <p className="text-xs text-gray-400 mb-1">{profileUser.email}</p>
+               )}
                <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
                   {displayDescription || "No bio available."}
                </p>
@@ -247,12 +305,22 @@ export const ProfileScreen: React.FC = () => {
          {/* Additional Info / Stats */}
          <div className={`grid grid-cols-2 gap-3 mb-6 ${enableAnimations ? 'animate-slide-up-fade' : ''}`} style={{ animationDelay: '100ms' }}>
              {isOwnProfile && (
-               <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-                  <div className="flex items-center gap-2 mb-1 text-gray-500">
-                     <Activity className="w-3 h-3" />
-                     <span className="text-[10px] font-bold uppercase">Time Active</span>
+               <div className="relative p-3 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                  <div className="flex items-center justify-between mb-1">
+                     <div className="flex items-center gap-2 text-gray-500">
+                        <Activity className="w-3 h-3" />
+                        <span className="text-[10px] font-bold uppercase">Time Active</span>
+                     </div>
                   </div>
-                  <p className="text-lg font-bold text-gray-900 dark:text-white">{timeSpent}</p>
+                  <div className="flex items-end justify-between">
+                      <p className="text-lg font-bold text-gray-900 dark:text-white">{timeSpent}</p>
+                      <button 
+                        onClick={() => setShowStatsModal(true)}
+                        className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+                      >
+                          View Week
+                      </button>
+                  </div>
                </div>
              )}
              

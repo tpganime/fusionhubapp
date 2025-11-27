@@ -163,6 +163,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   
   const sessionStartRef = useRef(Date.now());
 
+  // -- PERSISTENT SETTINGS INITIALIZATION --
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     let initial: 'light' | 'dark' = 'light';
     if (typeof window !== 'undefined') {
@@ -185,9 +186,33 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return true;
   });
 
-  const [animationSpeed, setAnimationSpeed] = useState<AnimationSpeed>('balanced');
-  const [enableLiquid, setEnableLiquid] = useState(true);
-  const [glassOpacity, setGlassOpacity] = useState(0.35);
+  const [animationSpeed, setAnimationSpeed] = useState<AnimationSpeed>(() => {
+    if (typeof window !== 'undefined') {
+      try { 
+        const stored = localStorage.getItem(STORAGE_KEYS.ANIM_SPEED);
+        if (stored === 'fast' || stored === 'balanced' || stored === 'relaxed') return stored;
+      } catch(e) {}
+    }
+    return 'balanced';
+  });
+
+  const [enableLiquid, setEnableLiquid] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try { return localStorage.getItem(STORAGE_KEYS.LIQUID) !== 'false'; } catch(e) { return true; }
+    }
+    return true;
+  });
+
+  const [glassOpacity, setGlassOpacity] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try { 
+        const stored = localStorage.getItem(STORAGE_KEYS.GLASS_OPACITY);
+        if (stored) return parseFloat(stored);
+      } catch(e) {}
+    }
+    return 0.35;
+  });
+
   const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
   const [appConfig, setAppConfig] = useState<AppConfig>(DEFAULT_CONFIG);
 
@@ -197,14 +222,63 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => { currentUserRef.current = currentUser; }, [currentUser]);
   useEffect(() => { usersRef.current = users; }, [users]);
 
-  // -- TIME TRACKING WITH HISTORY ARCHIVING --
+  const checkIsOwner = (email: string) => email.toLowerCase() === OWNER_EMAIL.toLowerCase();
+  const checkIsAdmin = (email: string) => email.toLowerCase() === ADMIN_EMAIL.toLowerCase() || checkIsOwner(email);
+  const checkIsOnline = (userId: string) => onlineUsers.includes(userId);
+  const isOwner = currentUser ? checkIsOwner(currentUser.email) : false;
+  const isAdmin = currentUser ? checkIsAdmin(currentUser.email) : false;
+
+  // -- CONFIG SYNC --
+  const syncConfigFromUsers = (userList: User[]) => {
+    // Priority: Explicit Admin Email -> Any Admin User
+    const mainAdmin = userList.find(u => u.email.toLowerCase() === ADMIN_EMAIL.toLowerCase());
+    const targetUser = mainAdmin || userList.find(u => checkIsAdmin(u.email));
+
+    if (targetUser && targetUser.description && targetUser.description.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(targetUser.description);
+        if (parsed.features) {
+          setAppConfig(prev => ({ ...prev, ...parsed }));
+        }
+      } catch (e) {
+        console.error("Failed to parse app config", e);
+      }
+    }
+  };
+
+  // -- SETTINGS EFFECTS --
+  useLayoutEffect(() => {
+    if (theme === 'dark') document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
+    localStorage.setItem(STORAGE_KEYS.THEME, theme);
+  }, [theme]);
+
+  useLayoutEffect(() => {
+    if (enableLiquid) document.body.classList.remove('no-liquid');
+    else document.body.classList.add('no-liquid');
+    localStorage.setItem(STORAGE_KEYS.LIQUID, String(enableLiquid));
+  }, [enableLiquid]);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--glass-opacity', glassOpacity.toString());
+    if (glassOpacity <= 0.05) document.documentElement.style.setProperty('--glass-filter', 'none');
+    else document.documentElement.style.setProperty('--glass-filter', 'blur(20px) saturate(180%)');
+    localStorage.setItem(STORAGE_KEYS.GLASS_OPACITY, glassOpacity.toString());
+  }, [glassOpacity]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-anim-speed', animationSpeed);
+    localStorage.setItem(STORAGE_KEYS.ANIM_SPEED, animationSpeed);
+  }, [animationSpeed]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.ANIMATIONS, String(enableAnimations));
+  }, [enableAnimations]);
+
+  // -- TIME TRACKING --
   useEffect(() => {
     if (!currentUser) return;
-    
-    // Function to get current IST date string (YYYY-MM-DD)
-    const getISTDate = () => {
-        return new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }).split(',')[0];
-    };
+    const getISTDate = () => new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }).split(',')[0];
 
     sessionStartRef.current = Date.now();
     const dailyKey = `fh_time_spent_${currentUser.id}`;
@@ -215,47 +289,30 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
        const lastReset = localStorage.getItem(STORAGE_KEYS.LAST_RESET);
 
        if (lastReset && lastReset !== today) {
-           // It's a new day (12 AM IST passed), archive yesterday's time before resetting
            const yesterdayTime = parseInt(localStorage.getItem(dailyKey) || '0', 10);
-           
            let history: Record<string, number> = {};
            try { history = JSON.parse(localStorage.getItem(historyKey) || '{}'); } catch(e) {}
-           
            if (lastReset) history[lastReset] = yesterdayTime;
            localStorage.setItem(historyKey, JSON.stringify(history));
-
-           // Reset counter for new day
            localStorage.setItem(dailyKey, '0');
            localStorage.setItem(STORAGE_KEYS.LAST_RESET, today);
            sessionStartRef.current = Date.now(); 
            return;
        }
-
-       // Normal update for today
        const stored = parseInt(localStorage.getItem(dailyKey) || '0', 10);
        const currentSession = Date.now() - sessionStartRef.current;
        localStorage.setItem(dailyKey, (stored + currentSession).toString());
        sessionStartRef.current = Date.now(); 
     };
 
-    // Initial check on load
     const today = getISTDate();
     const lastReset = localStorage.getItem(STORAGE_KEYS.LAST_RESET);
-    if (!lastReset) {
-        localStorage.setItem(STORAGE_KEYS.LAST_RESET, today);
-    } else if (lastReset !== today) {
-        // Handle case where app was loaded on a new day
-        saveTime(); 
-    }
+    if (!lastReset) localStorage.setItem(STORAGE_KEYS.LAST_RESET, today);
+    else if (lastReset !== today) saveTime(); 
 
     const interval = setInterval(saveTime, 30000);
     window.addEventListener('beforeunload', saveTime);
-    
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('beforeunload', saveTime);
-      saveTime();
-    }
+    return () => { clearInterval(interval); window.removeEventListener('beforeunload', saveTime); saveTime(); }
   }, [currentUser?.id]);
 
   const getTimeSpent = () => {
@@ -264,73 +321,33 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const stored = parseInt(localStorage.getItem(key) || '0', 10);
     const currentSession = Date.now() - sessionStartRef.current;
     const totalMs = stored + currentSession;
-    
-    const totalMinutes = Math.floor(totalMs / 60000);
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    
-    if (hours > 0) return `${hours}h ${minutes}m`;
-    return `${minutes}m`;
+    const m = Math.floor(totalMs / 60000);
+    const h = Math.floor(m / 60);
+    return h > 0 ? `${h}h ${m % 60}m` : `${m}m`;
   };
 
   const getWeeklyStats = (): WeeklyStat[] => {
     if (!currentUser) return [];
-    
     const historyKey = `fh_time_history_${currentUser.id}`;
     const dailyKey = `fh_time_spent_${currentUser.id}`;
     let history: Record<string, number> = {};
     try { history = JSON.parse(localStorage.getItem(historyKey) || '{}'); } catch(e) {}
-
-    // Add current today time to tracking
+    
     const today = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }).split(',')[0];
     const todayStored = parseInt(localStorage.getItem(dailyKey) || '0', 10);
     const currentSession = Date.now() - sessionStartRef.current;
     history[today] = todayStored + currentSession;
 
     const stats: WeeklyStat[] = [];
-    // Last 7 days
     for (let i = 6; i >= 0; i--) {
         const d = new Date();
         d.setDate(d.getDate() - i);
-        // Ensure same format logic
         const dateKey = d.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }).split(',')[0];
         const dayLabel = d.toLocaleDateString('en-US', { weekday: 'short' }); 
-        
-        stats.push({
-            day: dayLabel,
-            date: dateKey,
-            ms: history[dateKey] || 0
-        });
+        stats.push({ day: dayLabel, date: dateKey, ms: history[dateKey] || 0 });
     }
     return stats;
   };
-
-  const checkIsOwner = (email: string) => email.toLowerCase() === OWNER_EMAIL.toLowerCase();
-  const checkIsAdmin = (email: string) => email.toLowerCase() === ADMIN_EMAIL.toLowerCase() || checkIsOwner(email);
-  const checkIsOnline = (userId: string) => onlineUsers.includes(userId);
-  const isOwner = currentUser ? checkIsOwner(currentUser.email) : false;
-  const isAdmin = currentUser ? checkIsAdmin(currentUser.email) : false;
-
-  useLayoutEffect(() => {
-    if (theme === 'dark') document.documentElement.classList.add('dark');
-    else document.documentElement.classList.remove('dark');
-    localStorage.setItem(STORAGE_KEYS.THEME, theme);
-  }, [theme]);
-
-  useLayoutEffect(() => {
-    if (enableLiquid) document.body.classList.remove('no-liquid');
-    else document.body.classList.add('no-liquid');
-  }, [enableLiquid]);
-
-  useEffect(() => {
-    document.documentElement.style.setProperty('--glass-opacity', glassOpacity.toString());
-    if (glassOpacity <= 0.05) document.documentElement.style.setProperty('--glass-filter', 'none');
-    else document.documentElement.style.setProperty('--glass-filter', 'blur(20px) saturate(180%)');
-  }, [glassOpacity]);
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-anim-speed', animationSpeed);
-  }, [animationSpeed]);
 
   const enableNotifications = async () => {
     if (!("Notification" in window)) return;
@@ -342,6 +359,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setShowPermissionPrompt(false);
   }; 
   const closePermissionPrompt = () => setShowPermissionPrompt(false);
+
   const login = async (user: User) => { setCurrentUser(user); localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id); };
   const loginWithCredentials = async (email: string, pass: string) => {
       const found = users.find(u => u.email.trim().toLowerCase() === email.trim().toLowerCase() && u.password === pass);
@@ -349,89 +367,175 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       else throw new Error("Invalid credentials");
   };
   const logout = () => { setCurrentUser(null); localStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID); };
-  const signup = async (user: User) => { setUsers(prev => [...prev, user]); await login(user); };
-  const updateProfile = async (u: User) => { setCurrentUser(u); return true; }; 
-  const deleteAccount = async () => { logout(); };
+  const signup = async (user: User) => {
+      // Optimistic update for speed
+      setUsers(prev => [...prev, user]);
+      await login(user);
+      // Actual Save
+      const { error } = await supabase.from('users').insert(mapUserToDB(user));
+      if (error) console.error("Signup DB Error:", error);
+  };
+
+  // -- FIXED PROFILE UPDATE --
+  const updateProfile = async (updatedUser: User) => {
+    // 1. Optimistic Update
+    setCurrentUser(updatedUser);
+    setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+    
+    // 2. Persist to DB
+    try {
+        const { error } = await supabase.from('users').update(mapUserToDB(updatedUser)).eq('id', updatedUser.id);
+        if (error) {
+            console.error("Profile Update Error:", error);
+            alert(`Update Failed: ${error.message}`);
+            return false;
+        }
+        return true;
+    } catch (e) {
+        console.error(e);
+        return false;
+    }
+  };
+
+  // -- ADMIN CONFIG UPDATE --
+  const updateAppConfig = async (newConfig: AppConfig) => {
+    if (!isAdmin || !currentUser) return;
+    setAppConfig(newConfig);
+    const configString = JSON.stringify(newConfig);
+    
+    // Update the description field where config is stored
+    const updatedUser = { ...currentUser, description: configString };
+    
+    // Use the fixed updateProfile to save to DB
+    await updateProfile(updatedUser);
+  };
+
+  const deleteAccount = async () => { 
+      if (currentUser) {
+          await supabase.from('users').delete().eq('id', currentUser.id);
+          logout(); 
+      }
+  };
   const deactivateAccount = async () => { logout(); };
-  const sendMessage = async () => {};
-  const broadcastMessage = async () => {};
-  const sendFriendRequest = async () => {};
-  const acceptFriendRequest = async () => {};
-  const markNotificationRead = () => {};
-  const markConversationAsRead = () => {};
+  
+  const sendMessage = async (receiverId: string, content: string) => {
+    if (!currentUser) return;
+    const newMsg: Message = { id: generateUUID(), senderId: currentUser.id, receiverId, content, timestamp: Date.now(), read: false };
+    setMessages(prev => [...prev, newMsg]);
+    const { error } = await supabase.from('messages').insert(mapMessageToDB(newMsg));
+    if (error) {
+        console.error(error);
+        // triggerNotification('Error', 'Message failed to send');
+        setMessages(prev => prev.filter(m => m.id !== newMsg.id));
+    }
+  };
+
+  const broadcastMessage = async (content: string) => {
+      if (!isAdmin || !currentUser) return;
+      await sendMessage(BROADCAST_ID, content);
+  };
+
+  const sendFriendRequest = async (targetUserId: string) => {
+    if (!currentUser) return;
+    // Optimistic
+    setUsers(prev => prev.map(u => {
+        if (u.id === targetUserId) return { ...u, requests: [...u.requests, currentUser.id] };
+        return u;
+    }));
+    
+    // Fetch latest to ensure no overwrite race condition
+    const { data } = await supabase.from('users').select('requests').eq('id', targetUserId).single();
+    if (data) {
+        const currentRequests = data.requests || [];
+        if (!currentRequests.includes(currentUser.id)) {
+            await supabase.from('users').update({ requests: [...currentRequests, currentUser.id] }).eq('id', targetUserId);
+        }
+    }
+  };
+
+  const acceptFriendRequest = async (requesterId: string) => {
+    if (!currentUser) return;
+    const myNewFriends = [...currentUser.friends, requesterId];
+    const myNewRequests = currentUser.requests.filter(r => r !== requesterId);
+    
+    // Optimistic
+    setCurrentUser(prev => prev ? ({ ...prev, friends: myNewFriends, requests: myNewRequests }) : null);
+    
+    await supabase.from('users').update({ friends: myNewFriends, requests: myNewRequests }).eq('id', currentUser.id);
+    
+    // Update requester side
+    const { data } = await supabase.from('users').select('friends').eq('id', requesterId).single();
+    if (data) {
+        const theirFriends = data.friends || [];
+        if (!theirFriends.includes(currentUser.id)) {
+            await supabase.from('users').update({ friends: [...theirFriends, currentUser.id] }).eq('id', requesterId);
+        }
+    }
+  };
+
+  const markNotificationRead = (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  };
+
+  const markConversationAsRead = async (senderId: string) => {
+    if (!currentUser) return;
+    const unreadMessages = messages.filter(m => m.senderId === senderId && m.receiverId === currentUser.id && !m.read);
+    if (unreadMessages.length === 0) return;
+    const unreadIds = unreadMessages.map(m => m.id);
+    setMessages(prev => prev.map(m => (unreadIds.includes(m.id)) ? { ...m, read: true } : m));
+    await supabase.from('messages').update({ read: true }).in('id', unreadIds);
+  };
+
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
   const toggleAnimations = () => setEnableAnimations(prev => !prev);
   const toggleLiquid = () => setEnableLiquid(prev => !prev);
   const setAnimationSpeedFn = (s: AnimationSpeed) => setAnimationSpeed(s);
   const setGlassOpacityFn = (n: number) => setGlassOpacity(n);
-  const updateAppConfig = async () => {};
 
   useEffect(() => {
     let isMounted = true;
-    const safetyTimeout = setTimeout(() => {
-        if (isMounted) {
-            console.warn("Data fetch timed out - forcing app load.");
-            setIsLoading(false);
-        }
-    }, 5000);
+    const safetyTimeout = setTimeout(() => { if (isMounted) setIsLoading(false); }, 5000);
 
     const fetchData = async () => {
       try {
-        const cachedUsersStr = localStorage.getItem(STORAGE_KEYS.CACHE_USERS);
-        const cachedMessagesStr = localStorage.getItem(STORAGE_KEYS.CACHE_MESSAGES);
         const savedId = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
         
-        let cachedUsersList: User[] = [];
-
-        if (cachedUsersStr) {
-          try {
-            cachedUsersList = JSON.parse(cachedUsersStr);
-            if (cachedUsersList.length > 0 && isMounted) {
-                setUsers(cachedUsersList);
+        // Load Cache
+        try {
+            const cachedUsers = JSON.parse(localStorage.getItem(STORAGE_KEYS.CACHE_USERS) || '[]');
+            if (cachedUsers.length) { 
+                setUsers(cachedUsers); 
+                syncConfigFromUsers(cachedUsers);
             }
-          } catch (e) {}
-        }
-
-        if (cachedMessagesStr && isMounted) {
-          try {
-            const cachedMsgs = JSON.parse(cachedMessagesStr);
-            if (cachedMsgs.length > 0) setMessages(cachedMsgs);
-          } catch (e) {}
-        }
-
-        if (savedId && cachedUsersList.length > 0 && isMounted) {
-            const found = cachedUsersList.find(u => u.id === savedId);
-            if (found) {
-                setCurrentUser(found);
-                setIsLoading(false);
-                clearTimeout(safetyTimeout);
+            const cachedMsgs = JSON.parse(localStorage.getItem(STORAGE_KEYS.CACHE_MESSAGES) || '[]');
+            if (cachedMsgs.length) setMessages(cachedMsgs);
+            
+            if (savedId && cachedUsers.length) {
+                const found = cachedUsers.find((u: User) => u.id === savedId);
+                if (found) setCurrentUser(found);
             }
-        }
+        } catch(e) {}
 
+        // Fetch Live
         const { data: usersData, error: userError } = await supabase.from('users').select('*');
         if (userError) throw userError;
         
         if (isMounted) {
             const mappedUsers = usersData.map(mapUserFromDB);
             setUsers(mappedUsers);
+            syncConfigFromUsers(mappedUsers); // Sync config from live data
             
-            const { data: msgsData, error: msgError } = await supabase.from('messages').select('*').order('timestamp', { ascending: false }).limit(100);
-            if (!msgError) {
-                const mappedMsgs = msgsData.map(mapMessageFromDB).reverse();
-                setMessages(mappedMsgs);
-            }
+            const { data: msgsData } = await supabase.from('messages').select('*').order('timestamp', { ascending: false }).limit(100);
+            if (msgsData) setMessages(msgsData.map(mapMessageFromDB).reverse());
 
             if (savedId) {
                 const found = mappedUsers.find(u => u.id === savedId);
-                if (found) {
-                    setCurrentUser(found);
-                }
+                if (found) setCurrentUser(found);
             }
             
             setIsLoading(false);
             clearTimeout(safetyTimeout);
         }
-
       } catch (err) {
         console.error("Initialization error:", err);
         if (isMounted) setIsLoading(false);
@@ -439,11 +543,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
 
     fetchData();
-    
-    return () => { 
-        isMounted = false; 
-        clearTimeout(safetyTimeout); 
-    };
+    return () => { isMounted = false; clearTimeout(safetyTimeout); };
   }, []);
 
   return (

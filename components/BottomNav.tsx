@@ -14,7 +14,6 @@ export const BottomNav: React.FC = () => {
     { id: 'profile', path: '/profile', icon: User, label: 'Profile' },
   ];
 
-  // Calculate active index
   const activeIndex = tabs.findIndex(tab => 
     location.pathname === tab.path || (tab.path !== '/home' && location.pathname.startsWith(tab.path))
   );
@@ -22,22 +21,22 @@ export const BottomNav: React.FC = () => {
 
   return (
     <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center pointer-events-none px-4 animate-slide-up">
-      {/* Liquid Glass Capsule Container */}
-      <div className="pointer-events-auto relative flex items-center p-2 rounded-[3rem] shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] border border-white/40 dark:border-white/10 backdrop-blur-3xl bg-gradient-to-b from-white/40 to-white/20 dark:from-black/40 dark:to-black/20">
+      {/* 3D Glass Capsule */}
+      <div className="pointer-events-auto relative flex items-center p-2 rounded-[3rem] shadow-[0_20px_50px_0_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.5),inset_0_-1px_0_rgba(0,0,0,0.1)] border border-white/40 dark:border-white/10 backdrop-blur-3xl bg-gradient-to-b from-white/60 to-white/30 dark:from-white/10 dark:to-black/30">
         
-        {/* Floating Liquid Active Blob */}
+        {/* Floating Liquid Active Blob - 3D Bubble Effect */}
         <div 
           className="absolute top-2 bottom-2 w-16 rounded-[2.5rem] transition-all duration-500 cubic-bezier(0.34, 1.56, 0.64, 1) z-0"
           style={{
             left: '0.5rem', 
-            transform: `translate3d(${currentIndex * 4}rem, 0, 0)`, // Spacing multiplier (4rem = w-16)
-            background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 100%)',
-            boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 4px 15px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0,0,0,0.05)',
+            transform: `translate3d(${currentIndex * 4}rem, 0, 0)`,
+            background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.5) 100%)',
+            boxShadow: 'inset 0 2px 3px rgba(255, 255, 255, 1), 0 10px 20px -5px rgba(0, 0, 0, 0.15), 0 4px 6px -2px rgba(0,0,0,0.05)',
             backdropFilter: 'blur(12px)'
           }}
         >
-           {/* Glossy Reflection Highlight */}
-           <div className="absolute top-1 left-1/2 -translate-x-1/2 w-10 h-4 bg-gradient-to-b from-white to-transparent rounded-full opacity-90"></div>
+           {/* Specular Highlight for 3D volume */}
+           <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-8 h-3 bg-gradient-to-b from-white to-transparent rounded-full opacity-80"></div>
         </div>
 
         {/* Icons */}
@@ -55,7 +54,7 @@ export const BottomNav: React.FC = () => {
                   className={`w-7 h-7 transition-all duration-500 cubic-bezier(0.34, 1.56, 0.64, 1) ${
                     isActive 
                       ? 'text-gray-900 dark:text-gray-900 scale-110 stroke-[2.5px] drop-shadow-sm -translate-y-0.5' 
-                      : 'text-gray-600 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-white scale-90'
+                      : 'text-gray-600 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-white scale-90 opacity-80'
                   }`} 
                 />
               </button>

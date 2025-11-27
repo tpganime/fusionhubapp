@@ -98,72 +98,75 @@ export const AuthScreen: React.FC = () => {
 
   if (isLoading) {
     return (
-        <div className="h-full flex flex-col items-center justify-center">
-            <Loader2 className="w-10 h-10 text-white animate-spin mb-4 drop-shadow-lg" />
-            <p className="text-white font-medium drop-shadow-md animate-pulse">Loading FusionHub...</p>
+        <div className="h-full flex flex-col items-center justify-center bg-black">
+            <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-4 drop-shadow-lg" />
+            <p className="text-white font-bold tracking-widest animate-pulse">LOADING</p>
         </div>
     );
   }
 
-  const animClass = enableAnimations ? 'animate-slide-up opacity-0' : '';
+  // Animation Utilities
+  const animClass = enableAnimations ? 'animate-slide-up-heavy opacity-0' : '';
   const getDelay = (ms: number) => enableAnimations ? { animationDelay: `${ms}ms`, animationFillMode: 'both' as const } : {};
 
   return (
-    <div className="h-full flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      {/* Decorative Blobs - Slower movement */}
-      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob"></div>
-      <div className="absolute top-[-10%] right-[-10%] w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-2000"></div>
-      <div className="absolute -bottom-20 left-20 w-96 h-96 bg-pink-400 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-4000"></div>
+    <div className="h-full flex flex-col items-center justify-center p-6 relative overflow-hidden gpu-accelerated">
+      {/* Decorative Blobs - Heavy Movement */}
+      <div className="absolute top-[-20%] left-[-20%] w-[500px] h-[500px] bg-blue-500 rounded-full mix-blend-multiply filter blur-[100px] opacity-40 animate-blob"></div>
+      <div className="absolute top-[-10%] right-[-20%] w-[500px] h-[500px] bg-purple-500 rounded-full mix-blend-multiply filter blur-[100px] opacity-40 animate-blob animation-delay-2000"></div>
+      <div className="absolute -bottom-40 left-20 w-[600px] h-[600px] bg-pink-500 rounded-full mix-blend-multiply filter blur-[100px] opacity-40 animate-blob animation-delay-4000"></div>
 
       {/* Liquid Glass Card */}
-      <div className={`w-full max-w-md liquid-card p-10 z-10 ${enableAnimations ? 'animate-scale-in' : ''}`}>
-        <div className="text-center mb-8 flex flex-col items-center">
+      <div className={`w-full max-w-md liquid-card p-8 sm:p-10 z-10 shadow-2xl backdrop-blur-3xl transform-gpu ${enableAnimations ? 'animate-scale-elastic' : ''}`}>
+        
+        <div className="text-center mb-10 flex flex-col items-center">
             <svg 
               viewBox="0 0 100 100" 
-              className={`w-24 h-24 mb-4 drop-shadow-lg ${enableAnimations ? 'animate-float' : ''}`}
-              style={{ animationDuration: '6s' }}
+              className={`w-24 h-24 mb-6 drop-shadow-2xl ${enableAnimations ? 'animate-float-slow' : ''}`}
               fill="none" 
               xmlns="http://www.w3.org/2000/svg"
             >
               <defs>
                 <linearGradient id="logo_grad_auth" x1="0%" y1="0%" x2="100%" y2="100%">
                   <stop offset="0%" stopColor="#3B82F6" />
-                  <stop offset="100%" stopColor="#8B5CF6" />
+                  <stop offset="50%" stopColor="#8B5CF6" />
+                  <stop offset="100%" stopColor="#EC4899" />
                 </linearGradient>
               </defs>
-              <circle cx="50" cy="50" r="15" fill="url(#logo_grad_auth)" />
-              <ellipse cx="50" cy="50" rx="40" ry="12" stroke="url(#logo_grad_auth)" strokeWidth="6" transform="rotate(0 50 50)" />
-              <ellipse cx="50" cy="50" rx="40" ry="12" stroke="url(#logo_grad_auth)" strokeWidth="6" transform="rotate(60 50 50)" />
-              <ellipse cx="50" cy="50" rx="40" ry="12" stroke="url(#logo_grad_auth)" strokeWidth="6" transform="rotate(120 50 50)" />
+              <circle cx="50" cy="50" r="18" fill="url(#logo_grad_auth)" className="animate-pulse-slow" />
+              <ellipse cx="50" cy="50" rx="42" ry="14" stroke="url(#logo_grad_auth)" strokeWidth="4" transform="rotate(0 50 50)" className="opacity-80" />
+              <ellipse cx="50" cy="50" rx="42" ry="14" stroke="url(#logo_grad_auth)" strokeWidth="4" transform="rotate(60 50 50)" className="opacity-80" />
+              <ellipse cx="50" cy="50" rx="42" ry="14" stroke="url(#logo_grad_auth)" strokeWidth="4" transform="rotate(120 50 50)" className="opacity-80" />
             </svg>
-            <h1 className={`text-4xl font-black bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent drop-shadow-sm ${animClass}`} style={getDelay(100)}>
+
+            <h1 className={`text-4xl font-black bg-gradient-to-r from-gray-900 via-blue-800 to-gray-900 dark:from-white dark:via-blue-200 dark:to-white bg-clip-text text-transparent drop-shadow-sm tracking-tight ${animClass}`} style={getDelay(100)}>
             FusionHub
             </h1>
-            <h2 className={`text-lg font-bold text-gray-800 dark:text-gray-100 mt-2 ${animClass}`} style={getDelay(200)}>
+            <h2 className={`text-lg font-bold text-gray-600 dark:text-gray-300 mt-2 ${animClass}`} style={getDelay(200)}>
                 {isLogin ? 'Welcome Back!' : 'Join the Future'}
             </h2>
         </div>
 
-        <form onSubmit={isLogin ? handleLogin : handleSignup} className="space-y-5">
+        <form onSubmit={isLogin ? handleLogin : handleSignup} className="space-y-6">
           
           {!isLogin && (
-            <div className={`space-y-1 ${animClass}`} style={getDelay(300)}>
-              <label className="text-xs font-bold text-gray-600 dark:text-gray-300 ml-2 uppercase tracking-wide">Username</label>
-              <div className="relative">
+            <div className={`space-y-1.5 ${animClass}`} style={getDelay(300)}>
+              <label className="text-xs font-bold text-gray-500 dark:text-gray-400 ml-2 uppercase tracking-wider">Username</label>
+              <div className="relative group">
                 <input
                   type="text"
                   value={username}
                   onChange={(e) => handleCheckUsername(e.target.value)}
-                  className={`w-full p-4 liquid-input text-gray-900 dark:text-white placeholder-gray-500 ${usernameAvailable === false ? 'border-red-400' : ''}`}
-                  placeholder="Choose a username"
+                  className={`w-full p-4 liquid-input text-gray-900 dark:text-white placeholder-gray-400 font-medium ${usernameAvailable === false ? 'border-red-400/50 bg-red-50/20' : ''}`}
+                  placeholder="Choose a handle"
                   required={!isLogin}
                 />
                 {username.length > 2 && (
-                  <div className={`absolute right-4 top-4 ${enableAnimations ? 'animate-pop-in' : ''}`}>
+                  <div className={`absolute right-4 top-4 ${enableAnimations ? 'animate-pop-in-heavy' : ''}`}>
                       {usernameAvailable ? (
-                          <div className="w-3 h-3 bg-green-500 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.6)]"></div>
+                          <div className="w-3 h-3 bg-green-500 rounded-full shadow-[0_0_15px_rgba(34,197,94,0.8)]"></div>
                       ) : (
-                          <AlertCircle className="w-5 h-5 text-red-500" />
+                          <AlertCircle className="w-5 h-5 text-red-500 drop-shadow-md" />
                       )}
                   </div>
                 )}
@@ -171,57 +174,60 @@ export const AuthScreen: React.FC = () => {
             </div>
           )}
 
-          <div className={`space-y-1 ${animClass}`} style={getDelay(400)}>
-            <label className="text-xs font-bold text-gray-600 dark:text-gray-300 ml-2 uppercase tracking-wide">Email</label>
-            <div className="relative">
+          <div className={`space-y-1.5 ${animClass}`} style={getDelay(400)}>
+            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 ml-2 uppercase tracking-wider">Email</label>
+            <div className="relative group">
                <input
                  type="email"
                  value={email}
                  onChange={(e) => setEmail(e.target.value)}
-                 className="w-full p-4 pl-12 liquid-input text-gray-900 dark:text-white placeholder-gray-500"
+                 className="w-full p-4 pl-12 liquid-input text-gray-900 dark:text-white placeholder-gray-400 font-medium"
                  placeholder="name@example.com"
                  required
                />
-               <Mail className="absolute left-4 top-4 text-gray-500 w-5 h-5" />
+               <Mail className="absolute left-4 top-4 text-gray-400 group-focus-within:text-blue-500 transition-colors w-5 h-5" />
             </div>
           </div>
 
-          <div className={`space-y-1 ${animClass}`} style={getDelay(500)}>
-            <label className="text-xs font-bold text-gray-600 dark:text-gray-300 ml-2 uppercase tracking-wide">Password</label>
-            <div className="relative">
+          <div className={`space-y-1.5 ${animClass}`} style={getDelay(500)}>
+            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 ml-2 uppercase tracking-wider">Password</label>
+            <div className="relative group">
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full p-4 liquid-input text-gray-900 dark:text-white placeholder-gray-500"
+                className="w-full p-4 liquid-input text-gray-900 dark:text-white placeholder-gray-400 font-medium"
                 placeholder="••••••••"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-4 text-gray-500 hover:text-gray-700 dark:hover:text-white transition-colors"
+                className="absolute right-4 top-4 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors"
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
           </div>
 
-          {error && <div className={`p-3 rounded-xl bg-red-100/50 border border-red-200 text-red-600 text-sm text-center backdrop-blur-md ${enableAnimations ? 'animate-shake' : ''}`}>{error}</div>}
+          {error && <div className={`p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-sm font-medium text-center backdrop-blur-md ${enableAnimations ? 'animate-shake' : ''}`}>{error}</div>}
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className={`w-full py-4 mt-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl font-bold text-lg shadow-xl shadow-blue-500/20 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center space-x-2 disabled:opacity-70 disabled:scale-100 ${animClass}`}
+            className={`w-full py-4 mt-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl font-bold text-lg shadow-[0_10px_30px_-10px_rgba(79,70,229,0.5)] hover:shadow-[0_20px_40px_-10px_rgba(79,70,229,0.6)] hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center space-x-2 disabled:opacity-70 disabled:scale-100 ${animClass} relative overflow-hidden`}
             style={getDelay(600)}
           >
+            {/* Shimmer Effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-shimmer"></div>
+            
             {isSubmitting ? <Loader2 className="animate-spin" /> : <span>{isLogin ? 'Login' : 'Create Account'}</span>}
             {!isSubmitting && <ArrowRight size={20} />}
           </button>
         </form>
 
-        <div className={`mt-8 text-center ${animClass}`} style={getDelay(700)}>
-          <p className="text-sm text-gray-600 dark:text-gray-300">
+        <div className={`mt-10 text-center ${animClass}`} style={getDelay(700)}>
+          <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">
             {isLogin ? "New here?" : "Have an account?"}
             <button
               onClick={() => { 
@@ -231,7 +237,7 @@ export const AuthScreen: React.FC = () => {
                   setPassword('');
                   setUsername('');
               }}
-              className="ml-2 text-blue-600 dark:text-blue-300 font-bold hover:underline"
+              className="ml-2 text-blue-600 dark:text-blue-400 font-extrabold hover:underline decoration-2 underline-offset-4"
             >
               {isLogin ? 'Sign Up' : 'Login'}
             </button>

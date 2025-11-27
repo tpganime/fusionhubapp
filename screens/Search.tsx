@@ -40,9 +40,9 @@ export const SearchScreen: React.FC = () => {
     <div className="h-full overflow-y-auto pb-32 no-scrollbar gpu-accelerated">
       <TopBar />
       <main className="px-5 pt-2">
-        <h1 className={`text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white ${enableAnimations ? 'animate-slide-up-heavy' : ''}`} style={{ animationFillMode: 'both' }}>Discover</h1>
+        <h1 className={`text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`} style={{ animationFillMode: 'both' }}>Discover</h1>
         
-        <div className={`relative mb-6 transform-gpu ${enableAnimations ? 'animate-slide-up-heavy' : ''}`} style={{ animationDelay: '100ms', animationFillMode: 'both' }}>
+        <div className={`relative mb-6 transform-gpu ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`} style={{ animationDelay: '100ms', animationFillMode: 'both' }}>
           <SearchIcon className="absolute left-5 top-4 text-gray-500 w-5 h-5 z-10" />
           <input
             type="text"
@@ -55,7 +55,7 @@ export const SearchScreen: React.FC = () => {
 
         <div className="space-y-3">
           {query && filteredUsers.length === 0 && (
-            <div className={`text-center py-10 opacity-50 ${enableAnimations ? 'animate-heavy-fade-in' : ''}`}>
+            <div className={`text-center py-10 opacity-50 ${enableAnimations ? 'animate-fade-in' : ''}`}>
                 <p>No users found.</p>
             </div>
           )}
@@ -71,7 +71,7 @@ export const SearchScreen: React.FC = () => {
               <div 
                 key={user.id} 
                 onClick={() => navigate(`/user/${user.id}`)}
-                className={`liquid-card p-4 flex items-center justify-between transition-all hover:bg-white/40 dark:hover:bg-white/10 cursor-pointer group hover:scale-[1.02] transform-gpu will-change-transform ${enableAnimations ? 'animate-slide-up-heavy' : ''}`}
+                className={`liquid-card p-4 flex items-center justify-between transition-all hover:bg-white/40 dark:hover:bg-white/10 cursor-pointer group hover:scale-[1.02] transform-gpu will-change-transform ${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`}
                 style={{ animationDelay: `${200 + (index * 60)}ms`, animationFillMode: 'both' }}
               >
                 <div className="flex items-center space-x-4">

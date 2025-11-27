@@ -50,9 +50,9 @@ export const HomeScreen: React.FC = () => {
     return <ComingSoon title="Home" />;
   }
 
-  // Heavy Stagger Calculation
+  // Animation Calculation
   const getDelay = (index: number, base: number = 200) => {
-    return enableAnimations ? { animationDelay: `${base + (index * 80)}ms`, animationFillMode: 'both' as const } : {};
+    return enableAnimations ? { animationDelay: `${base + (index * 60)}ms`, animationFillMode: 'both' as const } : {};
   };
 
   return (
@@ -60,9 +60,9 @@ export const HomeScreen: React.FC = () => {
       <TopBar />
       <main className="px-5 pt-2">
         
-        {/* Notification Permission Liquid Banner */}
+        {/* Notification Permission Liquid Banner - Heavy pop in */}
         {showNotifBanner && (
-            <div className={`mb-6 p-5 liquid-card flex items-center justify-between transform-gpu ${enableAnimations ? 'animate-pop-in-heavy' : ''}`} style={{ animationDelay: '100ms' }}>
+            <div className={`mb-6 p-5 liquid-card flex items-center justify-between transform-gpu ${enableAnimations ? 'animate-pop-in' : ''}`} style={{ animationDelay: '100ms' }}>
                 <div className="flex items-center gap-4">
                     <div className="p-3 bg-blue-500/20 rounded-full text-blue-600 dark:text-blue-300 shadow-inner">
                         <Bell className="w-6 h-6 animate-bounce-soft" />
@@ -81,37 +81,37 @@ export const HomeScreen: React.FC = () => {
             </div>
         )}
 
-        {/* Greeting Liquid Card - Premium Physics */}
-        <div className={`relative overflow-hidden liquid-card p-6 mb-8 transform-gpu hover:scale-[1.02] hover:shadow-2xl transition-all duration-700 ${enableAnimations ? 'animate-scale-elastic' : ''}`}>
+        {/* Greeting Liquid Card - Refined Motion */}
+        <div className={`relative overflow-hidden liquid-card p-6 mb-6 transform-gpu hover:scale-[1.02] hover:shadow-2xl transition-all duration-700 ${enableAnimations ? 'animate-scale-in' : ''}`}>
            {/* Fluid background effect */}
-           <div className="absolute -top-20 -right-20 w-80 h-80 bg-gradient-to-br from-purple-400/30 to-blue-400/30 dark:from-purple-900/60 dark:to-blue-900/60 rounded-full blur-[60px] opacity-70 pointer-events-none animate-blob"></div>
+           <div className="absolute -top-20 -right-20 w-64 h-64 bg-gradient-to-br from-purple-300 to-blue-300 dark:from-purple-900/60 dark:to-blue-900/60 rounded-full blur-[80px] opacity-70 pointer-events-none animate-blob"></div>
            <div 
-             className="absolute -bottom-20 -left-20 w-80 h-80 bg-gradient-to-tr from-pink-400/30 to-yellow-300/30 dark:from-pink-900/50 dark:to-yellow-900/30 rounded-full blur-[60px] opacity-70 pointer-events-none animate-blob" 
+             className="absolute -bottom-20 -left-20 w-64 h-64 bg-gradient-to-tr from-pink-300 to-yellow-200 dark:from-pink-900/50 dark:to-yellow-900/30 rounded-full blur-[80px] opacity-70 pointer-events-none animate-blob" 
              style={{ animationDelay: '4s', animationDuration: '18s' }}
            ></div>
 
            <div className="relative z-10">
-             <h2 className={`text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1 ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`} style={getDelay(0, 100)}>
-               {timeData.greeting}
+             <h2 className={`text-sm font-medium text-gray-600 dark:text-gray-300 ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`} style={getDelay(0, 100)}>
+               {timeData.greeting},
              </h2>
-             <h1 className={`text-3xl font-black text-gray-900 dark:text-white mb-4 tracking-tighter drop-shadow-sm ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`} style={getDelay(1, 100)}>
+             <h1 className={`text-2xl font-extrabold text-gray-900 dark:text-white mb-3 tracking-tight drop-shadow-sm ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`} style={getDelay(1, 100)}>
                {currentUser?.username}
              </h1>
              
-             <div className="mt-4 flex flex-col items-start">
-                <span className={`text-5xl font-thin text-gray-800 dark:text-white tracking-tighter mix-blend-overlay ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`} style={getDelay(2, 100)}>
+             <div className="mt-2 flex flex-col items-start">
+                <span className={`text-4xl font-thin text-gray-800 dark:text-white tracking-tighter mix-blend-overlay ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`} style={getDelay(2, 100)}>
                   {timeData.time}
                 </span>
-                <span className={`px-4 py-1.5 mt-3 rounded-full bg-white/40 dark:bg-white/10 text-[11px] font-bold text-gray-700 dark:text-gray-200 uppercase tracking-widest backdrop-blur-md border border-white/30 shadow-sm ${enableAnimations ? 'animate-pop-in-heavy opacity-0' : ''}`} style={getDelay(3, 100)}>
+                <span className={`px-3 py-1 mt-2 rounded-full bg-white/40 dark:bg-white/10 text-[10px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-widest backdrop-blur-md border border-white/30 ${enableAnimations ? 'animate-pop-in' : ''}`} style={getDelay(3, 100)}>
                   {timeData.date}
                 </span>
              </div>
            </div>
         </div>
 
-        {/* Shortcuts Grid - Heavy Waterfall Stagger */}
-        <h3 className={`text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-5 pl-2 ${enableAnimations ? 'animate-heavy-fade-in' : ''}`} style={{ animationDelay: '200ms' }}>Apps</h3>
-        <div className="grid grid-cols-2 gap-5">
+        {/* Shortcuts Grid - Waterfall Stagger */}
+        <h3 className={`text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4 pl-2 ${enableAnimations ? 'animate-fade-in' : ''}`} style={{ animationDelay: '200ms' }}>Apps</h3>
+        <div className="grid grid-cols-2 gap-4">
           {HOME_SHORTCUTS.map((shortcut, index) => {
              const isEnabled = appConfig.features.shortcuts[shortcut.name] ?? true;
              
@@ -122,42 +122,42 @@ export const HomeScreen: React.FC = () => {
                        href={shortcut.url}
                        target="_blank"
                        rel="noopener noreferrer"
-                       className={`group relative overflow-hidden liquid-card p-5 hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.3)] hover:-translate-y-2 transition-all duration-500 transform-gpu ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`}
+                       className={`group relative overflow-hidden liquid-card p-5 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] hover:-translate-y-2 transition-all duration-500 transform-gpu ${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`}
                        style={getDelay(index, 300)}
                      >
-                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-4 group-hover:translate-x-0 duration-500 ease-out">
-                           <ArrowRight className="w-5 h-5 text-gray-500" />
+                        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-4 group-hover:translate-x-0 duration-500 ease-out">
+                           <ArrowRight className="w-4 h-4 text-gray-500" />
                         </div>
                         
-                        <div className="mb-5 w-16 h-16 rounded-[1.4rem] bg-gradient-to-br from-white to-white/50 dark:from-white/10 dark:to-white/5 flex items-center justify-center text-3xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] border border-white/40 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 ease-in-out group-hover:animate-bounce-soft">
+                        <div className="mb-4 w-14 h-14 rounded-[1.2rem] bg-gradient-to-br from-white to-white/50 dark:from-white/10 dark:to-white/5 flex items-center justify-center text-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)] border border-white/40 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 ease-in-out group-hover:animate-bounce-soft">
                            {shortcut.icon ? (
-                               <img src={`https://www.google.com/s2/favicons?domain=${shortcut.icon}&sz=64`} alt="icon" className="w-8 h-8" />
+                               <img src={`https://www.google.com/s2/favicons?domain=${shortcut.icon}&sz=64`} alt="icon" className="w-7 h-7" />
                            ) : (
-                               <span className="text-3xl">🔗</span>
+                               <span className="text-2xl">🔗</span>
                            )}
                         </div>
                         
-                        <h3 className="font-bold text-lg text-gray-800 dark:text-white mb-1 group-hover:text-blue-600 transition-colors duration-300">{shortcut.name}</h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1 group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors duration-300 font-medium">{shortcut.description}</p>
+                        <h3 className="font-bold text-gray-800 dark:text-white mb-1 group-hover:text-blue-600 transition-colors duration-300">{shortcut.name}</h3>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-1 group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors duration-300">{shortcut.description}</p>
                      </a>
                  );
              } else {
                  return (
                      <div 
                        key={shortcut.name}
-                       className={`group relative overflow-hidden liquid-card p-5 opacity-60 cursor-not-allowed transform-gpu grayscale hover:grayscale-0 transition-all duration-500 ${enableAnimations ? 'animate-slide-up-heavy opacity-0' : ''}`}
+                       className={`group relative overflow-hidden liquid-card p-5 opacity-60 cursor-not-allowed transform-gpu grayscale hover:grayscale-0 transition-all duration-500 ${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`}
                        style={getDelay(index, 300)}
                      >
-                        <div className="absolute top-4 right-4">
-                           <Lock className="w-5 h-5 text-gray-400" />
+                        <div className="absolute top-3 right-3">
+                           <Lock className="w-4 h-4 text-gray-400" />
                         </div>
                         
-                        <div className="mb-5 w-16 h-16 rounded-[1.4rem] bg-gray-200 dark:bg-gray-800/50 flex items-center justify-center">
-                           <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-700"></div>
+                        <div className="mb-4 w-14 h-14 rounded-[1.2rem] bg-gray-200 dark:bg-gray-800/50 flex items-center justify-center">
+                           <div className="w-7 h-7 rounded-full bg-gray-300 dark:bg-gray-700"></div>
                         </div>
                         
-                        <h3 className="font-bold text-lg text-gray-500 mb-1">{shortcut.name}</h3>
-                        <p className="text-xs text-blue-500 font-bold uppercase tracking-wide">Locked</p>
+                        <h3 className="font-bold text-gray-500 mb-1">{shortcut.name}</h3>
+                        <p className="text-[10px] text-blue-500 font-bold uppercase tracking-wide">Locked</p>
                      </div>
                  );
              }
@@ -165,8 +165,8 @@ export const HomeScreen: React.FC = () => {
         </div>
         
         {HOME_SHORTCUTS.length === 0 && (
-           <div className={`text-center py-10 opacity-50 ${enableAnimations ? 'animate-heavy-fade-in' : ''}`}>
-             <p className="text-sm text-gray-400 font-medium">No shortcuts available.</p>
+           <div className={`text-center py-10 opacity-50 ${enableAnimations ? 'animate-fade-in' : ''}`}>
+             <p className="text-sm text-gray-400">No shortcuts available.</p>
            </div>
         )}
       </main>

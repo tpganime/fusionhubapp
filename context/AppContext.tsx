@@ -24,6 +24,7 @@ interface AppContextType {
   glassOpacity: number;
   showPermissionPrompt: boolean;
   notificationPermission: NotificationPermission;
+  isSwitchAccountModalOpen: boolean;
   appConfig: AppConfig;
   isAdmin: boolean;
   isOwner: boolean;
@@ -57,6 +58,7 @@ interface AppContextType {
   updateAppConfig: (newConfig: AppConfig) => Promise<void>;
   getTimeSpent: () => string;
   getWeeklyStats: () => WeeklyStat[];
+  openSwitchAccountModal: (isOpen: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -91,7 +93,7 @@ const mapUserFromDB = (dbUser: any): User => {
       username: dbUser.username || 'Unknown',
       name: dbUser.name || '',
       email: dbUser.email || '',
-      password: dbUser.password, // Required for account switching persistence
+      password: dbUser.password, 
       avatar: dbUser.avatar || 'https://via.placeholder.com/150',
       description: dbUser.description,
       birthdate: dbUser.birthdate,
@@ -165,6 +167,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
+  const [isSwitchAccountModalOpen, setIsSwitchAccountModalOpen] = useState(false);
   
   const [knownAccounts, setKnownAccounts] = useState<User[]>(() => {
     try {
@@ -432,7 +435,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const saveAccountToHistory = (user: User) => {
     setKnownAccounts(prev => {
-        // Prevent duplicates, keep latest
         const filtered = prev.filter(u => u.id !== user.id);
         return [...filtered, user];
     });
@@ -442,7 +444,26 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setCurrentUser(user); 
       localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id); 
       saveAccountToHistory(user);
-      checkPermissionStatus(); 
+      checkPermissionStatus();
+      setIsSwitchAccountModalOpen(false);
+      
+      // GENERATE NOTIFICATIONS FOR PENDING REQUESTS ON LOGIN
+      const requests = user.requests || [];
+      if (requests.length > 0) {
+          // Fetch user details for requests if not in cache
+          const { data: requestUsers } = await supabase.from('users').select('*').in('id', requests);
+          if (requestUsers) {
+              const newNotifs: AppNotification[] = requestUsers.map((reqUser: any) => ({
+                  id: `req_${reqUser.id}_${Date.now()}`,
+                  type: 'friend_request',
+                  content: `${reqUser.username} sent you a friend request`,
+                  read: false,
+                  timestamp: Date.now(),
+                  data: { requesterId: reqUser.id, avatar: reqUser.avatar }
+              }));
+              setNotifications(prev => [...newNotifs, ...prev]);
+          }
+      }
   };
 
   const loginWithCredentials = async (email: string, pass: string) => {
@@ -470,7 +491,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const updateProfile = async (updatedUser: User) => {
     setCurrentUser(updatedUser);
     setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
-    saveAccountToHistory(updatedUser); // Update info in known accounts if profile changes
+    saveAccountToHistory(updatedUser);
     try {
         const { error } = await supabase.from('users').update(mapUserToDB(updatedUser)).eq('id', updatedUser.id);
         if (error) {
@@ -505,13 +526,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const sendMessage = async (receiverId: string, content: string) => {
     if (!currentUser) return;
     const newMsg: Message = { id: generateUUID(), senderId: currentUser.id, receiverId, content, timestamp: Date.now(), read: false };
-    // Optimistic update
     setMessages(prev => [...prev, newMsg]);
     playSendSound();
     
     const { error } = await supabase.from('messages').insert(mapMessageToDB(newMsg));
     if (error) {
-        console.error(error);
+        console.error("Message Send Error:", error);
         triggerNotification("Error", "Message failed to send.");
         setMessages(prev => prev.filter(m => m.id !== newMsg.id));
     }
@@ -525,7 +545,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const sendFriendRequest = async (targetUserId: string) => {
     if (!currentUser) return;
     
-    // Optimistic Update locally
+    // Optimistic Update
     setUsers(prev => prev.map(u => {
         if (u.id === targetUserId) {
             if (u.requests.includes(currentUser.id)) return u;
@@ -538,17 +558,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (data) {
         let currentRequests = data.requests || [];
         
-        // RESEND LOGIC: Remove then re-add to force a change event on the receiver
         if (currentRequests.includes(currentUser.id)) {
+            // Force re-trigger by removing and adding back with longer delay
             const filtered = currentRequests.filter((id: string) => id !== currentUser.id);
-            // 1. Remove
             await supabase.from('users').update({ requests: filtered }).eq('id', targetUserId);
-            // 2. Add back (wait slightly to ensure distinct events)
+            
             setTimeout(async () => {
                 await supabase.from('users').update({ requests: [...filtered, currentUser.id] }).eq('id', targetUserId);
-            }, 100);
+            }, 500); // Increased delay for robust event triggering
         } else {
-            // First time request
             await supabase.from('users').update({ requests: [...currentRequests, currentUser.id] }).eq('id', targetUserId);
         }
     }
@@ -583,7 +601,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           return u;
       }));
 
-      // DB Updates
       await supabase.from('users').update({ friends: myNewFriends }).eq('id', currentUser.id);
       
       const { data } = await supabase.from('users').select('friends').eq('id', targetUserId).single();
@@ -634,6 +651,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
   const toggleAnimations = () => setEnableAnimations(prev => !prev);
   const toggleLiquid = () => setEnableLiquid(prev => !prev);
+  
+  const openSwitchAccountModal = (isOpen: boolean) => setIsSwitchAccountModalOpen(isOpen);
 
   useEffect(() => {
     let isMounted = true;
@@ -666,7 +685,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
             if (savedId) {
                 const found = mappedUsers.find(u => u.id === savedId);
-                if (found) { setCurrentUser(found); checkPermissionStatus(); }
+                if (found) { 
+                    setCurrentUser(found); 
+                    checkPermissionStatus();
+                    // Generate notifications on initial load
+                    const requests = found.requests || [];
+                    if (requests.length > 0) {
+                        const { data: requestUsers } = await supabase.from('users').select('*').in('id', requests);
+                        if (requestUsers) {
+                            const newNotifs: AppNotification[] = requestUsers.map((reqUser: any) => ({
+                                id: `req_${reqUser.id}_${Date.now()}`,
+                                type: 'friend_request',
+                                content: `${reqUser.username} sent you a friend request`,
+                                read: false,
+                                timestamp: Date.now(),
+                                data: { requesterId: reqUser.id, avatar: reqUser.avatar }
+                            }));
+                            setNotifications(prev => {
+                                // merge and dedup
+                                const existingIds = new Set(prev.map(n => n.id));
+                                const uniqueNew = newNotifs.filter(n => !existingIds.has(n.id));
+                                return [...uniqueNew, ...prev];
+                            });
+                        }
+                    }
+                }
             }
             setIsLoading(false);
             clearTimeout(safetyTimeout);
@@ -731,40 +774,47 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
              return exists ? prev.map(u => u.id === updatedUser.id ? updatedUser : u) : [...prev, updatedUser];
           });
 
-          // ROBUST FRIEND REQUEST NOTIFICATION LOGIC
+          // ROBUST FRIEND REQUEST CHECKING
           if (currentUserRef.current && updatedUser.id === currentUserRef.current.id) {
-            setCurrentUser(updatedUser);
-            const currentRequests = updatedUser.requests || [];
+            const oldRequests = currentUserRef.current.requests || [];
+            const newRequests = updatedUser.requests || [];
             
-            // Check for any request ID that we haven't notified about recently
-            for (const reqId of currentRequests) {
-                // Check if we already have a notification for this user in the current session
-                const alreadyNotified = notificationsRef.current.some(n => 
-                    n.type === 'friend_request' && n.data?.requesterId === reqId
-                );
+            // Identify newly added requests by checking diff
+            const addedRequests = newRequests.filter(reqId => !oldRequests.includes(reqId));
+            
+            // Also check if any request in newRequests is NOT in notifications to be safe (backup check)
+            const notifiedRequestIds = new Set(notificationsRef.current.filter(n => n.type === 'friend_request').map(n => n.data?.requesterId));
+            const missedRequests = newRequests.filter(reqId => !notifiedRequestIds.has(reqId));
+            
+            // Merge unique IDs to process
+            const idsToProcess = new Set([...addedRequests, ...missedRequests]);
 
-                if (!alreadyNotified) {
-                   // Fetch requester info if missing from cache
-                   let requester = usersRef.current.find(u => u.id === reqId);
-                   if (!requester) {
-                       const { data } = await supabase.from('users').select('*').eq('id', reqId).single();
-                       if (data) requester = mapUserFromDB(data);
-                   }
+            setCurrentUser(updatedUser);
 
-                   if (requester) {
-                     playNotificationSound();
-                     const notif: AppNotification = {
-                       id: `req_${reqId}_${Date.now()}`, // Unique ID
-                       type: 'friend_request',
-                       content: `${requester.username} sent you a friend request`,
-                       read: false,
-                       timestamp: Date.now(),
-                       data: { requesterId: requester.id, avatar: requester.avatar }
-                     };
-                     setNotifications(prev => [notif, ...prev]);
-                     triggerNotification('New Friend Request', `${requester.username} wants to be friends`, requester.avatar);
-                   }
-                }
+            for (const reqId of idsToProcess) {
+               let requester = usersRef.current.find(u => u.id === reqId);
+               if (!requester) {
+                   const { data } = await supabase.from('users').select('*').eq('id', reqId).single();
+                   if (data) requester = mapUserFromDB(data);
+               }
+
+               if (requester) {
+                 playNotificationSound();
+                 const notif: AppNotification = {
+                   id: `req_${reqId}_${Date.now()}`,
+                   type: 'friend_request',
+                   content: `${requester.username} sent you a friend request`,
+                   read: false,
+                   timestamp: Date.now(),
+                   data: { requesterId: requester.id, avatar: requester.avatar }
+                 };
+                 // Prevent duplicates in state
+                 setNotifications(prev => {
+                     if (prev.some(n => n.data?.requesterId === reqId)) return prev;
+                     return [notif, ...prev];
+                 });
+                 triggerNotification('New Friend Request', `${requester.username} wants to be friends`, requester.avatar);
+               }
             }
           }
         }
@@ -782,11 +832,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   return (
     <AppContext.Provider value={{
-      currentUser, users, messages, notifications, knownAccounts, theme, isLoading, enableAnimations, animationSpeed, enableLiquid, glassOpacity, showPermissionPrompt, notificationPermission,
+      currentUser, users, messages, notifications, knownAccounts, theme, isLoading, enableAnimations, animationSpeed, enableLiquid, glassOpacity, showPermissionPrompt, notificationPermission, isSwitchAccountModalOpen,
       appConfig, isAdmin, isOwner, onlineUsers,
       login, loginWithCredentials, logout, switchAccount, removeKnownAccount, signup, updateProfile, deleteAccount, deactivateAccount,
       sendMessage, broadcastMessage, sendFriendRequest, acceptFriendRequest, unfriend, markNotificationRead,
-      toggleTheme, toggleAnimations, setAnimationSpeed, toggleLiquid, setGlassOpacity, markConversationAsRead, checkIsAdmin, checkIsOwner, checkIsOnline, enableNotifications, closePermissionPrompt, updateAppConfig, getTimeSpent, getWeeklyStats
+      toggleTheme, toggleAnimations, setAnimationSpeed, toggleLiquid, setGlassOpacity, markConversationAsRead, checkIsAdmin, checkIsOwner, checkIsOnline, enableNotifications, closePermissionPrompt, updateAppConfig, getTimeSpent, getWeeklyStats, openSwitchAccountModal
     }}>
       {children}
     </AppContext.Provider>

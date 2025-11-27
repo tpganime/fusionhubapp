@@ -2,10 +2,12 @@
 import React from 'react';
 import { Home, MessageCircle, Search, User } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useApp } from '../context/AppContext';
 
 export const BottomNav: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { openSwitchAccountModal } = useApp();
 
   const tabs = [
     { id: 'home', path: '/home', icon: Home, label: 'Home' },
@@ -18,6 +20,16 @@ export const BottomNav: React.FC = () => {
     location.pathname === tab.path || (tab.path !== '/home' && location.pathname.startsWith(tab.path))
   );
   const currentIndex = activeIndex === -1 ? 0 : activeIndex;
+
+  const handleTabClick = (tab: typeof tabs[0]) => {
+      navigate(tab.path);
+  };
+
+  const handleDoubleClick = (tabId: string) => {
+      if (tabId === 'profile') {
+          openSwitchAccountModal(true);
+      }
+  };
 
   return (
     <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center pointer-events-none px-4 animate-slide-up">
@@ -47,7 +59,8 @@ export const BottomNav: React.FC = () => {
             return (
               <button
                 key={tab.id}
-                onClick={() => navigate(tab.path)}
+                onClick={() => handleTabClick(tab)}
+                onDoubleClick={() => handleDoubleClick(tab.id)}
                 className="w-16 h-14 flex items-center justify-center rounded-full transition-all duration-300 group focus:outline-none active:scale-90"
               >
                 <Icon 

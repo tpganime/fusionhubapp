@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Lock, Eye, Trash2, LogOut, Shield, ChevronRight, Moon, Sun, Zap, LayoutDashboard, Bell, Droplets, Sliders, Power, Gauge } from 'lucide-react';
 import { PRIVACY_POLICY_TEXT } from '../constants';
+import { LiquidSlider } from '../components/LiquidSlider';
 
 export const SettingsScreen: React.FC = () => {
   const { currentUser, updateProfile, logout, deleteAccount, deactivateAccount, theme, toggleTheme, enableAnimations, toggleAnimations, animationSpeed, setAnimationSpeed, enableLiquid, toggleLiquid, glassOpacity, setGlassOpacity, isAdmin, enableNotifications, notificationPermission } = useApp();
@@ -48,8 +49,7 @@ export const SettingsScreen: React.FC = () => {
   // Slider = (1.0 - Opacity) * 100
   const transparencyValue = Math.round((1.0 - glassOpacity) * 100);
 
-  const handleTransparencyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const val = parseInt(e.target.value, 10);
+  const handleTransparencyChange = (val: number) => {
       // If 100% transparent, opacity is 0. If 0% transparent, opacity is 1.
       // Limit opacity to max 1.0
       const newOpacity = 1.0 - (val / 100.0);
@@ -148,14 +148,10 @@ export const SettingsScreen: React.FC = () => {
                           <span className="text-[10px] text-gray-500 dark:text-gray-400">{transparencyValue}% {transparencyValue === 100 ? '(Clear)' : ''}</span>
                        </div>
                    </div>
-                   <input 
-                       type="range" 
-                       min="0" 
-                       max="100" 
-                       step="1"
-                       value={transparencyValue} 
-                       onChange={handleTransparencyChange}
-                       className="liquid-slider"
+                   
+                   <LiquidSlider 
+                      value={transparencyValue} 
+                      onChange={handleTransparencyChange} 
                    />
                </div>
             )}

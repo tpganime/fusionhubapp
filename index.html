@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -84,9 +85,9 @@
                  "40%, 60%": { transform: "translate3d(4px, 0, 0)" }
                },
                knobStretch: {
-                 "0%": { width: "1.25rem" }, /* w-5 */
-                 "50%": { width: "1.75rem" }, 
-                 "100%": { width: "1.25rem" }
+                 "0%": { width: "1.5rem" }, 
+                 "50%": { width: "2rem" }, /* Stretch effect */
+                 "100%": { width: "1.5rem" }
                }
             },
           }
@@ -274,7 +275,7 @@
         will-change: transform, opacity;
       }
 
-      /* LIQUID FILL TOGGLE ANIMATION (Video Style) */
+      /* LIQUID FILL TOGGLE ANIMATION (REFINED) */
       .toggle-label {
         width: 3.5rem; /* w-14 */
         height: 2rem; /* h-8 */
@@ -282,9 +283,9 @@
         border-radius: 9999px;
         position: relative;
         cursor: pointer;
-        transition: background-color 0.4s ease;
+        transition: background-color 0.5s ease;
         box-shadow: inset 0 2px 4px rgba(0,0,0,0.1), 0 1px 2px rgba(255,255,255,0.5);
-        overflow: hidden; /* Important for liquid fill */
+        overflow: hidden; 
         z-index: 1;
       }
       .dark .toggle-label {
@@ -297,13 +298,13 @@
         content: '';
         position: absolute;
         top: 50%;
-        left: 0.25rem;
-        width: 1.5rem;
-        height: 1.5rem;
+        left: 0%;
+        width: 2rem;
+        height: 2rem;
         background-color: #22c55e;
         border-radius: 9999px;
-        transform: translate(-100%, -50%) scale(0);
-        transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55); /* Elastic expansion */
+        transform: translate(-100%, -50%) scale(1);
+        transition: transform 0.5s cubic-bezier(0.65, 0, 0.35, 1);
         z-index: -1;
       }
 
@@ -317,27 +318,74 @@
         height: 1.5rem; 
         background-color: white;
         border-radius: 9999px;
-        transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.2s ease;
+        /* Spring physics for knob movement */
+        transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         z-index: 2;
       }
       
       /* Checked State */
       .peer:checked + .toggle-label::after {
-        transform: translateX(1.5rem); /* Move right */
+        transform: translateX(1.5rem);
       }
       
       /* Active Liquid Fill */
       .peer:checked + .toggle-label {
-        background-color: #dcfce7; /* Light green tint track */
+        background-color: #dcfce7;
       }
       .peer:checked + .toggle-label::before {
-        transform: translate(-10%, -50%) scale(20); /* Explode to fill */
+        transform: translate(0%, -50%) scale(10, 3);
       }
       
-      /* Active Press - Elastic Knob Stretch */
+      /* Elastic Stretch Effect on active click */
       .peer:active + .toggle-label::after {
-        width: 1.8rem;
+        width: 2rem;
+      }
+      .peer:checked:active + .toggle-label::after {
+        transform: translateX(1.2rem);
+        width: 2rem;
+      }
+
+      /* LIQUID SLIDER STYLES */
+      .liquid-slider {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        background: transparent;
+      }
+      .liquid-slider:focus {
+        outline: none;
+      }
+      /* Track */
+      .liquid-slider::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 8px;
+        cursor: pointer;
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 99px;
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+      }
+      .dark .liquid-slider::-webkit-slider-runnable-track {
+        background: rgba(255, 255, 255, 0.1);
+      }
+      /* Thumb (Liquid Droplet) */
+      .liquid-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        height: 24px;
+        width: 24px;
+        border-radius: 50%;
+        background: #ffffff;
+        cursor: pointer;
+        margin-top: -8px; /* Centers thumb on track */
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2), inset 0 -3px 3px rgba(0,0,0,0.1);
+        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.2s;
+      }
+      /* Active Drag State (Elastic Stretch) */
+      .liquid-slider:active::-webkit-slider-thumb {
+        transform: scale(1.1);
+        width: 28px; /* Stretch width */
+        height: 20px; /* Squish height */
+        margin-top: -6px;
       }
     </style>
 <script type="importmap">

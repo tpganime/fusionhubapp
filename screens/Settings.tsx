@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
@@ -154,7 +155,7 @@ export const SettingsScreen: React.FC = () => {
                        step="1"
                        value={transparencyValue} 
                        onChange={handleTransparencyChange}
-                       className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+                       className="liquid-slider"
                    />
                </div>
             )}

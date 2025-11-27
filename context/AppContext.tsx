@@ -218,7 +218,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const currentUserRef = useRef<User | null>(null);
   const usersRef = useRef<User[]>([]);
-  const notificationsRef = useRef<AppNotification[]>([]); // Track notifications to prevent dupes
+  const notificationsRef = useRef<AppNotification[]>([]);
 
   useEffect(() => { currentUserRef.current = currentUser; }, [currentUser]);
   useEffect(() => { usersRef.current = users; }, [users]);
@@ -464,8 +464,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const sendMessage = async (receiverId: string, content: string) => {
     if (!currentUser) return;
     const newMsg: Message = { id: generateUUID(), senderId: currentUser.id, receiverId, content, timestamp: Date.now(), read: false };
+    // Optimistic update
     setMessages(prev => [...prev, newMsg]);
     playSendSound();
+    
     const { error } = await supabase.from('messages').insert(mapMessageToDB(newMsg));
     if (error) {
         console.error(error);
@@ -485,26 +487,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     // Optimistic Update
     setUsers(prev => prev.map(u => {
         if (u.id === targetUserId) {
-            // Prevent duplicates in local state if already requested
             if (u.requests.includes(currentUser.id)) return u;
             return { ...u, requests: [...u.requests, currentUser.id] };
         }
         return u;
     }));
     
-    // Fetch latest to ensure no overwrite race condition
     const { data } = await supabase.from('users').select('requests').eq('id', targetUserId).single();
     if (data) {
         let currentRequests = data.requests || [];
-        
-        // RESEND LOGIC: If already requested, trigger a change event by removing then adding back
+        // Resend logic: remove then add to trigger update event
         if (currentRequests.includes(currentUser.id)) {
             const filtered = currentRequests.filter((id: string) => id !== currentUser.id);
             await supabase.from('users').update({ requests: filtered }).eq('id', targetUserId);
-            currentRequests = filtered; // Update local var for next step
+            currentRequests = filtered;
         }
-        
-        // Add request
         await supabase.from('users').update({ requests: [...currentRequests, currentUser.id] }).eq('id', targetUserId);
     }
   };
@@ -533,11 +530,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const markConversationAsRead = async (senderId: string) => {
     if (!currentUser) return;
-    const unreadMessages = messages.filter(m => m.senderId === senderId && m.receiverId === currentUser.id && !m.read);
+    
+    // Identify unread messages from this sender to me
+    const unreadMessages = messages.filter(m => 
+        m.senderId === senderId && 
+        m.receiverId === currentUser.id && 
+        !m.read
+    );
+
+    // Skip if nothing to update to prevent spamming DB
     if (unreadMessages.length === 0) return;
+
     const unreadIds = unreadMessages.map(m => m.id);
-    setMessages(prev => prev.map(m => (unreadIds.includes(m.id)) ? { ...m, read: true } : m));
-    await supabase.from('messages').update({ read: true }).in('id', unreadIds);
+
+    // Optimistic UI Update
+    setMessages(prev => prev.map(m => 
+        (unreadIds.includes(m.id)) ? { ...m, read: true } : m
+    ));
+
+    // Batch Update in DB
+    const { error } = await supabase
+        .from('messages')
+        .update({ read: true })
+        .in('id', unreadIds);
+    
+    if (error) console.error("Failed to mark messages as read:", error);
   };
 
   const checkPermissionStatus = () => {
@@ -604,16 +621,33 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const channel = supabase.channel('realtime:app_data')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
         const newMsg = mapMessageFromDB(payload.new);
-        setMessages(prev => { if (prev.some(m => m.id === newMsg.id)) return prev; return [...prev, newMsg]; });
+        
+        // Update local messages state instantly
+        setMessages(prev => { 
+            // Prevent duplicates if already added optimistically
+            if (prev.some(m => m.id === newMsg.id)) return prev; 
+            return [...prev, newMsg]; 
+        });
 
+        // Notification Logic
         if (currentUserRef.current && newMsg.receiverId === currentUserRef.current.id) {
           const sender = usersRef.current.find(u => u.id === newMsg.senderId);
           const senderName = sender ? sender.username : 'Someone';
+          
           playNotificationSound();
-          const notif: AppNotification = { id: Date.now().toString(), type: 'message', content: `New message from ${senderName}`, read: false, timestamp: Date.now(), data: { targetUser: sender, avatar: sender?.avatar } };
+          const notif: AppNotification = { 
+              id: Date.now().toString(), 
+              type: 'message', 
+              content: `New message from ${senderName}`, 
+              read: false, 
+              timestamp: Date.now(), 
+              data: { targetUser: sender, avatar: sender?.avatar } 
+          };
           setNotifications(prev => [notif, ...prev]);
           triggerNotification(`Message from ${senderName}`, newMsg.content, sender?.avatar);
         }
+
+        // Broadcast Logic
         if (newMsg.receiverId === BROADCAST_ID) {
            if (currentUserRef.current && newMsg.senderId === currentUserRef.current.id) return;
            const sender = usersRef.current.find(u => u.id === newMsg.senderId);
@@ -626,6 +660,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload) => {
         const updatedMsg = mapMessageFromDB(payload.new);
+        // Instant update for read receipts
         setMessages(prev => prev.map(m => m.id === updatedMsg.id ? updatedMsg : m));
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, async (payload) => {
@@ -636,27 +671,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
              return exists ? prev.map(u => u.id === updatedUser.id ? updatedUser : u) : [...prev, updatedUser];
           });
 
-          // Friend Request Notification Logic with Robust Fetching
+          // Friend Request Notification Logic
           if (currentUserRef.current && updatedUser.id === currentUserRef.current.id) {
             setCurrentUser(updatedUser);
             const oldReqs = currentUserRef.current.requests || [];
             const newReqs = updatedUser.requests || [];
             
             if (newReqs.length > oldReqs.length) {
-               // Identify new request IDs
                const newReqIds = newReqs.filter(id => !oldReqs.includes(id));
                
                for (const newReqId of newReqIds) {
-                   // Check for duplicates in recent notifications
                    const isDuplicate = notificationsRef.current.some(n => 
                        n.type === 'friend_request' && n.data?.requesterId === newReqId && (Date.now() - n.timestamp < 10000)
                    );
                    if (isDuplicate) continue;
 
-                   // Try finding user in local state first
                    let requester = usersRef.current.find(u => u.id === newReqId);
                    
-                   // Fallback: Fetch from DB if not found (critical for notifications to appear)
                    if (!requester) {
                        const { data } = await supabase.from('users').select('*').eq('id', newReqId).single();
                        if (data) requester = mapUserFromDB(data);

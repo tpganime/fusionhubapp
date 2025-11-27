@@ -180,7 +180,22 @@ export const ProfileScreen: React.FC = () => {
 
   // Stats for Modal
   const weeklyStats = isOwnProfile ? getWeeklyStats() : [];
-  const maxTime = Math.max(...weeklyStats.map(s => s.ms), 1);
+  const maxMs = Math.max(...weeklyStats.map(s => s.ms), 60000); // Minimum 1 min scale
+  const totalMs = weeklyStats.reduce((acc, curr) => acc + curr.ms, 0);
+  const avgMs = Math.round(totalMs / 7);
+
+  const formatBigTime = (ms: number) => {
+      const m = Math.floor(ms / 60000);
+      const h = Math.floor(m / 60);
+      const mins = m % 60;
+      if (h > 0) return (
+        <span>
+            <span className="text-5xl">{h}</span><span className="text-3xl">h</span>
+            <span className="text-5xl ml-1">{mins}</span><span className="text-3xl">m</span>
+        </span>
+      );
+      return (<span><span className="text-5xl">{mins}</span><span className="text-3xl">m</span></span>);
+  };
 
   const formatMs = (ms: number) => {
       if (ms === 0) return '0m';
@@ -207,38 +222,51 @@ export const ProfileScreen: React.FC = () => {
       {/* Stats Modal */}
       {showStatsModal && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={() => setShowStatsModal(false)}></div>
-            <div className="relative bg-white dark:bg-gray-900 w-full max-w-sm rounded-3xl shadow-2xl p-6 border border-gray-200 dark:border-gray-700 animate-pop-in">
-                <button className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => setShowStatsModal(false)}>
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowStatsModal(false)}></div>
+            <div className="relative bg-white dark:bg-black w-full max-w-sm rounded-[2rem] shadow-2xl p-8 border border-white/20 animate-pop-in overflow-hidden">
+                <button className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 transition-colors z-20" onClick={() => setShowStatsModal(false)}>
                     <X className="w-5 h-5 text-gray-500" />
                 </button>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-blue-500" /> Weekly Activity
-                </h3>
                 
-                <div className="flex items-end justify-between h-40 gap-2 mb-2">
+                <div className="flex flex-col items-center mb-8">
+                    <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 tracking-wide">Time on FusionHub</h3>
+                    <div className="mt-2 font-black bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500 bg-clip-text text-transparent">
+                        {formatBigTime(avgMs)}
+                    </div>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mt-1">Daily Average</p>
+                    <p className="text-[11px] text-gray-400 text-center mt-3 leading-relaxed max-w-[240px]">
+                        Average time you spent per day using the FusionHub app on this device in the last week.
+                    </p>
+                </div>
+                
+                <div className="flex items-end justify-between h-48 gap-3">
                     {weeklyStats.map((stat, i) => {
-                        const heightPercent = (stat.ms / maxTime) * 100;
+                        const heightPercent = Math.max((stat.ms / maxMs) * 100, 4); // Min height 4% for visibility
                         const isToday = i === 6;
+                        const label = isToday ? 'Today' : stat.day;
+                        const displayTime = formatMs(stat.ms);
+                        
                         return (
-                            <div key={i} className="flex-1 flex flex-col items-center group">
-                                <div className="w-full relative flex items-end justify-center h-full rounded-t-lg bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                            <div key={i} className="flex-1 flex flex-col items-center gap-2 group relative">
+                                {/* Value Popup */}
+                                <div className={`absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-800 text-white text-[10px] font-bold py-1 px-2 rounded-md shadow-lg pointer-events-none whitespace-nowrap z-10 ${isToday ? 'opacity-100' : ''}`}>
+                                    {displayTime}
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                                </div>
+                                
+                                <div className="w-full relative flex items-end h-full">
                                     <div 
-                                      className={`w-full ${isToday ? 'bg-blue-500' : 'bg-blue-300 dark:bg-blue-700'} rounded-t-md transition-all duration-1000 ease-out`}
+                                      className={`w-full rounded-md transition-all duration-1000 ease-out ${isToday ? 'bg-blue-500' : 'bg-blue-200 dark:bg-blue-900'}`}
                                       style={{ height: `${heightPercent}%` }}
                                     ></div>
-                                    <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 transition-opacity bg-black text-white text-[10px] px-1.5 py-0.5 rounded pointer-events-none whitespace-nowrap z-10">
-                                        {formatMs(stat.ms)}
-                                    </div>
                                 </div>
-                                <span className={`text-[10px] mt-2 font-medium ${isToday ? 'text-blue-500' : 'text-gray-400'}`}>
-                                    {stat.day}
+                                <span className={`text-[10px] font-medium ${isToday ? 'text-black dark:text-white' : 'text-gray-400'}`}>
+                                    {label.substring(0, 3)}
                                 </span>
                             </div>
                         )
                     })}
                 </div>
-                <p className="text-center text-xs text-gray-400 mt-4">Total active time for the last 7 days.</p>
             </div>
         </div>
       )}

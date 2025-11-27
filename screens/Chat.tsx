@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
@@ -57,22 +58,28 @@ export const ChatScreen: React.FC = () => {
 
   const conversation = selectedUser ? getConversation(selectedUser.id) : [];
 
+  // Scroll to bottom when conversation length changes (new message arrival)
+  useEffect(() => {
+    if (conversation.length > 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [conversation.length, selectedUser?.id]);
+
+  // Mark as read logic
   useEffect(() => {
     if (selectedUser && currentUser) {
-      const hasUnread = messages.some(m => 
+      // Check if there are unread messages to avoid unnecessary updates
+      const hasUnread = conversation.some(m => 
         m.senderId === selectedUser.id && 
         m.receiverId === currentUser.id && 
         !m.read
       );
+      
       if (hasUnread) {
         markConversationAsRead(selectedUser.id);
       }
     }
   }, [selectedUser, messages, currentUser, markConversationAsRead]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [conversation.length, selectedUser?.id]);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -211,7 +218,7 @@ export const ChatScreen: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area - Adjusted for bigger nav */}
+      {/* Input Area */}
       <div className={`fixed bottom-28 left-0 right-0 px-4 z-[70] pointer-events-none ${enableAnimations ? 'animate-slide-up' : ''}`}>
         <form 
           onSubmit={handleSend} 

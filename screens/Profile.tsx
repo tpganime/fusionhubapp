@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
 import { ComingSoon } from '../components/ComingSoon';
-import { Camera, ArrowLeft, Lock, Link as LinkIcon, ShieldCheck, Crown, X, Settings, MessageCircle, ChevronDown, AlignJustify, Copy, Share2, Activity, Calendar, BarChart3, Mail, UserMinus } from 'lucide-react';
+import { Camera, ArrowLeft, Lock, Link as LinkIcon, ShieldCheck, Crown, X, Settings, MessageCircle, ChevronDown, AlignJustify, Copy, Share2, Activity, Calendar, BarChart3, Mail, UserMinus, User as UserIcon } from 'lucide-react';
 import { Gender } from '../types';
 import { useParams, useNavigate } from 'react-router-dom';
 
@@ -45,6 +45,18 @@ const compressImage = (file: File): Promise<string> => {
   });
 };
 
+const calculateAge = (birthDateString?: string) => {
+    if (!birthDateString) return null;
+    const today = new Date();
+    const birthDate = new Date(birthDateString);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+    }
+    return age;
+};
+
 export const ProfileScreen: React.FC = () => {
   const { currentUser, users, updateProfile, sendFriendRequest, unfriend, checkIsAdmin, checkIsOwner, enableAnimations, appConfig, getTimeSpent, getWeeklyStats } = useApp();
   const { userId } = useParams<{ userId: string }>();
@@ -57,10 +69,9 @@ export const ProfileScreen: React.FC = () => {
 
   useEffect(() => {
       if (isOwnProfile) {
-          const interval = setInterval(() => {
-              setTimeSpent(getTimeSpent());
-          }, 30000); 
-          setTimeSpent(getTimeSpent());
+          const update = () => setTimeSpent(getTimeSpent());
+          update(); // Initial call
+          const interval = setInterval(update, 30000); 
           return () => clearInterval(interval);
       }
   }, [isOwnProfile, getTimeSpent]);
@@ -174,6 +185,10 @@ export const ProfileScreen: React.FC = () => {
       }
   };
 
+  const startChat = () => {
+      navigate('/chat', { state: { targetUser: profileUser } });
+  };
+
   const isFriend = currentUser?.friends.includes(profileUser.id);
   const isRequested = profileUser.requests.includes(currentUser?.id || '');
   const canViewDetails = isOwnProfile || !profileUser.isPrivateProfile || isFriend;
@@ -183,6 +198,7 @@ export const ProfileScreen: React.FC = () => {
   
   const displayAvatar = isEditing ? avatar : profileUser.avatar;
   const displayDescription = (profileUser.description && profileUser.description.startsWith('{')) ? "Admin Account" : profileUser.description;
+  const displayAge = calculateAge(profileUser.birthdate);
 
   // Stats for Modal
   const weeklyStats = isOwnProfile ? getWeeklyStats() : [];
@@ -342,6 +358,20 @@ export const ProfileScreen: React.FC = () => {
              </div>
          </div>
 
+         {/* Details (Age & Gender) - Visible if allowed */}
+         {canViewDetails && !isEditing && (
+             <div className={`mb-6 flex gap-4 ${enableAnimations ? 'animate-slide-up-fade' : ''}`} style={{ animationDelay: '150ms' }}>
+                 <div className="flex-1 p-3 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 flex flex-col items-center">
+                     <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Age</span>
+                     <span className="text-lg font-bold text-gray-900 dark:text-white">{displayAge !== null ? displayAge : 'N/A'}</span>
+                 </div>
+                 <div className="flex-1 p-3 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 flex flex-col items-center">
+                     <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Gender</span>
+                     <span className="text-lg font-bold text-gray-900 dark:text-white capitalize">{profileUser.gender || 'N/A'}</span>
+                 </div>
+             </div>
+         )}
+
          {/* Activity Stats */}
          {isOwnProfile && (
              <div className={`mb-6 ${enableAnimations ? 'animate-slide-up-fade' : ''}`} style={{ animationDelay: '200ms' }}>
@@ -349,7 +379,7 @@ export const ProfileScreen: React.FC = () => {
                     <div className="flex items-center justify-between mb-2">
                        <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
                           <Activity className="w-4 h-4" />
-                          <span className="text-xs font-bold uppercase tracking-wide">Time Active</span>
+                          <span className="text-xs font-bold uppercase tracking-wide">Time Active (Today)</span>
                        </div>
                        <button 
                           onClick={() => setShowStatsModal(true)}
@@ -359,7 +389,7 @@ export const ProfileScreen: React.FC = () => {
                         </button>
                     </div>
                     <p className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{timeSpent}</p>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">Total time spent in app</p>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">Total time spent in app today</p>
                  </div>
              </div>
          )}
@@ -383,7 +413,7 @@ export const ProfileScreen: React.FC = () => {
                        ) : (
                           <button onClick={() => sendFriendRequest(profileUser.id)} disabled={isRequested} className={`flex-1 py-3 rounded-xl font-bold text-sm text-white shadow-lg ${isRequested ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}>{isRequested ? 'Requested' : 'Follow'}</button>
                        )}
-                       <button onClick={() => navigate('/chat', { state: { targetUser: profileUser } })} disabled={(!canViewDetails && !profileUser.allowPrivateChat)} className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">Message</button>
+                       <button onClick={startChat} disabled={(!canViewDetails && !profileUser.allowPrivateChat)} className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">Message</button>
                     </>
                 )}
                 <button onClick={handleShare} className="p-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors active:scale-95"><Share2 className="w-5 h-5" /></button>
@@ -401,6 +431,16 @@ export const ProfileScreen: React.FC = () => {
                   <div>
                       <label className="text-xs font-bold text-gray-500 uppercase ml-1">Username</label>
                       <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="w-full p-3 bg-gray-50 dark:bg-black rounded-lg border border-gray-200 dark:border-gray-700 text-sm focus:ring-2 focus:ring-blue-500 outline-none mt-1" placeholder="Username" />
+                  </div>
+                  <div>
+                      <label className="text-xs font-bold text-gray-500 uppercase ml-1">Date of Birth</label>
+                      <input type="date" value={birthdate} onChange={e => setBirthdate(e.target.value)} className="w-full p-3 bg-gray-50 dark:bg-black rounded-lg border border-gray-200 dark:border-gray-700 text-sm focus:ring-2 focus:ring-blue-500 outline-none mt-1" />
+                  </div>
+                  <div>
+                      <label className="text-xs font-bold text-gray-500 uppercase ml-1">Gender</label>
+                      <select value={gender} onChange={e => setGender(e.target.value as Gender)} className="w-full p-3 bg-gray-50 dark:bg-black rounded-lg border border-gray-200 dark:border-gray-700 text-sm focus:ring-2 focus:ring-blue-500 outline-none mt-1">
+                          {Object.values(Gender).map(g => <option key={g} value={g}>{g}</option>)}
+                      </select>
                   </div>
                   <div>
                       <label className="text-xs font-bold text-gray-500 uppercase ml-1">Bio</label>

@@ -72,6 +72,7 @@ const STORAGE_KEYS = {
   GLASS_OPACITY: 'fh_glass_opacity_v1',
   CACHE_USERS: 'fh_cache_users_v1',
   CACHE_MESSAGES: 'fh_cache_messages_v1',
+  CACHE_NOTIFICATIONS: 'fh_cache_notifications_v1',
   LAST_RESET: 'fh_last_reset_date',
   KNOWN_ACCOUNTS: 'fh_known_accounts_v1'
 };
@@ -160,15 +161,39 @@ const mapMessageToDB = (msg: Message) => ({
 });
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
-  const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
-  const [isSwitchAccountModalOpen, setIsSwitchAccountModalOpen] = useState(false);
+  const [users, setUsers] = useState<User[]>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEYS.CACHE_USERS);
+      return stored ? JSON.parse(stored) : [];
+    } catch { return []; }
+  });
+
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    try {
+        const savedId = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
+        const storedUsers = localStorage.getItem(STORAGE_KEYS.CACHE_USERS);
+        if (savedId && storedUsers) {
+            const parsedUsers = JSON.parse(storedUsers);
+            return parsedUsers.find((u: User) => u.id === savedId) || null;
+        }
+    } catch {}
+    return null;
+  });
+
+  const [messages, setMessages] = useState<Message[]>(() => {
+    try {
+        const stored = localStorage.getItem(STORAGE_KEYS.CACHE_MESSAGES);
+        return stored ? JSON.parse(stored) : [];
+    } catch { return []; }
+  });
   
+  const [notifications, setNotifications] = useState<AppNotification[]>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEYS.CACHE_NOTIFICATIONS);
+      return stored ? JSON.parse(stored) : [];
+    } catch(e) { return []; }
+  });
+
   const [knownAccounts, setKnownAccounts] = useState<User[]>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.KNOWN_ACCOUNTS);
@@ -176,6 +201,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     } catch (e) { return []; }
   });
 
+  const [isLoading, setIsLoading] = useState(!currentUser); 
+  const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
+  const [isSwitchAccountModalOpen, setIsSwitchAccountModalOpen] = useState(false);
+  
   const sessionStartRef = useRef(Date.now());
 
   // -- PERSISTENT SETTINGS INITIALIZATION --
@@ -240,8 +270,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => { notificationsRef.current = notifications; }, [notifications]);
   
   useEffect(() => {
+    if (users.length > 0) localStorage.setItem(STORAGE_KEYS.CACHE_USERS, JSON.stringify(users));
+  }, [users]);
+
+  useEffect(() => {
+    if (messages.length > 0) localStorage.setItem(STORAGE_KEYS.CACHE_MESSAGES, JSON.stringify(messages));
+  }, [messages]);
+
+  useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.KNOWN_ACCOUNTS, JSON.stringify(knownAccounts));
   }, [knownAccounts]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.CACHE_NOTIFICATIONS, JSON.stringify(notifications));
+  }, [notifications]);
 
   const checkIsOwner = (email: string) => email.toLowerCase() === OWNER_EMAIL.toLowerCase();
   const checkIsAdmin = (email: string) => email.toLowerCase() === ADMIN_EMAIL.toLowerCase() || checkIsOwner(email);
@@ -249,7 +291,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const isOwner = currentUser ? checkIsOwner(currentUser.email) : false;
   const isAdmin = currentUser ? checkIsAdmin(currentUser.email) : false;
 
-  // -- CONFIG SYNC --
   const syncConfigFromUsers = (userList: User[]) => {
     const mainAdmin = userList.find(u => u.email.toLowerCase() === ADMIN_EMAIL.toLowerCase());
     const targetUser = mainAdmin || userList.find(u => checkIsAdmin(u.email));
@@ -266,7 +307,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
-  // -- SETTINGS EFFECTS --
   useLayoutEffect(() => {
     if (theme === 'dark') document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
@@ -295,7 +335,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     localStorage.setItem(STORAGE_KEYS.ANIMATIONS, String(enableAnimations));
   }, [enableAnimations]);
 
-  // -- TIME TRACKING --
   useEffect(() => {
     if (!currentUser) return;
     const getISTDate = () => new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }).split(',')[0];
@@ -369,7 +408,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return stats;
   };
 
-  // Sound Effects
   const playNotificationSound = () => {
     try {
       const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
@@ -450,18 +488,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       // GENERATE NOTIFICATIONS FOR PENDING REQUESTS ON LOGIN
       const requests = user.requests || [];
       if (requests.length > 0) {
-          // Fetch user details for requests if not in cache
           const { data: requestUsers } = await supabase.from('users').select('*').in('id', requests);
           if (requestUsers) {
               const newNotifs: AppNotification[] = requestUsers.map((reqUser: any) => ({
-                  id: `req_${reqUser.id}_${Date.now()}`,
+                  id: `req_${reqUser.id}`, // Deterministic ID for login check
                   type: 'friend_request',
                   content: `${reqUser.username} sent you a friend request`,
                   read: false,
                   timestamp: Date.now(),
                   data: { requesterId: reqUser.id, avatar: reqUser.avatar }
               }));
-              setNotifications(prev => [...newNotifs, ...prev]);
+              setNotifications(prev => {
+                  const existingIds = new Set(prev.map(n => n.id));
+                  const uniqueNew = newNotifs.filter(n => !existingIds.has(n.id));
+                  return [...uniqueNew, ...prev];
+              });
           }
       }
   };
@@ -529,10 +570,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setMessages(prev => [...prev, newMsg]);
     playSendSound();
     
-    const { error } = await supabase.from('messages').insert(mapMessageToDB(newMsg));
-    if (error) {
-        console.error("Message Send Error:", error);
-        triggerNotification("Error", "Message failed to send.");
+    // Explicitly use ISO string for timestamp to satisfy Postgres timestamptz
+    const dbMsg = mapMessageToDB(newMsg);
+    
+    try {
+        const { error } = await supabase.from('messages').insert(dbMsg);
+        if (error) {
+            console.error("Message Send Error:", error);
+            triggerNotification("Error", "Message failed to send. Check console.");
+            // Revert optimistic update
+            setMessages(prev => prev.filter(m => m.id !== newMsg.id));
+        }
+    } catch (err) {
+        console.error("Message Send Exception:", err);
         setMessages(prev => prev.filter(m => m.id !== newMsg.id));
     }
   };
@@ -565,7 +615,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             
             setTimeout(async () => {
                 await supabase.from('users').update({ requests: [...filtered, currentUser.id] }).eq('id', targetUserId);
-            }, 500); // Increased delay for robust event triggering
+            }, 500); 
         } else {
             await supabase.from('users').update({ requests: [...currentRequests, currentUser.id] }).eq('id', targetUserId);
         }
@@ -688,13 +738,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 if (found) { 
                     setCurrentUser(found); 
                     checkPermissionStatus();
-                    // Generate notifications on initial load
+                    
                     const requests = found.requests || [];
                     if (requests.length > 0) {
                         const { data: requestUsers } = await supabase.from('users').select('*').in('id', requests);
                         if (requestUsers) {
                             const newNotifs: AppNotification[] = requestUsers.map((reqUser: any) => ({
-                                id: `req_${reqUser.id}_${Date.now()}`,
+                                id: `req_${reqUser.id}`, // DETERMINISTIC ID
                                 type: 'friend_request',
                                 content: `${reqUser.username} sent you a friend request`,
                                 read: false,
@@ -702,7 +752,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                                 data: { requesterId: reqUser.id, avatar: reqUser.avatar }
                             }));
                             setNotifications(prev => {
-                                // merge and dedup
                                 const existingIds = new Set(prev.map(n => n.id));
                                 const uniqueNew = newNotifs.filter(n => !existingIds.has(n.id));
                                 return [...uniqueNew, ...prev];
@@ -774,47 +823,53 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
              return exists ? prev.map(u => u.id === updatedUser.id ? updatedUser : u) : [...prev, updatedUser];
           });
 
-          // ROBUST FRIEND REQUEST CHECKING
           if (currentUserRef.current && updatedUser.id === currentUserRef.current.id) {
             const oldRequests = currentUserRef.current.requests || [];
             const newRequests = updatedUser.requests || [];
             
-            // Identify newly added requests by checking diff
+            // STRICT DIFF: Only notify if ID is in new but NOT in old
             const addedRequests = newRequests.filter(reqId => !oldRequests.includes(reqId));
             
-            // Also check if any request in newRequests is NOT in notifications to be safe (backup check)
+            // Check for notifications we missed (e.g. offline)
             const notifiedRequestIds = new Set(notificationsRef.current.filter(n => n.type === 'friend_request').map(n => n.data?.requesterId));
             const missedRequests = newRequests.filter(reqId => !notifiedRequestIds.has(reqId));
             
             // Merge unique IDs to process
             const idsToProcess = new Set([...addedRequests, ...missedRequests]);
 
-            setCurrentUser(updatedUser);
+            if (idsToProcess.size > 0) {
+                setCurrentUser(updatedUser);
 
-            for (const reqId of idsToProcess) {
-               let requester = usersRef.current.find(u => u.id === reqId);
-               if (!requester) {
-                   const { data } = await supabase.from('users').select('*').eq('id', reqId).single();
-                   if (data) requester = mapUserFromDB(data);
-               }
+                for (const reqId of idsToProcess) {
+                   let requester = usersRef.current.find(u => u.id === reqId);
+                   if (!requester) {
+                       const { data } = await supabase.from('users').select('*').eq('id', reqId).single();
+                       if (data) requester = mapUserFromDB(data);
+                   }
 
-               if (requester) {
-                 playNotificationSound();
-                 const notif: AppNotification = {
-                   id: `req_${reqId}_${Date.now()}`,
-                   type: 'friend_request',
-                   content: `${requester.username} sent you a friend request`,
-                   read: false,
-                   timestamp: Date.now(),
-                   data: { requesterId: requester.id, avatar: requester.avatar }
-                 };
-                 // Prevent duplicates in state
-                 setNotifications(prev => {
-                     if (prev.some(n => n.data?.requesterId === reqId)) return prev;
-                     return [notif, ...prev];
-                 });
-                 triggerNotification('New Friend Request', `${requester.username} wants to be friends`, requester.avatar);
-               }
+                   if (requester) {
+                     const notifId = `req_${reqId}`; // Deterministic ID
+                     
+                     // SAFE UPDATE: Check duplicate inside the setter to be absolutely sure
+                     setNotifications(prev => {
+                         if (prev.some(n => n.id === notifId)) return prev;
+                         
+                         playNotificationSound();
+                         const notif: AppNotification = {
+                           id: notifId,
+                           type: 'friend_request',
+                           content: `${requester.username} sent you a friend request`,
+                           read: false,
+                           timestamp: Date.now(),
+                           data: { requesterId: requester.id, avatar: requester.avatar }
+                         };
+                         triggerNotification('New Friend Request', `${requester.username} wants to be friends`, requester.avatar);
+                         return [notif, ...prev];
+                     });
+                   }
+                }
+            } else {
+                setCurrentUser(updatedUser);
             }
           }
         }

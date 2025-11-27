@@ -202,9 +202,9 @@
       .liquid-toggle {
         --transition: 0.2s;
         --ease: ease-out;
-        --unchecked: #cbd5e1;
-        --active-color: #22c55e;
-        /* Dynamic color mixing based on --complete state */
+        --unchecked: #cbd5e1; /* Gray for Off state */
+        --active-color: #22c55e; /* Green for On state */
+        /* Mix color based on complete percentage. 0% complete = 100% unchecked (gray). 100% complete = 100% active (green) */
         --checked: color-mix(in srgb, var(--active-color) calc(var(--complete) * 1%), var(--unchecked));
         --border: 3px; 
         --width: 52;   
@@ -366,8 +366,8 @@
         position: absolute;
         top: 50%;
         transform: translate(-50%, -50%);
-        width: 40px; 
-        height: 28px;
+        width: 28px; 
+        height: 20px;
         border-radius: 999px;
         cursor: pointer;
         z-index: 2;

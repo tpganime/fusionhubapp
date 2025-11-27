@@ -161,6 +161,8 @@ const mapMessageToDB = (msg: Message) => ({
 });
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  // --- PREDICTIVE PRE-LOADING ---
+  // We initialize state directly from localStorage. This removes "loading" time for returning users.
   const [users, setUsers] = useState<User[]>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.CACHE_USERS);
@@ -201,7 +203,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     } catch (e) { return []; }
   });
 
+  // If data exists in cache, we skip the loading spinner immediately
   const [isLoading, setIsLoading] = useState(!currentUser); 
+
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
   const [isSwitchAccountModalOpen, setIsSwitchAccountModalOpen] = useState(false);
@@ -269,20 +273,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => { usersRef.current = users; }, [users]);
   useEffect(() => { notificationsRef.current = notifications; }, [notifications]);
   
+  // -- BACKGROUND CACHING --
+  // We write to localStorage asynchronously to avoid blocking the main thread
   useEffect(() => {
-    if (users.length > 0) localStorage.setItem(STORAGE_KEYS.CACHE_USERS, JSON.stringify(users));
+    if (users.length > 0) setTimeout(() => localStorage.setItem(STORAGE_KEYS.CACHE_USERS, JSON.stringify(users)), 0);
   }, [users]);
 
   useEffect(() => {
-    if (messages.length > 0) localStorage.setItem(STORAGE_KEYS.CACHE_MESSAGES, JSON.stringify(messages));
+    if (messages.length > 0) setTimeout(() => localStorage.setItem(STORAGE_KEYS.CACHE_MESSAGES, JSON.stringify(messages)), 0);
   }, [messages]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.KNOWN_ACCOUNTS, JSON.stringify(knownAccounts));
+    setTimeout(() => localStorage.setItem(STORAGE_KEYS.KNOWN_ACCOUNTS, JSON.stringify(knownAccounts)), 0);
   }, [knownAccounts]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.CACHE_NOTIFICATIONS, JSON.stringify(notifications));
+    setTimeout(() => localStorage.setItem(STORAGE_KEYS.CACHE_NOTIFICATIONS, JSON.stringify(notifications)), 0);
   }, [notifications]);
 
   const checkIsOwner = (email: string) => email.toLowerCase() === OWNER_EMAIL.toLowerCase();
@@ -335,9 +341,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     localStorage.setItem(STORAGE_KEYS.ANIMATIONS, String(enableAnimations));
   }, [enableAnimations]);
 
+  // -- OPTIMIZED TIME TRACKING (Strict 12 AM IST Reset) --
   useEffect(() => {
     if (!currentUser) return;
-    const getISTDate = () => new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }).split(',')[0];
+    
+    // Helper to get strictly "YYYY-MM-DD" in Asia/Kolkata
+    const getISTDate = () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }); // en-CA gives YYYY-MM-DD format
 
     sessionStartRef.current = Date.now();
     const dailyKey = `fh_time_spent_${currentUser.id}`;
@@ -347,31 +356,58 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
        const today = getISTDate();
        const lastReset = localStorage.getItem(STORAGE_KEYS.LAST_RESET);
 
+       // Check if day changed in IST
        if (lastReset && lastReset !== today) {
+           console.log(`Day changed from ${lastReset} to ${today} (IST). Archiving time.`);
            const yesterdayTime = parseInt(localStorage.getItem(dailyKey) || '0', 10);
            let history: Record<string, number> = {};
            try { history = JSON.parse(localStorage.getItem(historyKey) || '{}'); } catch(e) {}
+           
            if (lastReset) history[lastReset] = yesterdayTime;
+           
+           // Cleanup history older than 7 days to save space
+           const cutoff = new Date();
+           cutoff.setDate(cutoff.getDate() - 8);
+           const cutoffStr = cutoff.toISOString().split('T')[0];
+           Object.keys(history).forEach(k => { if (k < cutoffStr) delete history[k]; });
+
            localStorage.setItem(historyKey, JSON.stringify(history));
-           localStorage.setItem(dailyKey, '0');
+           localStorage.setItem(dailyKey, '0'); // RESET for new day
            localStorage.setItem(STORAGE_KEYS.LAST_RESET, today);
-           sessionStartRef.current = Date.now(); 
+           sessionStartRef.current = Date.now(); // Reset session counter for new day
            return;
        }
+       
+       // Regular update
        const stored = parseInt(localStorage.getItem(dailyKey) || '0', 10);
        const currentSession = Date.now() - sessionStartRef.current;
        localStorage.setItem(dailyKey, (stored + currentSession).toString());
-       sessionStartRef.current = Date.now(); 
+       sessionStartRef.current = Date.now(); // Bump session ref to avoid double counting
     };
 
     const today = getISTDate();
     const lastReset = localStorage.getItem(STORAGE_KEYS.LAST_RESET);
-    if (!lastReset) localStorage.setItem(STORAGE_KEYS.LAST_RESET, today);
-    else if (lastReset !== today) saveTime(); 
+    
+    // Initialize if first run
+    if (!lastReset) {
+        localStorage.setItem(STORAGE_KEYS.LAST_RESET, today);
+    } else if (lastReset !== today) {
+        // Handle case where app was closed overnight and opened next day
+        saveTime(); 
+    }
 
-    const interval = setInterval(saveTime, 30000);
+    const interval = setInterval(saveTime, 10000); // Save every 10s to be more precise
     window.addEventListener('beforeunload', saveTime);
-    return () => { clearInterval(interval); window.removeEventListener('beforeunload', saveTime); saveTime(); }
+    window.addEventListener('visibilitychange', () => {
+        if (document.hidden) saveTime();
+        else sessionStartRef.current = Date.now(); // Reset ref on resume
+    });
+
+    return () => { 
+        clearInterval(interval); 
+        window.removeEventListener('beforeunload', saveTime); 
+        saveTime(); 
+    };
   }, [currentUser?.id]);
 
   const getTimeSpent = () => {
@@ -392,22 +428,26 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     let history: Record<string, number> = {};
     try { history = JSON.parse(localStorage.getItem(historyKey) || '{}'); } catch(e) {}
     
-    const today = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }).split(',')[0];
+    // Get real-time stats for "Today"
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
     const todayStored = parseInt(localStorage.getItem(dailyKey) || '0', 10);
     const currentSession = Date.now() - sessionStartRef.current;
     history[today] = todayStored + currentSession;
 
     const stats: WeeklyStat[] = [];
+    // Generate last 7 days keys strictly in IST
     for (let i = 6; i >= 0; i--) {
         const d = new Date();
-        d.setDate(d.getDate() - i);
-        const dateKey = d.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }).split(',')[0];
-        const dayLabel = d.toLocaleDateString('en-US', { weekday: 'short' }); 
+        d.setTime(d.getTime() - (i * 24 * 60 * 60 * 1000)); // Subtract days
+        // Important: Use same locale format as keys
+        const dateKey = d.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }); 
+        const dayLabel = d.toLocaleDateString('en-US', { weekday: 'short', timeZone: "Asia/Kolkata" }); 
         stats.push({ day: dayLabel, date: dateKey, ms: history[dateKey] || 0 });
     }
     return stats;
   };
 
+  // Sound Effects
   const playNotificationSound = () => {
     try {
       const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
@@ -485,13 +525,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       checkPermissionStatus();
       setIsSwitchAccountModalOpen(false);
       
-      // GENERATE NOTIFICATIONS FOR PENDING REQUESTS ON LOGIN
       const requests = user.requests || [];
       if (requests.length > 0) {
           const { data: requestUsers } = await supabase.from('users').select('*').in('id', requests);
           if (requestUsers) {
               const newNotifs: AppNotification[] = requestUsers.map((reqUser: any) => ({
-                  id: `req_${reqUser.id}`, // Deterministic ID for login check
+                  id: `req_${reqUser.id}`,
                   type: 'friend_request',
                   content: `${reqUser.username} sent you a friend request`,
                   read: false,
@@ -570,19 +609,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setMessages(prev => [...prev, newMsg]);
     playSendSound();
     
-    // Explicitly use ISO string for timestamp to satisfy Postgres timestamptz
-    const dbMsg = mapMessageToDB(newMsg);
-    
-    try {
-        const { error } = await supabase.from('messages').insert(dbMsg);
-        if (error) {
-            console.error("Message Send Error:", error);
-            triggerNotification("Error", "Message failed to send. Check console.");
-            // Revert optimistic update
-            setMessages(prev => prev.filter(m => m.id !== newMsg.id));
-        }
-    } catch (err) {
-        console.error("Message Send Exception:", err);
+    const { error } = await supabase.from('messages').insert(mapMessageToDB(newMsg));
+    if (error) {
+        console.error("Message Send Error:", error);
+        triggerNotification("Error", "Message failed to send.");
         setMessages(prev => prev.filter(m => m.id !== newMsg.id));
     }
   };
@@ -595,7 +625,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const sendFriendRequest = async (targetUserId: string) => {
     if (!currentUser) return;
     
-    // Optimistic Update
     setUsers(prev => prev.map(u => {
         if (u.id === targetUserId) {
             if (u.requests.includes(currentUser.id)) return u;
@@ -609,10 +638,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         let currentRequests = data.requests || [];
         
         if (currentRequests.includes(currentUser.id)) {
-            // Force re-trigger by removing and adding back with longer delay
             const filtered = currentRequests.filter((id: string) => id !== currentUser.id);
             await supabase.from('users').update({ requests: filtered }).eq('id', targetUserId);
-            
             setTimeout(async () => {
                 await supabase.from('users').update({ requests: [...filtered, currentUser.id] }).eq('id', targetUserId);
             }, 500); 

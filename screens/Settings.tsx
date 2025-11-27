@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Lock, Eye, Trash2, LogOut, Shield, ChevronRight, Moon, Sun, Zap, LayoutDashboard, Bell, Droplets, Sliders, Power, Gauge } from 'lucide-react';
 import { PRIVACY_POLICY_TEXT } from '../constants';
 import { LiquidSlider } from '../components/LiquidSlider';
+import { LiquidToggle } from '../components/LiquidToggle';
 
 export const SettingsScreen: React.FC = () => {
   const { currentUser, updateProfile, logout, deleteAccount, deactivateAccount, theme, toggleTheme, enableAnimations, toggleAnimations, animationSpeed, setAnimationSpeed, enableLiquid, toggleLiquid, glassOpacity, setGlassOpacity, isAdmin, enableNotifications, notificationPermission } = useApp();
@@ -42,16 +43,9 @@ export const SettingsScreen: React.FC = () => {
       }
   };
 
-  // Inverted Logic for Slider
-  // Glass Opacity: 0.0 (Transparent) to 1.0 (Opaque)
-  // Slider UI: Transparency 0% (Opaque) to 100% (Transparent)
-  // Mapping: Opacity = 1.0 - (Slider / 100)
-  // Slider = (1.0 - Opacity) * 100
   const transparencyValue = Math.round((1.0 - glassOpacity) * 100);
 
   const handleTransparencyChange = (val: number) => {
-      // If 100% transparent, opacity is 0. If 0% transparent, opacity is 1.
-      // Limit opacity to max 1.0
       const newOpacity = 1.0 - (val / 100.0);
       setGlassOpacity(Math.max(0, Math.min(1, newOpacity)));
   };
@@ -72,7 +66,6 @@ export const SettingsScreen: React.FC = () => {
     );
   }
 
-  // Animation stagger logic
   const getAnimStyle = (index: number) => {
       return enableAnimations ? {
           animationDelay: `${index * 80}ms`,
@@ -91,7 +84,6 @@ export const SettingsScreen: React.FC = () => {
 
       <main className="px-5 space-y-6 max-w-md mx-auto">
         
-        {/* Admin Section */}
         {isAdmin && (
           <section className={`${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`} style={getAnimStyle(0)}>
             <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 ml-2 tracking-wider">Admin</h3>
@@ -107,7 +99,6 @@ export const SettingsScreen: React.FC = () => {
           </section>
         )}
 
-        {/* Appearance */}
         <section className={`${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`} style={getAnimStyle(1)}>
           <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 ml-2 tracking-wider">Appearance</h3>
           <div className="liquid-card overflow-hidden divide-y divide-gray-200/30 dark:divide-white/10">
@@ -120,10 +111,7 @@ export const SettingsScreen: React.FC = () => {
                  </div>
                  <span className="font-bold text-gray-900 dark:text-white text-sm">Dark Mode</span>
                </div>
-               <label className="relative inline-flex items-center cursor-pointer">
-                 <input type="checkbox" checked={theme === 'dark'} onChange={toggleTheme} className="sr-only peer toggle-checkbox" />
-                 <div className="toggle-label"></div>
-               </label>
+               <LiquidToggle checked={theme === 'dark'} onChange={toggleTheme} />
             </div>
 
             {/* Liquid Glass */}
@@ -132,13 +120,9 @@ export const SettingsScreen: React.FC = () => {
                  <div className="p-2.5 bg-cyan-100 dark:bg-cyan-900/50 rounded-xl text-cyan-600 dark:text-cyan-300 shadow-md"><Droplets className="w-5 h-5" /></div>
                  <span className="font-bold text-gray-900 dark:text-white text-sm">Liquid Glass</span>
                </div>
-               <label className="relative inline-flex items-center cursor-pointer">
-                 <input type="checkbox" checked={enableLiquid} onChange={toggleLiquid} className="sr-only peer toggle-checkbox" />
-                 <div className="toggle-label"></div>
-               </label>
+               <LiquidToggle checked={enableLiquid} onChange={toggleLiquid} />
             </div>
             
-            {/* Transparency Slider (Only when Liquid is enabled) */}
             {enableLiquid && (
                <div className="p-5 animate-slide-up">
                    <div className="flex items-center gap-4 mb-3">
@@ -148,11 +132,7 @@ export const SettingsScreen: React.FC = () => {
                           <span className="text-[10px] text-gray-500 dark:text-gray-400">{transparencyValue}% {transparencyValue === 100 ? '(Clear)' : ''}</span>
                        </div>
                    </div>
-                   
-                   <LiquidSlider 
-                      value={transparencyValue} 
-                      onChange={handleTransparencyChange} 
-                   />
+                   <LiquidSlider value={transparencyValue} onChange={handleTransparencyChange} />
                </div>
             )}
 
@@ -162,13 +142,9 @@ export const SettingsScreen: React.FC = () => {
                  <div className="p-2.5 bg-pink-100 dark:bg-pink-900/50 rounded-xl text-pink-600 dark:text-pink-300 shadow-md"><Zap className="w-5 h-5" /></div>
                  <span className="font-bold text-gray-900 dark:text-white text-sm">Animations</span>
                </div>
-               <label className="relative inline-flex items-center cursor-pointer">
-                 <input type="checkbox" checked={enableAnimations} onChange={toggleAnimations} className="sr-only peer toggle-checkbox" />
-                 <div className="toggle-label"></div>
-               </label>
+               <LiquidToggle checked={enableAnimations} onChange={toggleAnimations} />
             </div>
 
-            {/* Animation Speed (Only if Animations enabled) */}
             {enableAnimations && (
                <div className="p-5 animate-slide-up">
                    <div className="flex items-center gap-4 mb-3">
@@ -193,7 +169,6 @@ export const SettingsScreen: React.FC = () => {
                </div>
             )}
 
-             {/* Notifications */}
             <div className="p-5 flex items-center justify-between">
                <div className="flex items-center gap-4">
                  <div className="p-2.5 bg-blue-100 dark:bg-blue-900/50 rounded-xl text-blue-600 dark:text-blue-300 shadow-md"><Bell className="w-5 h-5" /></div>
@@ -201,19 +176,11 @@ export const SettingsScreen: React.FC = () => {
                    <span className="font-bold text-gray-900 dark:text-white text-sm">Notifications</span>
                  </div>
                </div>
-               <button 
-                  onClick={enableNotifications}
-                  className={`relative inline-flex items-center cursor-pointer transition-opacity ${isNotificationGranted ? 'opacity-100' : 'opacity-70'}`}
-               >
-                 <div className={`w-12 h-7 rounded-full transition-colors shadow-inner relative overflow-hidden ${isNotificationGranted ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}>
-                    <div className={`absolute top-[3px] left-[3px] bg-white border border-gray-200 rounded-full h-5 w-5 transition-transform shadow-sm ${isNotificationGranted ? 'translate-x-full border-transparent' : ''}`}></div>
-                 </div>
-               </button>
+               <LiquidToggle checked={isNotificationGranted} onChange={enableNotifications} />
             </div>
           </div>
         </section>
 
-        {/* Privacy */}
         <section className={`${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`} style={getAnimStyle(2)}>
           <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 ml-2 tracking-wider">Privacy</h3>
           <div className="liquid-card overflow-hidden divide-y divide-gray-200/30 dark:divide-white/10">
@@ -222,25 +189,18 @@ export const SettingsScreen: React.FC = () => {
                  <div className="p-2.5 bg-purple-100 dark:bg-purple-900/50 rounded-xl text-purple-600 dark:text-purple-300 shadow-md"><Eye className="w-5 h-5" /></div>
                  <span className="font-bold text-gray-900 dark:text-white text-sm">Private Profile</span>
                </div>
-               <label className="relative inline-flex items-center cursor-pointer">
-                 <input type="checkbox" checked={currentUser.isPrivateProfile} onChange={togglePrivateProfile} className="sr-only peer toggle-checkbox" />
-                 <div className="toggle-label"></div>
-               </label>
+               <LiquidToggle checked={currentUser.isPrivateProfile} onChange={togglePrivateProfile} />
             </div>
             <div className="p-5 flex items-center justify-between">
                <div className="flex items-center gap-4">
                  <div className="p-2.5 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl text-indigo-600 dark:text-indigo-300 shadow-md"><Lock className="w-5 h-5" /></div>
                  <span className="font-bold text-gray-900 dark:text-white text-sm">Allow DM</span>
                </div>
-               <label className="relative inline-flex items-center cursor-pointer">
-                 <input type="checkbox" checked={currentUser.allowPrivateChat} onChange={togglePrivateChat} className="sr-only peer toggle-checkbox" />
-                 <div className="toggle-label"></div>
-               </label>
+               <LiquidToggle checked={currentUser.allowPrivateChat} onChange={togglePrivateChat} />
             </div>
           </div>
         </section>
 
-        {/* Legal */}
         <section className={`${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`} style={getAnimStyle(3)}>
           <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 ml-2 tracking-wider">Legal</h3>
           <div className="liquid-card overflow-hidden">
@@ -254,7 +214,6 @@ export const SettingsScreen: React.FC = () => {
           </div>
         </section>
 
-        {/* Danger Zone */}
         <section className={`${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`} style={getAnimStyle(4)}>
           <h3 className="text-xs font-bold text-red-500/70 uppercase mb-3 ml-2 tracking-wider">Danger Zone</h3>
           <div className="liquid-card overflow-hidden divide-y divide-gray-200/30 dark:divide-white/10">

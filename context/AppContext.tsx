@@ -215,13 +215,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
        const lastReset = localStorage.getItem(STORAGE_KEYS.LAST_RESET);
 
        if (lastReset && lastReset !== today) {
-           // It's a new day, archive yesterday's time before resetting
+           // It's a new day (12 AM IST passed), archive yesterday's time before resetting
            const yesterdayTime = parseInt(localStorage.getItem(dailyKey) || '0', 10);
            
            let history: Record<string, number> = {};
            try { history = JSON.parse(localStorage.getItem(historyKey) || '{}'); } catch(e) {}
            
-           history[lastReset] = yesterdayTime;
+           if (lastReset) history[lastReset] = yesterdayTime;
            localStorage.setItem(historyKey, JSON.stringify(history));
 
            // Reset counter for new day
@@ -294,7 +294,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         d.setDate(d.getDate() - i);
         // Ensure same format logic
         const dateKey = d.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }).split(',')[0];
-        const dayLabel = d.toLocaleDateString('en-US', { weekday: 'short' }); // Mon, Tue
+        const dayLabel = d.toLocaleDateString('en-US', { weekday: 'short' }); 
         
         stats.push({
             day: dayLabel,
@@ -366,11 +366,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const setGlassOpacityFn = (n: number) => setGlassOpacity(n);
   const updateAppConfig = async () => {};
 
-  // -- DATA FETCHING WITH SAFETY TIMEOUT --
   useEffect(() => {
     let isMounted = true;
-    
-    // Safety timeout to ensure loading screen doesn't hang forever
     const safetyTimeout = setTimeout(() => {
         if (isMounted) {
             console.warn("Data fetch timed out - forcing app load.");
@@ -407,11 +404,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             if (found) {
                 setCurrentUser(found);
                 setIsLoading(false);
-                clearTimeout(safetyTimeout); // Clear timeout if cache load success
+                clearTimeout(safetyTimeout);
             }
         }
 
-        // Fetch from Supabase
         const { data: usersData, error: userError } = await supabase.from('users').select('*');
         if (userError) throw userError;
         

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
 import { ComingSoon } from '../components/ComingSoon';
-import { Camera, ArrowLeft, Lock, Link as LinkIcon, ShieldCheck, Crown, X, Settings, MessageCircle, ChevronDown, AlignJustify, Copy, Share2, Activity, Calendar, BarChart3 } from 'lucide-react';
+import { Camera, ArrowLeft, Lock, Link as LinkIcon, ShieldCheck, Crown, X, Settings, MessageCircle, ChevronDown, AlignJustify, Copy, Share2, Activity, Calendar, BarChart3, Mail } from 'lucide-react';
 import { Gender } from '../types';
 import { useParams, useNavigate } from 'react-router-dom';
 
@@ -180,7 +180,7 @@ export const ProfileScreen: React.FC = () => {
 
   // Stats for Modal
   const weeklyStats = isOwnProfile ? getWeeklyStats() : [];
-  const maxTime = Math.max(...weeklyStats.map(s => s.ms), 1); // Avoid div by zero
+  const maxTime = Math.max(...weeklyStats.map(s => s.ms), 1);
 
   const formatMs = (ms: number) => {
       if (ms === 0) return '0m';
@@ -216,7 +216,6 @@ export const ProfileScreen: React.FC = () => {
                     <Activity className="w-5 h-5 text-blue-500" /> Weekly Activity
                 </h3>
                 
-                {/* Bar Chart */}
                 <div className="flex items-end justify-between h-40 gap-2 mb-2">
                     {weeklyStats.map((stat, i) => {
                         const heightPercent = (stat.ms / maxTime) * 100;
@@ -228,7 +227,6 @@ export const ProfileScreen: React.FC = () => {
                                       className={`w-full ${isToday ? 'bg-blue-500' : 'bg-blue-300 dark:bg-blue-700'} rounded-t-md transition-all duration-1000 ease-out`}
                                       style={{ height: `${heightPercent}%` }}
                                     ></div>
-                                    {/* Tooltip */}
                                     <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 transition-opacity bg-black text-white text-[10px] px-1.5 py-0.5 rounded pointer-events-none whitespace-nowrap z-10">
                                         {formatMs(stat.ms)}
                                     </div>
@@ -269,102 +267,127 @@ export const ProfileScreen: React.FC = () => {
       </div>
 
       <div className="pt-16 px-4">
-         {/* User Info Card - Style #1 */}
-         <div className={`p-5 mb-4 liquid-card flex items-center gap-5 ${enableAnimations ? 'animate-slide-up-fade' : ''}`}>
-            {/* Avatar Left */}
-            <div className="relative flex-shrink-0">
-               <div 
-                 className="w-20 h-20 rounded-full p-[2px] bg-gradient-to-tr from-blue-400 to-purple-500 cursor-pointer"
-                 onClick={() => !isEditing && setShowFullAvatar(true)}
-               >
-                  <img src={displayAvatar} alt="avatar" className="w-full h-full rounded-full object-cover border-2 border-white dark:border-black" />
-               </div>
-               {isEditing && (
-                 <label className="absolute bottom-0 right-0 bg-blue-600 p-1.5 rounded-full text-white cursor-pointer shadow-md">
-                   <Camera className="w-4 h-4" />
-                   <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                 </label>
-               )}
-            </div>
+         {/* User Info Section - Style Updated */}
+         <div className="mb-6">
+             <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">User Info</h2>
+             <div className={`p-5 liquid-card flex items-center gap-5 ${enableAnimations ? 'animate-slide-up-fade' : ''}`}>
+                {/* Avatar Left */}
+                <div className="relative flex-shrink-0">
+                   <div 
+                     className="w-20 h-20 rounded-full p-[2px] bg-gradient-to-tr from-blue-400 to-purple-500 cursor-pointer shadow-lg"
+                     onClick={() => !isEditing && setShowFullAvatar(true)}
+                   >
+                      <img src={displayAvatar} alt="avatar" className="w-full h-full rounded-full object-cover border-2 border-white dark:border-black" />
+                   </div>
+                   {isEditing && (
+                     <label className="absolute bottom-0 right-0 bg-blue-600 p-1.5 rounded-full text-white cursor-pointer shadow-md hover:bg-blue-700 transition-colors">
+                       <Camera className="w-4 h-4" />
+                       <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                     </label>
+                   )}
+                </div>
 
-            {/* Info Right */}
-            <div className="flex-1 min-w-0">
-               <h2 className="text-xl font-bold text-gray-900 dark:text-white truncate">{profileUser.name || profileUser.username}</h2>
-               <p className="text-sm text-blue-600 dark:text-blue-400 font-medium mb-1">
-                  {isAdminUser ? (isOwnerUser ? "FusionHub Owner" : "FusionHub Admin") : "Member"}
-               </p>
-               {isOwnProfile && (
-                   <p className="text-xs text-gray-400 mb-1">{profileUser.email}</p>
-               )}
-               <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
-                  {displayDescription || "No bio available."}
-               </p>
-            </div>
+                {/* Info Right */}
+                <div className="flex-1 min-w-0 space-y-1">
+                   <div>
+                       <h2 className="text-xl font-bold text-gray-900 dark:text-white truncate leading-tight">
+                           {profileUser.name || profileUser.username}
+                       </h2>
+                       <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                          {isAdminUser ? (isOwnerUser ? "Owner" : "Administrator") : "Member"}
+                       </p>
+                   </div>
+                   
+                   {/* Email - Only visible to self */}
+                   {isOwnProfile && (
+                       <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-1">
+                           <span className="font-semibold text-gray-700 dark:text-gray-300">Email:</span>
+                           <span className="truncate">{profileUser.email}</span>
+                       </div>
+                   )}
+                   
+                   {/* Joined Date */}
+                   <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                        <span className="font-semibold text-gray-700 dark:text-gray-300">Joined:</span>
+                        <span>Nov 2025</span>
+                   </div>
+                </div>
+             </div>
          </div>
 
-         {/* Additional Info / Stats */}
-         <div className={`grid grid-cols-2 gap-3 mb-6 ${enableAnimations ? 'animate-slide-up-fade' : ''}`} style={{ animationDelay: '100ms' }}>
-             {isOwnProfile && (
-               <div className="relative p-3 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-                  <div className="flex items-center justify-between mb-1">
-                     <div className="flex items-center gap-2 text-gray-500">
-                        <Activity className="w-3 h-3" />
-                        <span className="text-[10px] font-bold uppercase">Time Active</span>
-                     </div>
-                  </div>
-                  <div className="flex items-end justify-between">
-                      <p className="text-lg font-bold text-gray-900 dark:text-white">{timeSpent}</p>
-                      <button 
-                        onClick={() => setShowStatsModal(true)}
-                        className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
-                      >
-                          View Week
-                      </button>
-                  </div>
-               </div>
-             )}
-             
-             {isOwnProfile && (
-               <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-                  <div className="flex items-center gap-2 mb-1 text-gray-500">
-                     <Calendar className="w-3 h-3" />
-                     <span className="text-[10px] font-bold uppercase">Joined</span>
-                  </div>
-                  <p className="text-sm font-bold text-gray-900 dark:text-white">Nov 2025</p>
-               </div>
-             )}
+         {/* Bio / Description */}
+         <div className={`mb-6 ${enableAnimations ? 'animate-slide-up-fade' : ''}`} style={{ animationDelay: '100ms' }}>
+             <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Bio</h2>
+             <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 text-sm text-gray-600 dark:text-gray-300 leading-relaxed min-h-[80px]">
+                 {displayDescription || "No bio available."}
+             </div>
          </div>
 
-         {/* Buttons */}
+         {/* Activity Stats */}
+         {isOwnProfile && (
+             <div className={`mb-6 ${enableAnimations ? 'animate-slide-up-fade' : ''}`} style={{ animationDelay: '200ms' }}>
+                 <div className="relative p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-2xl border border-blue-100 dark:border-blue-900/30">
+                    <div className="flex items-center justify-between mb-2">
+                       <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                          <Activity className="w-4 h-4" />
+                          <span className="text-xs font-bold uppercase tracking-wide">Time Active</span>
+                       </div>
+                       <button 
+                          onClick={() => setShowStatsModal(true)}
+                          className="p-1.5 bg-white dark:bg-black/20 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                        >
+                            <BarChart3 className="w-4 h-4" />
+                        </button>
+                    </div>
+                    <p className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{timeSpent}</p>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">Total time spent in app</p>
+                 </div>
+             </div>
+         )}
+
+         {/* Action Buttons */}
          {!isEditing && (
-            <div className={`flex gap-2 mb-6 ${enableAnimations ? 'animate-slide-up-fade' : ''}`} style={{ animationDelay: '200ms' }}>
+            <div className={`flex gap-3 mb-8 ${enableAnimations ? 'animate-slide-up-fade' : ''}`} style={{ animationDelay: '300ms' }}>
                 {isOwnProfile ? (
-                    <button onClick={() => setIsEditing(true)} className="flex-1 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white font-bold text-sm hover:bg-gray-200 transition-colors active:scale-95">
+                    <button 
+                        onClick={() => setIsEditing(true)} 
+                        className="flex-1 py-3 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-black font-bold text-sm hover:opacity-90 transition-opacity shadow-lg active:scale-95"
+                    >
                         Edit Profile
                     </button>
                 ) : (
                     <>
                        {isFriend ? (
-                          <button className="flex-1 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-900 text-gray-900 font-bold text-sm">Following</button>
+                          <button className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-sm">Following</button>
                        ) : (
-                          <button onClick={() => sendFriendRequest(profileUser.id)} disabled={isRequested} className={`flex-1 py-2.5 rounded-xl font-bold text-sm text-white ${isRequested ? 'bg-gray-400' : 'bg-blue-600'}`}>{isRequested ? 'Requested' : 'Follow'}</button>
+                          <button onClick={() => sendFriendRequest(profileUser.id)} disabled={isRequested} className={`flex-1 py-3 rounded-xl font-bold text-sm text-white shadow-lg ${isRequested ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}>{isRequested ? 'Requested' : 'Follow'}</button>
                        )}
-                       <button onClick={() => navigate('/chat', { state: { targetUser: profileUser } })} disabled={(!canViewDetails && !profileUser.allowPrivateChat)} className="flex-1 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white font-bold text-sm">Message</button>
+                       <button onClick={() => navigate('/chat', { state: { targetUser: profileUser } })} disabled={(!canViewDetails && !profileUser.allowPrivateChat)} className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">Message</button>
                     </>
                 )}
-                <button onClick={handleShare} className="p-2.5 rounded-xl bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white"><Share2 className="w-5 h-5" /></button>
+                <button onClick={handleShare} className="p-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors active:scale-95"><Share2 className="w-5 h-5" /></button>
             </div>
          )}
 
+         {/* Edit Form */}
          {isEditing && (
-            <div className={`p-4 rounded-xl bg-gray-50 dark:bg-gray-900 mb-6 border border-gray-100 dark:border-gray-800 ${enableAnimations ? 'animate-slide-up' : ''}`}>
+            <div className={`p-5 rounded-2xl bg-white dark:bg-gray-900 mb-6 border border-gray-200 dark:border-gray-800 shadow-xl ${enableAnimations ? 'animate-slide-up' : ''}`}>
                 <div className="space-y-4">
-                  <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-3 bg-white dark:bg-black rounded-lg border border-gray-200 dark:border-gray-700 text-sm" placeholder="Name" />
-                  <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="w-full p-3 bg-white dark:bg-black rounded-lg border border-gray-200 dark:border-gray-700 text-sm" placeholder="Username" />
-                  <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full p-3 bg-white dark:bg-black rounded-lg border border-gray-200 dark:border-gray-700 text-sm h-24 resize-none" placeholder="Bio" />
-                  <div className="flex gap-3">
-                     <button onClick={() => setIsEditing(false)} className="flex-1 py-2 text-sm font-bold text-gray-500">Cancel</button>
-                     <button onClick={handleSave} className="flex-1 py-2 text-sm font-bold bg-blue-600 text-white rounded-lg">Save</button>
+                  <div>
+                      <label className="text-xs font-bold text-gray-500 uppercase ml-1">Display Name</label>
+                      <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-3 bg-gray-50 dark:bg-black rounded-lg border border-gray-200 dark:border-gray-700 text-sm focus:ring-2 focus:ring-blue-500 outline-none mt-1" placeholder="Name" />
+                  </div>
+                  <div>
+                      <label className="text-xs font-bold text-gray-500 uppercase ml-1">Username</label>
+                      <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="w-full p-3 bg-gray-50 dark:bg-black rounded-lg border border-gray-200 dark:border-gray-700 text-sm focus:ring-2 focus:ring-blue-500 outline-none mt-1" placeholder="Username" />
+                  </div>
+                  <div>
+                      <label className="text-xs font-bold text-gray-500 uppercase ml-1">Bio</label>
+                      <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full p-3 bg-gray-50 dark:bg-black rounded-lg border border-gray-200 dark:border-gray-700 text-sm h-24 resize-none focus:ring-2 focus:ring-blue-500 outline-none mt-1" placeholder="Tell us about yourself..." />
+                  </div>
+                  <div className="flex gap-3 pt-2">
+                     <button onClick={() => setIsEditing(false)} className="flex-1 py-2.5 text-sm font-bold text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">Cancel</button>
+                     <button onClick={handleSave} className="flex-1 py-2.5 text-sm font-bold bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-lg">Save Changes</button>
                   </div>
                 </div>
             </div>
@@ -373,10 +396,11 @@ export const ProfileScreen: React.FC = () => {
          {/* Private Lock */}
          {!canViewDetails && !isEditing && (
              <div className="mt-10 text-center p-10">
-                 <div className="w-14 h-14 rounded-full border-2 border-gray-300 dark:border-gray-700 flex items-center justify-center mx-auto mb-3">
+                 <div className="w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-3 shadow-inner">
                      <Lock className="w-6 h-6 text-gray-400" />
                  </div>
                  <h3 className="font-bold text-gray-900 dark:text-white">This account is private</h3>
+                 <p className="text-xs text-gray-500 mt-1">Follow to see their posts and info.</p>
              </div>
          )}
       </div>

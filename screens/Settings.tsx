@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lock, Eye, Trash2, LogOut, Shield, ChevronRight, Moon, Sun, Zap, LayoutDashboard, Bell, Droplets, Sliders, Power, Gauge, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Lock, Eye, Trash2, LogOut, Shield, ChevronRight, Moon, Sun, Zap, LayoutDashboard, Bell, Droplets, Sliders, Power, Gauge, ArrowRight as ArrowRightIcon } from 'lucide-react';
 import { PRIVACY_POLICY_TEXT } from '../constants';
 import { LiquidSlider } from '../components/LiquidSlider';
 import { LiquidToggle } from '../components/LiquidToggle';
@@ -15,14 +15,6 @@ export const SettingsScreen: React.FC = () => {
   const isNotificationGranted = notificationPermission === 'granted';
 
   if (!currentUser) return null;
-
-  const togglePrivateProfile = () => {
-    updateProfile({ ...currentUser, isPrivateProfile: !currentUser.isPrivateProfile });
-  };
-
-  const togglePrivateChat = () => {
-    updateProfile({ ...currentUser, allowPrivateChat: !currentUser.allowPrivateChat });
-  };
 
   const handleLogout = () => {
     logout();
@@ -191,11 +183,11 @@ export const SettingsScreen: React.FC = () => {
         {/* New Glass Capsule Log Out Button */}
         <button 
           onClick={handleLogout}
-          className="w-full py-4 mt-8 flex items-center justify-between px-6 rounded-full border border-white/40 dark:border-white/10 bg-white/30 dark:bg-white/5 backdrop-blur-xl shadow-lg hover:bg-white/40 transition-all active:scale-95 group"
+          className="w-full py-4 mt-8 flex items-center justify-between px-6 rounded-full border border-white/40 dark:border-white/10 bg-white/30 dark:bg-white/5 backdrop-blur-xl shadow-lg hover:bg-white/40 transition-all active:scale-95 group mb-8"
         >
            <span className="text-lg font-bold text-gray-800 dark:text-white">Log Out</span>
-           <div className="p-1.5 bg-white/50 dark:bg-white/10 rounded-full group-hover:translate-x-1 transition-transform">
-              <ArrowRight className="w-5 h-5 text-gray-800 dark:text-white" />
+           <div className="p-2 bg-white/50 dark:bg-white/10 rounded-full group-hover:translate-x-1 transition-transform border border-white/20">
+              <ArrowRightIcon className="w-5 h-5 text-gray-800 dark:text-white" />
            </div>
         </button>
 

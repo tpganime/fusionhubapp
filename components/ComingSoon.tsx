@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, {  } from 'react';
 import { Construction } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from './TopBar';

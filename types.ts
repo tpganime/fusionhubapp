@@ -6,6 +6,8 @@ export enum Gender {
   PREFER_NOT_TO_SAY = 'Prefer not to say'
 }
 
+export type AnimationSpeed = 'fast' | 'balanced' | 'relaxed';
+
 export interface User {
   id: string;
   username: string; // This is the handle (e.g. _t.a.n.m.a.y_17)

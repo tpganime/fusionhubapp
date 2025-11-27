@@ -2,11 +2,11 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lock, Eye, Trash2, LogOut, Shield, ChevronRight, Moon, Sun, Zap, LayoutDashboard, Bell, Droplets, Sliders, Power } from 'lucide-react';
+import { ArrowLeft, Lock, Eye, Trash2, LogOut, Shield, ChevronRight, Moon, Sun, Zap, LayoutDashboard, Bell, Droplets, Sliders, Power, Gauge } from 'lucide-react';
 import { PRIVACY_POLICY_TEXT } from '../constants';
 
 export const SettingsScreen: React.FC = () => {
-  const { currentUser, updateProfile, logout, deleteAccount, deactivateAccount, theme, toggleTheme, enableAnimations, toggleAnimations, enableLiquid, toggleLiquid, glassOpacity, setGlassOpacity, isAdmin, enableNotifications, notificationPermission } = useApp();
+  const { currentUser, updateProfile, logout, deleteAccount, deactivateAccount, theme, toggleTheme, enableAnimations, toggleAnimations, animationSpeed, setAnimationSpeed, enableLiquid, toggleLiquid, glassOpacity, setGlassOpacity, isAdmin, enableNotifications, notificationPermission } = useApp();
   const navigate = useNavigate();
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
   
@@ -160,7 +160,7 @@ export const SettingsScreen: React.FC = () => {
                </div>
             )}
 
-            {/* Animations */}
+            {/* Animations Toggle */}
             <div className="p-5 flex items-center justify-between">
                <div className="flex items-center gap-4">
                  <div className="p-2.5 bg-pink-100 dark:bg-pink-900/50 rounded-xl text-pink-600 dark:text-pink-300 shadow-md"><Zap className="w-5 h-5" /></div>
@@ -171,6 +171,31 @@ export const SettingsScreen: React.FC = () => {
                  <div className="w-12 h-7 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-500 shadow-inner"></div>
                </label>
             </div>
+
+            {/* Animation Speed (Only if Animations enabled) */}
+            {enableAnimations && (
+               <div className="p-5 animate-slide-up">
+                   <div className="flex items-center gap-4 mb-3">
+                       <div className="p-2.5 bg-orange-100 dark:bg-orange-900/50 rounded-xl text-orange-600 dark:text-orange-300 shadow-md"><Gauge className="w-5 h-5" /></div>
+                       <span className="font-bold text-gray-900 dark:text-white text-sm">Speed</span>
+                   </div>
+                   <div className="flex gap-2 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
+                      {(['fast', 'balanced', 'relaxed'] as const).map((speed) => (
+                        <button
+                          key={speed}
+                          onClick={() => setAnimationSpeed(speed)}
+                          className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all capitalize ${
+                            animationSpeed === speed 
+                              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' 
+                              : 'text-gray-500 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-700/50'
+                          }`}
+                        >
+                          {speed}
+                        </button>
+                      ))}
+                   </div>
+               </div>
+            )}
 
              {/* Notifications */}
             <div className="p-5 flex items-center justify-between">

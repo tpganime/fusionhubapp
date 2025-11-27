@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, useLayoutEffect, ReactNode, useRef } from 'react';
-import { User, Message, Notification as AppNotification, Gender, AppConfig } from '../types';
+import { User, Message, Notification as AppNotification, Gender, AppConfig, AnimationSpeed } from '../types';
 import { supabase } from '../lib/supabase';
 import { ADMIN_EMAIL, OWNER_EMAIL, DEFAULT_CONFIG, BROADCAST_ID } from '../constants';
 
@@ -12,6 +12,7 @@ interface AppContextType {
   theme: 'light' | 'dark';
   isLoading: boolean;
   enableAnimations: boolean;
+  animationSpeed: AnimationSpeed;
   enableLiquid: boolean;
   glassOpacity: number;
   showPermissionPrompt: boolean;
@@ -34,6 +35,7 @@ interface AppContextType {
   markNotificationRead: (id: string) => void;
   toggleTheme: () => void;
   toggleAnimations: () => void;
+  setAnimationSpeed: (speed: AnimationSpeed) => void;
   toggleLiquid: () => void;
   setGlassOpacity: (opacity: number) => void;
   markConversationAsRead: (senderId: string) => void;
@@ -52,6 +54,7 @@ const STORAGE_KEYS = {
   THEME: 'fh_theme_v1',
   CURRENT_USER_ID: 'fh_current_user_id_v1',
   ANIMATIONS: 'fh_animations_v1',
+  ANIM_SPEED: 'fh_anim_speed_v1',
   LIQUID: 'fh_liquid_v1',
   GLASS_OPACITY: 'fh_glass_opacity_v1',
   CACHE_USERS: 'fh_cache_users_v1',
@@ -175,6 +178,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       } catch(e) { return true; }
     }
     return true;
+  });
+
+  const [animationSpeed, setAnimationSpeed] = useState<AnimationSpeed>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEYS.ANIM_SPEED);
+        return (stored === 'fast' || stored === 'relaxed') ? stored : 'balanced';
+      } catch (e) { return 'balanced'; }
+    }
+    return 'balanced';
   });
 
   const [enableLiquid, setEnableLiquid] = useState(() => {
@@ -342,6 +355,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.ANIMATIONS, String(enableAnimations));
   }, [enableAnimations]);
+
+  useEffect(() => {
+    // Apply Animation Speed
+    document.documentElement.setAttribute('data-anim-speed', animationSpeed);
+    localStorage.setItem(STORAGE_KEYS.ANIM_SPEED, animationSpeed);
+  }, [animationSpeed]);
 
   useEffect(() => {
     if (users.length > 0) {
@@ -828,11 +847,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   return (
     <AppContext.Provider value={{
-      currentUser, users, messages, notifications, theme, isLoading, enableAnimations, enableLiquid, glassOpacity, showPermissionPrompt, notificationPermission,
+      currentUser, users, messages, notifications, theme, isLoading, enableAnimations, animationSpeed, enableLiquid, glassOpacity, showPermissionPrompt, notificationPermission,
       appConfig, isAdmin, isOwner, onlineUsers,
       login, loginWithCredentials, logout, signup, updateProfile, deleteAccount, deactivateAccount,
       sendMessage, broadcastMessage, sendFriendRequest, acceptFriendRequest, markNotificationRead,
-      toggleTheme, toggleAnimations, toggleLiquid, setGlassOpacity, markConversationAsRead, checkIsAdmin, checkIsOwner, checkIsOnline, enableNotifications, closePermissionPrompt, updateAppConfig, getTimeSpent
+      toggleTheme, toggleAnimations, setAnimationSpeed, toggleLiquid, setGlassOpacity, markConversationAsRead, checkIsAdmin, checkIsOwner, checkIsOnline, enableNotifications, closePermissionPrompt, updateAppConfig, getTimeSpent
     }}>
       {children}
     </AppContext.Provider>

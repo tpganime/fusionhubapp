@@ -91,8 +91,30 @@
       :root {
         --glass-opacity: 0.35;
         --glass-filter: blur(20px) saturate(180%);
+        --anim-duration: 0.6s; /* Default balanced */
       }
       
+      /* Animation Speed Overrides */
+      :root[data-anim-speed="fast"] {
+        --anim-duration: 0.3s;
+      }
+      :root[data-anim-speed="balanced"] {
+        --anim-duration: 0.6s;
+      }
+      :root[data-anim-speed="relaxed"] {
+        --anim-duration: 1.0s;
+      }
+
+      /* Force tailwind animations to use dynamic variable */
+      .animate-fade-in, 
+      .animate-slide-up, 
+      .animate-slide-down, 
+      .animate-slide-up-fade, 
+      .animate-scale-in, 
+      .animate-pop-in {
+        animation-duration: var(--anim-duration) !important;
+      }
+
       body {
         font-family: 'Inter', sans-serif;
         background-color: #F2F2F7;
@@ -239,10 +261,10 @@
     "@remix-run/router": "https://esm.sh/@remix-run/router@1.15.3",
     "lucide-react": "https://esm.sh/lucide-react@0.344.0?external=react",
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.39.7",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "vite": "https://aistudiocdn.com/vite@^7.2.4",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1"
+    "react/": "https://aistudiocdn.com/react@^19.2.0/"
   }
 }
 </script>

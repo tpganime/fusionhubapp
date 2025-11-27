@@ -218,9 +218,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const currentUserRef = useRef<User | null>(null);
   const usersRef = useRef<User[]>([]);
+  const notificationsRef = useRef<AppNotification[]>([]); // Track notifications to prevent dupes
 
   useEffect(() => { currentUserRef.current = currentUser; }, [currentUser]);
   useEffect(() => { usersRef.current = users; }, [users]);
+  useEffect(() => { notificationsRef.current = notifications; }, [notifications]);
 
   const checkIsOwner = (email: string) => email.toLowerCase() === OWNER_EMAIL.toLowerCase();
   const checkIsAdmin = (email: string) => email.toLowerCase() === ADMIN_EMAIL.toLowerCase() || checkIsOwner(email);
@@ -230,7 +232,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // -- CONFIG SYNC --
   const syncConfigFromUsers = (userList: User[]) => {
-    // Priority: Explicit Admin Email -> Any Admin User
     const mainAdmin = userList.find(u => u.email.toLowerCase() === ADMIN_EMAIL.toLowerCase());
     const targetUser = mainAdmin || userList.find(u => checkIsAdmin(u.email));
 
@@ -349,40 +350,87 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return stats;
   };
 
+  // Sound Effects
+  const playNotificationSound = () => {
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1046.5, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.6);
+    } catch (e) {}
+  };
+
+  const playSendSound = () => {
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(300, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.05, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.1);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.1);
+    } catch (e) {}
+  };
+
+  const triggerNotification = (title: string, body: string, icon?: string) => {
+    const isHidden = document.hidden;
+    const N = window.Notification as any; 
+    const hasPermission = "Notification" in window && N.permission === "granted";
+    playNotificationSound();
+
+    if (isHidden && hasPermission) {
+      try {
+        new N(title, { body, icon: icon || '/favicon.ico', silent: true });
+      } catch (e) {}
+    }
+  };
+
   const enableNotifications = async () => {
     if (!("Notification" in window)) return;
     const permission = await window.Notification.requestPermission();
     setNotificationPermission(permission);
     if (permission === "granted") {
+      playNotificationSound();
       new Notification("Notifications Enabled", { body: "You will now receive alerts!", icon: '/favicon.ico' });
     }
     setShowPermissionPrompt(false);
   }; 
   const closePermissionPrompt = () => setShowPermissionPrompt(false);
 
-  const login = async (user: User) => { setCurrentUser(user); localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id); };
+  const login = async (user: User) => { setCurrentUser(user); localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id); checkPermissionStatus(); };
   const loginWithCredentials = async (email: string, pass: string) => {
       const found = users.find(u => u.email.trim().toLowerCase() === email.trim().toLowerCase() && u.password === pass);
       if (found) await login(found);
       else throw new Error("Invalid credentials");
   };
-  const logout = () => { setCurrentUser(null); localStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID); };
+  const logout = () => { setCurrentUser(null); localStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID); setNotifications([]); };
   const signup = async (user: User) => {
-      // Optimistic update for speed
       setUsers(prev => [...prev, user]);
       await login(user);
-      // Actual Save
       const { error } = await supabase.from('users').insert(mapUserToDB(user));
       if (error) console.error("Signup DB Error:", error);
   };
 
-  // -- FIXED PROFILE UPDATE --
   const updateProfile = async (updatedUser: User) => {
-    // 1. Optimistic Update
     setCurrentUser(updatedUser);
     setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
-    
-    // 2. Persist to DB
     try {
         const { error } = await supabase.from('users').update(mapUserToDB(updatedUser)).eq('id', updatedUser.id);
         if (error) {
@@ -397,16 +445,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
-  // -- ADMIN CONFIG UPDATE --
   const updateAppConfig = async (newConfig: AppConfig) => {
     if (!isAdmin || !currentUser) return;
     setAppConfig(newConfig);
     const configString = JSON.stringify(newConfig);
-    
-    // Update the description field where config is stored
     const updatedUser = { ...currentUser, description: configString };
-    
-    // Use the fixed updateProfile to save to DB
     await updateProfile(updatedUser);
   };
 
@@ -422,10 +465,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (!currentUser) return;
     const newMsg: Message = { id: generateUUID(), senderId: currentUser.id, receiverId, content, timestamp: Date.now(), read: false };
     setMessages(prev => [...prev, newMsg]);
+    playSendSound();
     const { error } = await supabase.from('messages').insert(mapMessageToDB(newMsg));
     if (error) {
         console.error(error);
-        // triggerNotification('Error', 'Message failed to send');
+        triggerNotification("Error", "Message failed to send.");
         setMessages(prev => prev.filter(m => m.id !== newMsg.id));
     }
   };
@@ -437,19 +481,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const sendFriendRequest = async (targetUserId: string) => {
     if (!currentUser) return;
-    // Optimistic
+    
+    // Optimistic Update
     setUsers(prev => prev.map(u => {
-        if (u.id === targetUserId) return { ...u, requests: [...u.requests, currentUser.id] };
+        if (u.id === targetUserId) {
+            // Prevent duplicates in local state if already requested
+            if (u.requests.includes(currentUser.id)) return u;
+            return { ...u, requests: [...u.requests, currentUser.id] };
+        }
         return u;
     }));
     
     // Fetch latest to ensure no overwrite race condition
     const { data } = await supabase.from('users').select('requests').eq('id', targetUserId).single();
     if (data) {
-        const currentRequests = data.requests || [];
-        if (!currentRequests.includes(currentUser.id)) {
-            await supabase.from('users').update({ requests: [...currentRequests, currentUser.id] }).eq('id', targetUserId);
+        let currentRequests = data.requests || [];
+        
+        // RESEND LOGIC: If already requested, trigger a change event by removing then adding back
+        if (currentRequests.includes(currentUser.id)) {
+            const filtered = currentRequests.filter((id: string) => id !== currentUser.id);
+            await supabase.from('users').update({ requests: filtered }).eq('id', targetUserId);
+            currentRequests = filtered; // Update local var for next step
         }
+        
+        // Add request
+        await supabase.from('users').update({ requests: [...currentRequests, currentUser.id] }).eq('id', targetUserId);
     }
   };
 
@@ -458,12 +514,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const myNewFriends = [...currentUser.friends, requesterId];
     const myNewRequests = currentUser.requests.filter(r => r !== requesterId);
     
-    // Optimistic
     setCurrentUser(prev => prev ? ({ ...prev, friends: myNewFriends, requests: myNewRequests }) : null);
     
     await supabase.from('users').update({ friends: myNewFriends, requests: myNewRequests }).eq('id', currentUser.id);
     
-    // Update requester side
     const { data } = await supabase.from('users').select('friends').eq('id', requesterId).single();
     if (data) {
         const theirFriends = data.friends || [];
@@ -486,11 +540,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     await supabase.from('messages').update({ read: true }).in('id', unreadIds);
   };
 
+  const checkPermissionStatus = () => {
+    if ("Notification" in window && window.Notification.permission === "default") {
+      setShowPermissionPrompt(true);
+    }
+    if ("Notification" in window) {
+      setNotificationPermission(window.Notification.permission);
+    }
+  };
+
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
   const toggleAnimations = () => setEnableAnimations(prev => !prev);
   const toggleLiquid = () => setEnableLiquid(prev => !prev);
-  const setAnimationSpeedFn = (s: AnimationSpeed) => setAnimationSpeed(s);
-  const setGlassOpacityFn = (n: number) => setGlassOpacity(n);
 
   useEffect(() => {
     let isMounted = true;
@@ -499,40 +560,32 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const fetchData = async () => {
       try {
         const savedId = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
-        
-        // Load Cache
         try {
             const cachedUsers = JSON.parse(localStorage.getItem(STORAGE_KEYS.CACHE_USERS) || '[]');
-            if (cachedUsers.length) { 
-                setUsers(cachedUsers); 
-                syncConfigFromUsers(cachedUsers);
-            }
+            if (cachedUsers.length) { setUsers(cachedUsers); syncConfigFromUsers(cachedUsers); }
             const cachedMsgs = JSON.parse(localStorage.getItem(STORAGE_KEYS.CACHE_MESSAGES) || '[]');
             if (cachedMsgs.length) setMessages(cachedMsgs);
-            
             if (savedId && cachedUsers.length) {
                 const found = cachedUsers.find((u: User) => u.id === savedId);
                 if (found) setCurrentUser(found);
             }
         } catch(e) {}
 
-        // Fetch Live
         const { data: usersData, error: userError } = await supabase.from('users').select('*');
         if (userError) throw userError;
         
         if (isMounted) {
             const mappedUsers = usersData.map(mapUserFromDB);
             setUsers(mappedUsers);
-            syncConfigFromUsers(mappedUsers); // Sync config from live data
+            syncConfigFromUsers(mappedUsers);
             
             const { data: msgsData } = await supabase.from('messages').select('*').order('timestamp', { ascending: false }).limit(100);
             if (msgsData) setMessages(msgsData.map(mapMessageFromDB).reverse());
 
             if (savedId) {
                 const found = mappedUsers.find(u => u.id === savedId);
-                if (found) setCurrentUser(found);
+                if (found) { setCurrentUser(found); checkPermissionStatus(); }
             }
-            
             setIsLoading(false);
             clearTimeout(safetyTimeout);
         }
@@ -546,13 +599,105 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return () => { isMounted = false; clearTimeout(safetyTimeout); };
   }, []);
 
+  // -- REALTIME SUBSCRIPTION --
+  useEffect(() => {
+    const channel = supabase.channel('realtime:app_data')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
+        const newMsg = mapMessageFromDB(payload.new);
+        setMessages(prev => { if (prev.some(m => m.id === newMsg.id)) return prev; return [...prev, newMsg]; });
+
+        if (currentUserRef.current && newMsg.receiverId === currentUserRef.current.id) {
+          const sender = usersRef.current.find(u => u.id === newMsg.senderId);
+          const senderName = sender ? sender.username : 'Someone';
+          playNotificationSound();
+          const notif: AppNotification = { id: Date.now().toString(), type: 'message', content: `New message from ${senderName}`, read: false, timestamp: Date.now(), data: { targetUser: sender, avatar: sender?.avatar } };
+          setNotifications(prev => [notif, ...prev]);
+          triggerNotification(`Message from ${senderName}`, newMsg.content, sender?.avatar);
+        }
+        if (newMsg.receiverId === BROADCAST_ID) {
+           if (currentUserRef.current && newMsg.senderId === currentUserRef.current.id) return;
+           const sender = usersRef.current.find(u => u.id === newMsg.senderId);
+           const senderName = sender?.username || "Admin";
+           playNotificationSound();
+           const notif: AppNotification = { id: Date.now().toString(), type: 'system', content: `📢 ${senderName}: ${newMsg.content}`, read: false, timestamp: Date.now(), data: {} };
+           setNotifications(prev => [notif, ...prev]);
+           triggerNotification(`Announcement from ${senderName}`, newMsg.content);
+        }
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload) => {
+        const updatedMsg = mapMessageFromDB(payload.new);
+        setMessages(prev => prev.map(m => m.id === updatedMsg.id ? updatedMsg : m));
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, async (payload) => {
+        if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+          const updatedUser = mapUserFromDB(payload.new);
+          setUsers(prev => {
+             const exists = prev.find(u => u.id === updatedUser.id);
+             return exists ? prev.map(u => u.id === updatedUser.id ? updatedUser : u) : [...prev, updatedUser];
+          });
+
+          // Friend Request Notification Logic with Robust Fetching
+          if (currentUserRef.current && updatedUser.id === currentUserRef.current.id) {
+            setCurrentUser(updatedUser);
+            const oldReqs = currentUserRef.current.requests || [];
+            const newReqs = updatedUser.requests || [];
+            
+            if (newReqs.length > oldReqs.length) {
+               // Identify new request IDs
+               const newReqIds = newReqs.filter(id => !oldReqs.includes(id));
+               
+               for (const newReqId of newReqIds) {
+                   // Check for duplicates in recent notifications
+                   const isDuplicate = notificationsRef.current.some(n => 
+                       n.type === 'friend_request' && n.data?.requesterId === newReqId && (Date.now() - n.timestamp < 10000)
+                   );
+                   if (isDuplicate) continue;
+
+                   // Try finding user in local state first
+                   let requester = usersRef.current.find(u => u.id === newReqId);
+                   
+                   // Fallback: Fetch from DB if not found (critical for notifications to appear)
+                   if (!requester) {
+                       const { data } = await supabase.from('users').select('*').eq('id', newReqId).single();
+                       if (data) requester = mapUserFromDB(data);
+                   }
+
+                   if (requester) {
+                     playNotificationSound();
+                     const notif: AppNotification = {
+                       id: Date.now().toString(),
+                       type: 'friend_request',
+                       content: `${requester.username} sent you a friend request`,
+                       read: false,
+                       timestamp: Date.now(),
+                       data: { requesterId: requester.id, avatar: requester.avatar }
+                     };
+                     setNotifications(prev => [notif, ...prev]);
+                     triggerNotification('New Friend Request', `${requester.username} wants to be friends`, requester.avatar);
+                   }
+               }
+            }
+          }
+        }
+      })
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        const onlineIds = Object.keys(state);
+        setOnlineUsers(onlineIds);
+        if (currentUser) channel.track({ user_id: currentUser.id, online_at: new Date().toISOString() });
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
   return (
     <AppContext.Provider value={{
       currentUser, users, messages, notifications, theme, isLoading, enableAnimations, animationSpeed, enableLiquid, glassOpacity, showPermissionPrompt, notificationPermission,
       appConfig, isAdmin, isOwner, onlineUsers,
       login, loginWithCredentials, logout, signup, updateProfile, deleteAccount, deactivateAccount,
       sendMessage, broadcastMessage, sendFriendRequest, acceptFriendRequest, markNotificationRead,
-      toggleTheme, toggleAnimations, setAnimationSpeed: setAnimationSpeedFn, toggleLiquid, setGlassOpacity: setGlassOpacityFn, markConversationAsRead, checkIsAdmin, checkIsOwner, checkIsOnline, enableNotifications, closePermissionPrompt, updateAppConfig, getTimeSpent, getWeeklyStats
+      toggleTheme, toggleAnimations, setAnimationSpeed, toggleLiquid, setGlassOpacity, markConversationAsRead, checkIsAdmin, checkIsOwner, checkIsOnline, enableNotifications, closePermissionPrompt, updateAppConfig, getTimeSpent, getWeeklyStats
     }}>
       {children}
     </AppContext.Provider>

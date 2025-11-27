@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
 import { ComingSoon } from '../components/ComingSoon';
-import { Search as SearchIcon, UserPlus, Check, MessageCircle, ShieldCheck, Crown } from 'lucide-react';
+import { Search as SearchIcon, UserPlus, Check, MessageCircle, ShieldCheck, Crown, RotateCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const SearchScreen: React.FC = () => {
@@ -113,10 +114,10 @@ export const SearchScreen: React.FC = () => {
                   ) : (
                     <button 
                       onClick={(e) => handleRequest(e, user.id)}
-                      disabled={requested}
-                      className={`p-2.5 rounded-full transition-colors border active:scale-95 ${requested ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 border-transparent' : 'bg-gray-100/50 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-white/50 border-gray-200 dark:border-gray-700'}`}
+                      className={`p-2.5 rounded-full transition-colors border active:scale-95 ${requested ? 'bg-orange-100 dark:bg-orange-900/20 text-orange-500 border-orange-200' : 'bg-gray-100/50 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-white/50 border-gray-200 dark:border-gray-700'}`}
+                      title={requested ? "Resend Request" : "Add Friend"}
                     >
-                      {requested ? <Check className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
+                      {requested ? <RotateCw className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
                     </button>
                   )}
                 </div>

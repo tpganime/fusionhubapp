@@ -15,6 +15,7 @@ interface AppContextType {
   users: User[];
   messages: Message[];
   notifications: AppNotification[];
+  knownAccounts: User[];
   theme: 'light' | 'dark';
   isLoading: boolean;
   enableAnimations: boolean;
@@ -30,6 +31,8 @@ interface AppContextType {
   login: (user: User) => Promise<void>;
   loginWithCredentials: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  switchAccount: (user: User) => Promise<void>;
+  removeKnownAccount: (userId: string) => void;
   signup: (user: User) => Promise<void>;
   updateProfile: (updatedUser: User) => Promise<boolean>;
   deleteAccount: () => Promise<void>;
@@ -67,7 +70,8 @@ const STORAGE_KEYS = {
   GLASS_OPACITY: 'fh_glass_opacity_v1',
   CACHE_USERS: 'fh_cache_users_v1',
   CACHE_MESSAGES: 'fh_cache_messages_v1',
-  LAST_RESET: 'fh_last_reset_date'
+  LAST_RESET: 'fh_last_reset_date',
+  KNOWN_ACCOUNTS: 'fh_known_accounts_v1'
 };
 
 const generateUUID = () => {
@@ -87,7 +91,7 @@ const mapUserFromDB = (dbUser: any): User => {
       username: dbUser.username || 'Unknown',
       name: dbUser.name || '',
       email: dbUser.email || '',
-      password: dbUser.password,
+      password: dbUser.password, // Required for account switching persistence
       avatar: dbUser.avatar || 'https://via.placeholder.com/150',
       description: dbUser.description,
       birthdate: dbUser.birthdate,
@@ -162,6 +166,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [isLoading, setIsLoading] = useState(true);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
   
+  const [knownAccounts, setKnownAccounts] = useState<User[]>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEYS.KNOWN_ACCOUNTS);
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) { return []; }
+  });
+
   const sessionStartRef = useRef(Date.now());
 
   // -- PERSISTENT SETTINGS INITIALIZATION --
@@ -224,6 +235,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => { currentUserRef.current = currentUser; }, [currentUser]);
   useEffect(() => { usersRef.current = users; }, [users]);
   useEffect(() => { notificationsRef.current = notifications; }, [notifications]);
+  
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.KNOWN_ACCOUNTS, JSON.stringify(knownAccounts));
+  }, [knownAccounts]);
 
   const checkIsOwner = (email: string) => email.toLowerCase() === OWNER_EMAIL.toLowerCase();
   const checkIsAdmin = (email: string) => email.toLowerCase() === ADMIN_EMAIL.toLowerCase() || checkIsOwner(email);
@@ -415,12 +430,35 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }; 
   const closePermissionPrompt = () => setShowPermissionPrompt(false);
 
-  const login = async (user: User) => { setCurrentUser(user); localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id); checkPermissionStatus(); };
+  const saveAccountToHistory = (user: User) => {
+    setKnownAccounts(prev => {
+        // Prevent duplicates, keep latest
+        const filtered = prev.filter(u => u.id !== user.id);
+        return [...filtered, user];
+    });
+  };
+
+  const login = async (user: User) => { 
+      setCurrentUser(user); 
+      localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id); 
+      saveAccountToHistory(user);
+      checkPermissionStatus(); 
+  };
+
   const loginWithCredentials = async (email: string, pass: string) => {
       const found = users.find(u => u.email.trim().toLowerCase() === email.trim().toLowerCase() && u.password === pass);
       if (found) await login(found);
       else throw new Error("Invalid credentials");
   };
+
+  const switchAccount = async (user: User) => {
+      await login(user);
+  };
+
+  const removeKnownAccount = (userId: string) => {
+      setKnownAccounts(prev => prev.filter(u => u.id !== userId));
+  };
+
   const logout = () => { setCurrentUser(null); localStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID); setNotifications([]); };
   const signup = async (user: User) => {
       setUsers(prev => [...prev, user]);
@@ -432,6 +470,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const updateProfile = async (updatedUser: User) => {
     setCurrentUser(updatedUser);
     setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+    saveAccountToHistory(updatedUser); // Update info in known accounts if profile changes
     try {
         const { error } = await supabase.from('users').update(mapUserToDB(updatedUser)).eq('id', updatedUser.id);
         if (error) {
@@ -457,6 +496,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const deleteAccount = async () => { 
       if (currentUser) {
           await supabase.from('users').delete().eq('id', currentUser.id);
+          removeKnownAccount(currentUser.id);
           logout(); 
       }
   };
@@ -485,7 +525,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const sendFriendRequest = async (targetUserId: string) => {
     if (!currentUser) return;
     
-    // Optimistic Update
+    // Optimistic Update locally
     setUsers(prev => prev.map(u => {
         if (u.id === targetUserId) {
             if (u.requests.includes(currentUser.id)) return u;
@@ -497,13 +537,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const { data } = await supabase.from('users').select('requests').eq('id', targetUserId).single();
     if (data) {
         let currentRequests = data.requests || [];
-        // Resend logic: remove then add to trigger update event
+        
+        // RESEND LOGIC: Remove then re-add to force a change event on the receiver
         if (currentRequests.includes(currentUser.id)) {
             const filtered = currentRequests.filter((id: string) => id !== currentUser.id);
+            // 1. Remove
             await supabase.from('users').update({ requests: filtered }).eq('id', targetUserId);
-            currentRequests = filtered;
+            // 2. Add back (wait slightly to ensure distinct events)
+            setTimeout(async () => {
+                await supabase.from('users').update({ requests: [...filtered, currentUser.id] }).eq('id', targetUserId);
+            }, 100);
+        } else {
+            // First time request
+            await supabase.from('users').update({ requests: [...currentRequests, currentUser.id] }).eq('id', targetUserId);
         }
-        await supabase.from('users').update({ requests: [...currentRequests, currentUser.id] }).eq('id', targetUserId);
     }
   };
 
@@ -553,24 +600,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const markConversationAsRead = async (senderId: string) => {
     if (!currentUser) return;
     
-    // Identify unread messages from this sender to me
     const unreadMessages = messages.filter(m => 
         m.senderId === senderId && 
         m.receiverId === currentUser.id && 
         !m.read
     );
 
-    // Skip if nothing to update to prevent spamming DB
     if (unreadMessages.length === 0) return;
 
     const unreadIds = unreadMessages.map(m => m.id);
 
-    // Optimistic UI Update
     setMessages(prev => prev.map(m => 
         (unreadIds.includes(m.id)) ? { ...m, read: true } : m
     ));
 
-    // Batch Update in DB
     const { error } = await supabase
         .from('messages')
         .update({ read: true })
@@ -644,14 +687,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
         const newMsg = mapMessageFromDB(payload.new);
         
-        // Update local messages state instantly
         setMessages(prev => { 
-            // Prevent duplicates if already added optimistically
             if (prev.some(m => m.id === newMsg.id)) return prev; 
             return [...prev, newMsg]; 
         });
 
-        // Notification Logic
         if (currentUserRef.current && newMsg.receiverId === currentUserRef.current.id) {
           const sender = usersRef.current.find(u => u.id === newMsg.senderId);
           const senderName = sender ? sender.username : 'Someone';
@@ -669,7 +709,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           triggerNotification(`Message from ${senderName}`, newMsg.content, sender?.avatar);
         }
 
-        // Broadcast Logic
         if (newMsg.receiverId === BROADCAST_ID) {
            if (currentUserRef.current && newMsg.senderId === currentUserRef.current.id) return;
            const sender = usersRef.current.find(u => u.id === newMsg.senderId);
@@ -682,7 +721,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload) => {
         const updatedMsg = mapMessageFromDB(payload.new);
-        // Instant update for read receipts
         setMessages(prev => prev.map(m => m.id === updatedMsg.id ? updatedMsg : m));
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, async (payload) => {
@@ -693,32 +731,30 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
              return exists ? prev.map(u => u.id === updatedUser.id ? updatedUser : u) : [...prev, updatedUser];
           });
 
-          // Friend Request Notification Logic
+          // ROBUST FRIEND REQUEST NOTIFICATION LOGIC
           if (currentUserRef.current && updatedUser.id === currentUserRef.current.id) {
             setCurrentUser(updatedUser);
-            const oldReqs = currentUserRef.current.requests || [];
-            const newReqs = updatedUser.requests || [];
+            const currentRequests = updatedUser.requests || [];
             
-            if (newReqs.length > oldReqs.length) {
-               const newReqIds = newReqs.filter(id => !oldReqs.includes(id));
-               
-               for (const newReqId of newReqIds) {
-                   const isDuplicate = notificationsRef.current.some(n => 
-                       n.type === 'friend_request' && n.data?.requesterId === newReqId && (Date.now() - n.timestamp < 10000)
-                   );
-                   if (isDuplicate) continue;
+            // Check for any request ID that we haven't notified about recently
+            for (const reqId of currentRequests) {
+                // Check if we already have a notification for this user in the current session
+                const alreadyNotified = notificationsRef.current.some(n => 
+                    n.type === 'friend_request' && n.data?.requesterId === reqId
+                );
 
-                   let requester = usersRef.current.find(u => u.id === newReqId);
-                   
+                if (!alreadyNotified) {
+                   // Fetch requester info if missing from cache
+                   let requester = usersRef.current.find(u => u.id === reqId);
                    if (!requester) {
-                       const { data } = await supabase.from('users').select('*').eq('id', newReqId).single();
+                       const { data } = await supabase.from('users').select('*').eq('id', reqId).single();
                        if (data) requester = mapUserFromDB(data);
                    }
 
                    if (requester) {
                      playNotificationSound();
                      const notif: AppNotification = {
-                       id: Date.now().toString(),
+                       id: `req_${reqId}_${Date.now()}`, // Unique ID
                        type: 'friend_request',
                        content: `${requester.username} sent you a friend request`,
                        read: false,
@@ -728,7 +764,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                      setNotifications(prev => [notif, ...prev]);
                      triggerNotification('New Friend Request', `${requester.username} wants to be friends`, requester.avatar);
                    }
-               }
+                }
             }
           }
         }
@@ -746,9 +782,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   return (
     <AppContext.Provider value={{
-      currentUser, users, messages, notifications, theme, isLoading, enableAnimations, animationSpeed, enableLiquid, glassOpacity, showPermissionPrompt, notificationPermission,
+      currentUser, users, messages, notifications, knownAccounts, theme, isLoading, enableAnimations, animationSpeed, enableLiquid, glassOpacity, showPermissionPrompt, notificationPermission,
       appConfig, isAdmin, isOwner, onlineUsers,
-      login, loginWithCredentials, logout, signup, updateProfile, deleteAccount, deactivateAccount,
+      login, loginWithCredentials, logout, switchAccount, removeKnownAccount, signup, updateProfile, deleteAccount, deactivateAccount,
       sendMessage, broadcastMessage, sendFriendRequest, acceptFriendRequest, unfriend, markNotificationRead,
       toggleTheme, toggleAnimations, setAnimationSpeed, toggleLiquid, setGlassOpacity, markConversationAsRead, checkIsAdmin, checkIsOwner, checkIsOnline, enableNotifications, closePermissionPrompt, updateAppConfig, getTimeSpent, getWeeklyStats
     }}>

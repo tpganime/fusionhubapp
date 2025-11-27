@@ -38,6 +38,7 @@ interface AppContextType {
   broadcastMessage: (content: string) => Promise<void>;
   sendFriendRequest: (targetUserId: string) => Promise<void>;
   acceptFriendRequest: (requesterId: string) => Promise<void>;
+  unfriend: (targetUserId: string) => Promise<void>;
   markNotificationRead: (id: string) => void;
   toggleTheme: () => void;
   toggleAnimations: () => void;
@@ -524,6 +525,27 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
+  const unfriend = async (targetUserId: string) => {
+      if (!currentUser) return;
+      
+      const myNewFriends = currentUser.friends.filter(id => id !== targetUserId);
+      setCurrentUser(prev => prev ? ({ ...prev, friends: myNewFriends }) : null);
+      setUsers(prev => prev.map(u => {
+          if (u.id === currentUser.id) return { ...u, friends: myNewFriends };
+          if (u.id === targetUserId) return { ...u, friends: u.friends.filter(f => f !== currentUser.id) };
+          return u;
+      }));
+
+      // DB Updates
+      await supabase.from('users').update({ friends: myNewFriends }).eq('id', currentUser.id);
+      
+      const { data } = await supabase.from('users').select('friends').eq('id', targetUserId).single();
+      if (data) {
+          const theirNewFriends = (data.friends || []).filter((id: string) => id !== currentUser.id);
+          await supabase.from('users').update({ friends: theirNewFriends }).eq('id', targetUserId);
+      }
+  };
+
   const markNotificationRead = (id: string) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   };
@@ -727,7 +749,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       currentUser, users, messages, notifications, theme, isLoading, enableAnimations, animationSpeed, enableLiquid, glassOpacity, showPermissionPrompt, notificationPermission,
       appConfig, isAdmin, isOwner, onlineUsers,
       login, loginWithCredentials, logout, signup, updateProfile, deleteAccount, deactivateAccount,
-      sendMessage, broadcastMessage, sendFriendRequest, acceptFriendRequest, markNotificationRead,
+      sendMessage, broadcastMessage, sendFriendRequest, acceptFriendRequest, unfriend, markNotificationRead,
       toggleTheme, toggleAnimations, setAnimationSpeed, toggleLiquid, setGlassOpacity, markConversationAsRead, checkIsAdmin, checkIsOwner, checkIsOnline, enableNotifications, closePermissionPrompt, updateAppConfig, getTimeSpent, getWeeklyStats
     }}>
       {children}

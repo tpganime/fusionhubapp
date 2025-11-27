@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lock, Eye, Trash2, LogOut, Shield, ChevronRight, Moon, Sun, Zap, LayoutDashboard, Bell, Droplets, Sliders, Power, Gauge, ArrowRight as ArrowRightIcon } from 'lucide-react';
+import { ArrowLeft, Lock, Eye, Trash2, LogOut, Shield, ChevronRight, Moon, Sun, Zap, LayoutDashboard, Bell, Droplets, Sliders, Power, Gauge, ArrowRight as ArrowRightIcon, Users } from 'lucide-react';
 import { PRIVACY_POLICY_TEXT } from '../constants';
 import { LiquidSlider } from '../components/LiquidSlider';
 import { LiquidToggle } from '../components/LiquidToggle';
@@ -17,6 +17,13 @@ export const SettingsScreen: React.FC = () => {
   if (!currentUser) return null;
 
   const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
+  const handleSwitchAccount = () => {
+    // For fast switching, we just logout and go to login. 
+    // In a full implementation, we might remember the email/session.
     logout();
     navigate('/');
   };
@@ -180,16 +187,29 @@ export const SettingsScreen: React.FC = () => {
           </div>
         </section>
 
-        {/* New Glass Capsule Log Out Button */}
-        <button 
-          onClick={handleLogout}
-          className="w-full py-4 mt-8 flex items-center justify-between px-6 rounded-full border border-white/40 dark:border-white/10 bg-white/30 dark:bg-white/5 backdrop-blur-xl shadow-lg hover:bg-white/40 transition-all active:scale-95 group mb-8"
-        >
-           <span className="text-lg font-bold text-gray-800 dark:text-white">Log Out</span>
-           <div className="p-2 bg-white/50 dark:bg-white/10 rounded-full group-hover:translate-x-1 transition-transform border border-white/20">
-              <ArrowRightIcon className="w-5 h-5 text-gray-800 dark:text-white" />
-           </div>
-        </button>
+        <div className="flex gap-4">
+            {/* New Switch Account Button */}
+            <button 
+              onClick={handleSwitchAccount}
+              className="flex-1 py-4 flex flex-col items-center justify-center rounded-[2rem] border border-white/40 dark:border-white/10 bg-white/20 dark:bg-white/5 backdrop-blur-xl shadow-lg hover:bg-white/30 transition-all active:scale-95 group"
+            >
+               <div className="p-2.5 bg-blue-100 dark:bg-blue-900/30 rounded-full mb-2 text-blue-600 dark:text-blue-400">
+                  <Users className="w-5 h-5" />
+               </div>
+               <span className="text-xs font-bold text-gray-800 dark:text-white">Switch Account</span>
+            </button>
+
+            {/* New Glass Capsule Log Out Button */}
+            <button 
+              onClick={handleLogout}
+              className="flex-[2] py-4 flex items-center justify-between px-6 rounded-[2rem] border border-white/40 dark:border-white/10 bg-white/30 dark:bg-white/5 backdrop-blur-xl shadow-lg hover:bg-white/40 transition-all active:scale-95 group"
+            >
+               <span className="text-lg font-bold text-gray-800 dark:text-white">Log Out</span>
+               <div className="p-2 bg-white/50 dark:bg-white/10 rounded-full group-hover:translate-x-1 transition-transform border border-white/20">
+                  <ArrowRightIcon className="w-5 h-5 text-gray-800 dark:text-white" />
+               </div>
+            </button>
+        </div>
 
         <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-8 opacity-50">FusionHub v1.3.4 LIQUID</p>
 

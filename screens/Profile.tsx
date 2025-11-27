@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
 import { ComingSoon } from '../components/ComingSoon';
-import { Camera, ArrowLeft, Lock, Link as LinkIcon, ShieldCheck, Crown, X, Settings, MessageCircle, ChevronDown, AlignJustify, Copy, Share2, Activity, Calendar, BarChart3, Mail } from 'lucide-react';
+import { Camera, ArrowLeft, Lock, Link as LinkIcon, ShieldCheck, Crown, X, Settings, MessageCircle, ChevronDown, AlignJustify, Copy, Share2, Activity, Calendar, BarChart3, Mail, UserMinus } from 'lucide-react';
 import { Gender } from '../types';
 import { useParams, useNavigate } from 'react-router-dom';
 
@@ -46,7 +46,7 @@ const compressImage = (file: File): Promise<string> => {
 };
 
 export const ProfileScreen: React.FC = () => {
-  const { currentUser, users, updateProfile, sendFriendRequest, checkIsAdmin, checkIsOwner, enableAnimations, appConfig, getTimeSpent, getWeeklyStats } = useApp();
+  const { currentUser, users, updateProfile, sendFriendRequest, unfriend, checkIsAdmin, checkIsOwner, enableAnimations, appConfig, getTimeSpent, getWeeklyStats } = useApp();
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   
@@ -168,6 +168,12 @@ export const ProfileScreen: React.FC = () => {
      }
   };
 
+  const handleUnfriend = async () => {
+      if (window.confirm(`Are you sure you want to unfriend ${profileUser.username}?`)) {
+          await unfriend(profileUser.id);
+      }
+  };
+
   const isFriend = currentUser?.friends.includes(profileUser.id);
   const isRequested = profileUser.requests.includes(currentUser?.id || '');
   const canViewDetails = isOwnProfile || !profileUser.isPrivateProfile || isFriend;
@@ -195,14 +201,6 @@ export const ProfileScreen: React.FC = () => {
         </span>
       );
       return (<span><span className="text-5xl">{mins}</span><span className="text-3xl">m</span></span>);
-  };
-
-  const formatMs = (ms: number) => {
-      if (ms === 0) return '0m';
-      const m = Math.floor(ms / 60000);
-      const h = Math.floor(m / 60);
-      const min = m % 60;
-      return h > 0 ? `${h}h ${min}m` : `${min}m`;
   };
 
   return (
@@ -239,29 +237,22 @@ export const ProfileScreen: React.FC = () => {
                     </p>
                 </div>
                 
-                <div className="flex items-end justify-between h-48 gap-3">
+                <div className="flex items-end justify-between h-48 gap-3 border-b border-gray-100 dark:border-gray-800 pb-2">
                     {weeklyStats.map((stat, i) => {
                         const heightPercent = Math.max((stat.ms / maxMs) * 100, 4); // Min height 4% for visibility
                         const isToday = i === 6;
                         const label = isToday ? 'Today' : stat.day;
-                        const displayTime = formatMs(stat.ms);
                         
                         return (
                             <div key={i} className="flex-1 flex flex-col items-center gap-2 group relative">
-                                {/* Value Popup */}
-                                <div className={`absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-800 text-white text-[10px] font-bold py-1 px-2 rounded-md shadow-lg pointer-events-none whitespace-nowrap z-10 ${isToday ? 'opacity-100' : ''}`}>
-                                    {displayTime}
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
-                                </div>
-                                
-                                <div className="w-full relative flex items-end h-full">
+                                <div className="w-full relative flex items-end h-full bg-gray-100 dark:bg-gray-900 rounded-md overflow-hidden">
                                     <div 
-                                      className={`w-full rounded-md transition-all duration-1000 ease-out ${isToday ? 'bg-blue-500' : 'bg-blue-200 dark:bg-blue-900'}`}
+                                      className={`w-full rounded-md transition-all duration-1000 ease-out bg-[#60A5FA]`}
                                       style={{ height: `${heightPercent}%` }}
                                     ></div>
                                 </div>
-                                <span className={`text-[10px] font-medium ${isToday ? 'text-black dark:text-white' : 'text-gray-400'}`}>
-                                    {label.substring(0, 3)}
+                                <span className={`text-[9px] font-bold uppercase ${isToday ? 'text-black dark:text-white' : 'text-gray-400'}`}>
+                                    {label.substring(0, 1)}
                                 </span>
                             </div>
                         )
@@ -362,9 +353,9 @@ export const ProfileScreen: React.FC = () => {
                        </div>
                        <button 
                           onClick={() => setShowStatsModal(true)}
-                          className="p-1.5 bg-white dark:bg-black/20 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                          className="px-3 py-1 bg-white dark:bg-black/20 rounded-lg text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors shadow-sm"
                         >
-                            <BarChart3 className="w-4 h-4" />
+                            View Week
                         </button>
                     </div>
                     <p className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{timeSpent}</p>
@@ -386,7 +377,9 @@ export const ProfileScreen: React.FC = () => {
                 ) : (
                     <>
                        {isFriend ? (
-                          <button className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-sm">Following</button>
+                          <button onClick={handleUnfriend} className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-sm hover:bg-red-50 dark:hover:bg-red-900/10 hover:text-red-600 flex items-center justify-center gap-2">
+                              <UserMinus className="w-4 h-4" /> Following
+                          </button>
                        ) : (
                           <button onClick={() => sendFriendRequest(profileUser.id)} disabled={isRequested} className={`flex-1 py-3 rounded-xl font-bold text-sm text-white shadow-lg ${isRequested ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}>{isRequested ? 'Requested' : 'Follow'}</button>
                        )}

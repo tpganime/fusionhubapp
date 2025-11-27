@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, ArrowRight, AlertCircle, Mail, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, AlertCircle, Mail, Loader2, Calendar } from 'lucide-react';
 import { User } from '../types';
 
 const generateUUID = () => {
@@ -22,6 +23,7 @@ export const AuthScreen: React.FC = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [birthdate, setBirthdate] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,6 +43,17 @@ export const AuthScreen: React.FC = () => {
     } else {
       setUsernameAvailable(null);
     }
+  };
+
+  const calculateAge = (birthDateString: string) => {
+    const today = new Date();
+    const birthDate = new Date(birthDateString);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+    }
+    return age;
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -71,6 +84,17 @@ export const AuthScreen: React.FC = () => {
         setError('Email already registered');
         return;
     }
+
+    if (!birthdate) {
+        setError('Date of birth is required');
+        return;
+    }
+
+    const age = calculateAge(birthdate);
+    if (age < 13) {
+        setError('You must be at least 13 years old to use FusionHub.');
+        return;
+    }
     
     setIsSubmitting(true);
 
@@ -80,6 +104,7 @@ export const AuthScreen: React.FC = () => {
           username,
           password,
           email: email.trim(),
+          birthdate: birthdate,
           avatar: `https://picsum.photos/200?random=${Date.now()}`,
           isPrivateProfile: false,
           allowPrivateChat: true,
@@ -146,28 +171,44 @@ export const AuthScreen: React.FC = () => {
         <form onSubmit={isLogin ? handleLogin : handleSignup} className="space-y-5">
           
           {!isLogin && (
-            <div className={`space-y-1 ${animClass}`} style={getDelay(300)}>
-              <label className="text-xs font-bold text-gray-600 dark:text-gray-300 ml-2 uppercase tracking-wide">Username</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => handleCheckUsername(e.target.value)}
-                  className={`w-full p-4 liquid-input text-gray-900 dark:text-white placeholder-gray-500 ${usernameAvailable === false ? 'border-red-400' : ''}`}
-                  placeholder="Choose a username"
-                  required={!isLogin}
-                />
-                {username.length > 2 && (
-                  <div className={`absolute right-4 top-4 ${enableAnimations ? 'animate-pop-in' : ''}`}>
-                      {usernameAvailable ? (
-                          <div className="w-3 h-3 bg-green-500 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.6)]"></div>
-                      ) : (
-                          <AlertCircle className="w-5 h-5 text-red-500" />
-                      )}
-                  </div>
-                )}
-              </div>
-            </div>
+            <>
+                <div className={`space-y-1 ${animClass}`} style={getDelay(300)}>
+                <label className="text-xs font-bold text-gray-600 dark:text-gray-300 ml-2 uppercase tracking-wide">Username</label>
+                <div className="relative">
+                    <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => handleCheckUsername(e.target.value)}
+                    className={`w-full p-4 liquid-input text-gray-900 dark:text-white placeholder-gray-500 ${usernameAvailable === false ? 'border-red-400' : ''}`}
+                    placeholder="Choose a username"
+                    required={!isLogin}
+                    />
+                    {username.length > 2 && (
+                    <div className={`absolute right-4 top-4 ${enableAnimations ? 'animate-pop-in' : ''}`}>
+                        {usernameAvailable ? (
+                            <div className="w-3 h-3 bg-green-500 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.6)]"></div>
+                        ) : (
+                            <AlertCircle className="w-5 h-5 text-red-500" />
+                        )}
+                    </div>
+                    )}
+                </div>
+                </div>
+
+                <div className={`space-y-1 ${animClass}`} style={getDelay(350)}>
+                    <label className="text-xs font-bold text-gray-600 dark:text-gray-300 ml-2 uppercase tracking-wide">Date of Birth</label>
+                    <div className="relative">
+                        <input
+                            type="date"
+                            value={birthdate}
+                            onChange={(e) => setBirthdate(e.target.value)}
+                            className="w-full p-4 pl-12 liquid-input text-gray-900 dark:text-white placeholder-gray-500"
+                            required
+                        />
+                        <Calendar className="absolute left-4 top-4 text-gray-500 w-5 h-5" />
+                    </div>
+                </div>
+            </>
           )}
 
           <div className={`space-y-1 ${animClass}`} style={getDelay(400)}>
@@ -229,6 +270,7 @@ export const AuthScreen: React.FC = () => {
                   setEmail('');
                   setPassword('');
                   setUsername('');
+                  setBirthdate('');
               }}
               className="ml-2 text-blue-600 dark:text-blue-300 font-bold hover:underline"
             >

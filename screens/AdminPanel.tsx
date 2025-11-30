@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Volume2, Send, Database, Copy, Users, Crown, CheckCircle2, XCircle } from 'lucide-react';
+import { ArrowLeft, Save, Volume2, Send, Database, Copy, Users, Crown, CheckCircle2, XCircle, ToggleLeft, ToggleRight, Layers } from 'lucide-react';
 import { HOME_SHORTCUTS } from '../constants';
 import { GenericModal } from '../components/GenericModal';
 
@@ -27,6 +27,19 @@ export const AdminPanelScreen: React.FC = () => {
       features: {
         ...prev.features,
         [feature]: !prev.features[feature]
+      }
+    }));
+  };
+
+  const handleToggleShortcut = (name: string) => {
+    setLocalConfig(prev => ({
+      ...prev,
+      features: {
+        ...prev.features,
+        shortcuts: {
+          ...prev.features.shortcuts,
+          [name]: !prev.features.shortcuts[name]
+        }
       }
     }));
   };
@@ -166,7 +179,7 @@ create policy "Allow all operations" on messages for all using (true) with check
         <h2 className="text-xl font-bold ml-2 text-gray-900 dark:text-white">Admin Panel</h2>
       </div>
 
-      <main className="flex-1 overflow-y-auto p-4 space-y-8 max-w-md mx-auto w-full no-scrollbar pb-24">
+      <main className="flex-1 overflow-y-auto p-4 space-y-6 max-w-md mx-auto w-full no-scrollbar pb-24">
         
         {/* User Management Card */}
         <div className="bg-gray-50 dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
@@ -181,6 +194,43 @@ create policy "Allow all operations" on messages for all using (true) with check
            >
              Manage Users & Premium
            </button>
+        </div>
+
+        {/* Feature Management (Coming Soon Toggles) */}
+        <div className="bg-gray-50 dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
+           <div className="flex items-center gap-3 mb-4 text-orange-600 dark:text-orange-400">
+              <Layers className="w-6 h-6" />
+              <h3 className="font-bold text-lg">App Features</h3>
+           </div>
+           <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Toggle features ON to enable them, OFF to show "Coming Soon".</p>
+           
+           <div className="space-y-3">
+             {/* Main Tabs */}
+             {(['home', 'chat', 'search', 'profile'] as const).map(feature => (
+               <div key={feature} className="flex items-center justify-between p-3 bg-white dark:bg-black rounded-xl border border-gray-200 dark:border-gray-700">
+                 <span className="capitalize font-bold text-gray-800 dark:text-white">{feature}</span>
+                 <button onClick={() => handleToggleFeature(feature)} className={`text-2xl transition-colors ${localConfig.features[feature] ? 'text-green-500' : 'text-gray-400'}`}>
+                    {localConfig.features[feature] ? <ToggleRight className="w-8 h-8" /> : <ToggleLeft className="w-8 h-8" />}
+                 </button>
+               </div>
+             ))}
+
+             <div className="h-px bg-gray-200 dark:bg-gray-700 my-2"></div>
+             <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Shortcuts</p>
+             
+             {/* Shortcuts */}
+             {HOME_SHORTCUTS.map(sc => (
+                 <div key={sc.name} className="flex items-center justify-between p-3 bg-white dark:bg-black rounded-xl border border-gray-200 dark:border-gray-700">
+                   <span className="font-bold text-gray-800 dark:text-white">{sc.name}</span>
+                   <button 
+                     onClick={() => handleToggleShortcut(sc.name)} 
+                     className={`text-2xl transition-colors ${localConfig.features.shortcuts[sc.name] !== false ? 'text-green-500' : 'text-gray-400'}`}
+                   >
+                      {localConfig.features.shortcuts[sc.name] !== false ? <ToggleRight className="w-8 h-8" /> : <ToggleLeft className="w-8 h-8" />}
+                   </button>
+                 </div>
+             ))}
+           </div>
         </div>
 
         {/* Broadcast */}

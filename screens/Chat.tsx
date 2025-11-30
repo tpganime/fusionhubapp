@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
@@ -163,6 +164,7 @@ export const ChatScreen: React.FC = () => {
                 
                 const isAdminUser = !shouldMask && checkIsAdmin(user.email);
                 const isOwnerUser = !shouldMask && checkIsOwner(user.email);
+                const isPremiumUser = !shouldMask && !!user.isPremium;
                 const isOnline = !shouldMask && checkIsOnline(user.id);
                 const isTyping = !shouldMask && typingStatus[user.id];
 
@@ -187,6 +189,7 @@ export const ChatScreen: React.FC = () => {
                         <h3 className={`font-bold text-lg truncate flex items-center gap-1 ${hasUnread ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>
                             {displayName}
                             {isOwnerUser ? <Crown className="w-3 h-3 text-yellow-500 fill-yellow-500" /> : isAdminUser ? <ShieldCheck className="w-3 h-3 text-blue-500" /> : null}
+                            {isPremiumUser && !isOwnerUser && !isAdminUser && <Crown className="w-3 h-3 text-yellow-500 fill-yellow-500" />}
                         </h3>
                         {lastMsg && <span className="text-[10px] text-gray-500 font-medium">{new Date(lastMsg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>}
                       </div>
@@ -217,6 +220,7 @@ export const ChatScreen: React.FC = () => {
 
   const isOwnerUser = !shouldMask && checkIsOwner(selectedUser.email);
   const isAdminUser = !shouldMask && checkIsAdmin(selectedUser.email);
+  const isPremiumUser = !shouldMask && !!selectedUser.isPremium;
   const isSelectedUserOnline = !shouldMask && checkIsOnline(selectedUser.id);
   const isTyping = !shouldMask && typingStatus[selectedUser.id];
   
@@ -256,6 +260,7 @@ export const ChatScreen: React.FC = () => {
                     <span className="font-bold text-gray-900 dark:text-white text-sm flex items-center gap-1 truncate w-full">
                         {displayName}
                         {isOwnerUser ? <Crown className="w-3 h-3 text-yellow-500 fill-yellow-500 flex-shrink-0" /> : isAdminUser ? <ShieldCheck className="w-3 h-3 text-blue-500 flex-shrink-0" /> : null}
+                        {isPremiumUser && !isOwnerUser && !isAdminUser && <Crown className="w-3 h-3 text-yellow-500 fill-yellow-500 flex-shrink-0" />}
                     </span>
                     <span className={`text-[10px] font-bold ${isTyping ? 'text-blue-500 animate-pulse' : (isDeactivated || isDisabled) ? 'text-red-500' : isSelectedUserOnline ? 'text-green-500' : 'text-gray-400'}`}>
                         {statusText}

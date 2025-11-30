@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lock, Trash2, Power, ChevronRight, Moon, Sun, Zap, LayoutDashboard, Bell, Droplets, Sliders, ArrowRight as ArrowRightIcon, Users, Shield, MessageCircle, AlertTriangle, Copy, Gauge, Crown, Upload, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Lock, Trash2, Power, ChevronRight, Moon, Sun, Zap, LayoutDashboard, Bell, Droplets, Sliders, ArrowRight as ArrowRightIcon, Users, Shield, MessageCircle, AlertTriangle, Copy, Gauge, Crown, Upload, CheckCircle2, ScanLine } from 'lucide-react';
 import { PRIVACY_POLICY_TEXT } from '../constants';
 import { LiquidSlider } from '../components/LiquidSlider';
 import { LiquidToggle } from '../components/LiquidToggle';
@@ -19,6 +19,7 @@ export const SettingsScreen: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentStep, setPaymentStep] = useState<'initial' | 'upload' | 'scanning' | 'success'>('initial');
+  const [scanStatus, setScanStatus] = useState("Initializing...");
   
   const isNotificationGranted = notificationPermission === 'granted';
   const isPremium = !!currentUser?.isPremium;
@@ -43,8 +44,12 @@ export const SettingsScreen: React.FC = () => {
   const transparencyValue = Math.round((1.0 - glassOpacity) * 100);
   const handleTransparencyChange = (val: number) => {
       if (!isPremium) return;
-      const newOpacity = 1.0 - (val / 100.0);
-      setGlassOpacity(Math.max(0, Math.min(1, newOpacity)));
+      // If slider is 100%, set opacity to 0 (Crystal Clear)
+      // Otherwise scale between 0.05 and 1.0
+      let newOpacity = 1.0 - (val / 100.0);
+      if (val >= 98) newOpacity = 0; 
+      
+      setGlassOpacity(newOpacity);
   };
 
   const handleAnimationSpeedChange = (speed: 'fast' | 'balanced' | 'relaxed') => {
@@ -81,20 +86,39 @@ export const SettingsScreen: React.FC = () => {
       // Open verification modal immediately
       setShowPaymentModal(true);
       setPaymentStep('initial');
+      setScanStatus("Initializing...");
   };
 
   const handleUploadScreenshot = (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files && e.target.files[0]) {
           setPaymentStep('scanning');
           
-          // Simulate AI Scan
+          // Simulation sequence for "Real AI" feel
+          const steps = [
+              { msg: "Uploading receipt...", delay: 1000 },
+              { msg: "Preprocessing image...", delay: 1200 },
+              { msg: "AI OCR extracting text...", delay: 2000 },
+              { msg: "Identifying transaction ID...", delay: 1500 },
+              { msg: "Verifying with bank server...", delay: 2000 },
+              { msg: "Payment confirmed!", delay: 1000 }
+          ];
+
+          let totalDelay = 0;
+          steps.forEach(step => {
+              setTimeout(() => {
+                  setScanStatus(step.msg);
+              }, totalDelay);
+              totalDelay += step.delay;
+          });
+
           setTimeout(() => {
               setPaymentStep('success');
-              // Grant Premium
+              // Grant Premium for 30 days
               if (currentUser) {
-                  updateProfile({ ...currentUser, isPremium: true });
+                  const expiry = Date.now() + (30 * 24 * 60 * 60 * 1000); // 30 Days from now
+                  updateProfile({ ...currentUser, isPremium: true, premiumExpiry: expiry });
               }
-          }, 4000);
+          }, totalDelay + 500);
       }
   };
 
@@ -144,16 +168,21 @@ export const SettingsScreen: React.FC = () => {
 
              {paymentStep === 'scanning' && (
                  <>
-                    <div className="relative w-full h-48 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden mb-4 border border-blue-500/30">
+                    <div className="relative w-full h-48 bg-gray-900 rounded-xl overflow-hidden mb-4 border border-blue-500/30">
+                        <div className="absolute inset-0 flex items-center justify-center opacity-30">
+                            {/* Matrix-like background effect */}
+                            <div className="text-[8px] text-green-500 font-mono break-all leading-none opacity-50">
+                                {Array(2000).fill(0).map(() => Math.random() > 0.5 ? '1' : '0').join('')}
+                            </div>
+                        </div>
                         <div className="absolute inset-0 flex items-center justify-center">
-                             <img src="https://via.placeholder.com/300x200?text=Receipt" className="opacity-50 object-cover" alt="receipt" />
+                             <ScanLine className="w-16 h-16 text-blue-400 animate-pulse" />
                         </div>
                         {/* Scanning Line Animation */}
-                        <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.8)] animate-[scan_2s_ease-in-out_infinite]"></div>
-                        <div className="absolute inset-0 bg-blue-500/10 animate-pulse"></div>
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.8)] animate-[scan_2s_ease-in-out_infinite]"></div>
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">AI Verifying...</h3>
-                    <p className="text-xs text-gray-500 animate-pulse">Scanning transaction details</p>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">AI Scan In Progress</h3>
+                    <p className="text-xs text-blue-500 font-mono uppercase tracking-widest animate-pulse">{scanStatus}</p>
                  </>
              )}
 
@@ -164,7 +193,7 @@ export const SettingsScreen: React.FC = () => {
                     </div>
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Premium Activated!</h3>
                     <p className="text-gray-600 dark:text-gray-300 mb-6 text-sm">
-                        Thank you for your purchase. All features have been unlocked.
+                        Thank you for your purchase. Premium features are unlocked for 30 days.
                     </p>
                     <button onClick={() => setShowPaymentModal(false)} className="w-full py-3 rounded-xl bg-green-600 text-white font-bold shadow-lg shadow-green-600/30 hover:bg-green-700">
                         Awesome!
@@ -232,12 +261,12 @@ export const SettingsScreen: React.FC = () => {
                          <h3 className="text-2xl font-black italic tracking-tight">FusionHub Premium</h3>
                      </div>
                      <p className="text-white/90 text-sm mb-4 font-medium leading-relaxed">
-                         Unlock exclusive features and remove ads for just <span className="text-white font-black text-lg">₹29</span>.
+                         Unlock exclusive features and remove ads for just <span className="text-white font-black text-lg">₹29</span> / 30 days.
                      </p>
                      <ul className="space-y-2 mb-6 text-xs font-bold text-white/80">
                          <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Remove All Ads</li>
                          <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Unlock Animations</li>
-                         <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Custom Glass Transparency</li>
+                         <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Crystal Clear Glass Mode</li>
                          <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Adjust Animation Speed</li>
                      </ul>
                      <button 
@@ -251,11 +280,16 @@ export const SettingsScreen: React.FC = () => {
         ) : (
             <div className="bg-gradient-to-br from-gray-800 to-black border border-gray-700 rounded-3xl p-6 relative overflow-hidden">
                  <div className="absolute top-0 right-0 p-4 opacity-10"><Crown className="w-32 h-32 text-yellow-500" /></div>
-                 <div className="relative z-10 flex items-center justify-between">
-                     <div>
-                         <h3 className="text-xl font-bold text-white flex items-center gap-2">Premium Active <CheckCircle2 className="w-5 h-5 text-green-400" /></h3>
-                         <p className="text-gray-400 text-xs mt-1">Thanks for supporting FusionHub!</p>
+                 <div className="relative z-10">
+                     <div className="flex items-center justify-between">
+                        <h3 className="text-xl font-bold text-white flex items-center gap-2">Premium Active <CheckCircle2 className="w-5 h-5 text-green-400" /></h3>
                      </div>
+                     <p className="text-gray-400 text-xs mt-2 mb-2">Thanks for supporting FusionHub!</p>
+                     {currentUser.premiumExpiry && (
+                         <p className="text-[10px] text-gray-500 font-mono">
+                             Expires: {new Date(currentUser.premiumExpiry).toLocaleDateString()}
+                         </p>
+                     )}
                  </div>
             </div>
         )}
@@ -305,7 +339,9 @@ export const SettingsScreen: React.FC = () => {
                               <span className="font-bold text-gray-900 dark:text-white text-sm">Transparency</span>
                               {!isPremium && <Lock className="w-3 h-3 text-yellow-500" />}
                           </div>
-                          <span className="text-[10px] text-gray-500 dark:text-gray-400">{transparencyValue}%</span>
+                          <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                              {transparencyValue === 100 ? 'Crystal Clear' : `${transparencyValue}%`}
+                          </span>
                        </div>
                    </div>
                    <div><LiquidSlider value={transparencyValue} onChange={handleTransparencyChange} /></div>
@@ -438,7 +474,7 @@ export const SettingsScreen: React.FC = () => {
             </button>
         </div>
 
-        <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-8 opacity-50 pb-10">FusionHub v1.3.5</p>
+        <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-8 opacity-50 pb-10">FusionHub v1.4.0</p>
 
       </main>
     </div>

@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
@@ -64,6 +65,7 @@ export const SearchScreen: React.FC = () => {
             const canMessage = isFriend(user.id) || user.allowPrivateChat;
             const isAdminUser = checkIsAdmin(user.email);
             const isOwnerUser = checkIsOwner(user.email);
+            const isPremiumUser = !!user.isPremium;
             const isOnline = checkIsOnline(user.id);
             const requested = isRequestSent(user);
             
@@ -85,6 +87,10 @@ export const SearchScreen: React.FC = () => {
                       ) : isAdminUser ? (
                         <div className="absolute -top-2 -right-2 bg-blue-500 rounded-full p-1 shadow-sm">
                           <ShieldCheck className="w-3 h-3 text-white" />
+                        </div>
+                      ) : isPremiumUser ? (
+                        <div className="absolute -top-2 -right-2 bg-gradient-to-tr from-yellow-300 to-orange-500 rounded-full p-1 shadow-sm">
+                          <Crown className="w-3 h-3 text-white fill-white" />
                         </div>
                       ) : null}
                   </div>

@@ -3,15 +3,17 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Volume2, Send, Database, Copy } from 'lucide-react';
+import { ArrowLeft, Save, Volume2, Send, Database, Copy, Users, Crown, CheckCircle2, XCircle } from 'lucide-react';
 import { HOME_SHORTCUTS } from '../constants';
+import { GenericModal } from '../components/GenericModal';
 
 export const AdminPanelScreen: React.FC = () => {
-  const { appConfig, updateAppConfig, broadcastMessage, isAdmin } = useApp();
+  const { appConfig, updateAppConfig, broadcastMessage, isAdmin, users, updateProfile } = useApp();
   const navigate = useNavigate();
   const [localConfig, setLocalConfig] = useState(appConfig);
   const [broadcastText, setBroadcastText] = useState('');
   const [sending, setSending] = useState(false);
+  const [showUserModal, setShowUserModal] = useState(false);
 
   if (!isAdmin) {
     navigate('/home');
@@ -43,7 +45,25 @@ export const AdminPanelScreen: React.FC = () => {
     alert('Message sent to all users.');
   };
 
-  const sqlCode = `-- FORCE FIX DATABASE SCHEMA
+  const togglePremium = async (targetUser: any) => {
+      const isCurrentlyPremium = !!targetUser.isPremium;
+      let updates: any = { isPremium: !isCurrentlyPremium };
+      
+      if (!isCurrentlyPremium) {
+          // Granting
+          updates.premiumExpiry = Date.now() + (30 * 24 * 60 * 60 * 1000);
+      } else {
+          // Revoking
+          updates.premiumExpiry = null;
+      }
+      
+      const success = await updateProfile({ ...targetUser, ...updates });
+      if (success) {
+          alert(`Premium ${!isCurrentlyPremium ? 'Granted' : 'Revoked'} for ${targetUser.username}`);
+      }
+  };
+
+  const sqlCode = `-- FORCE FIX DATABASE SCHEMA V2
 -- Run this in Supabase SQL Editor to fix "Internal Error" and "Invalid Syntax" issues.
 
 -- 1. Create Tables (If missing)
@@ -79,19 +99,15 @@ alter table users add column if not exists instagram_link text;
 alter table users add column if not exists is_private_profile boolean default false;
 alter table users add column if not exists allow_private_chat boolean default true;
 alter table users add column if not exists is_premium boolean default false;
+alter table users add column if not exists premium_expiry bigint;
 
 -- 3. FORCE TIMESTAMP FIX (Handles Type Conversion)
--- This converts any text timestamps to bigint numbers to prevent "invalid input syntax"
 DO $$
 BEGIN
-  -- Only run if column exists
   IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'messages' AND column_name = 'timestamp') THEN
-    -- Alter column type with casting logic
     ALTER TABLE messages ALTER COLUMN timestamp TYPE bigint USING (
       CASE 
-        -- If it's already a number string, cast to bigint
         WHEN cast(timestamp as text) ~ '^[0-9]+$' THEN cast(timestamp as text)::bigint 
-        -- If it's an ISO date string, convert to epoch milliseconds
         ELSE (extract(epoch from cast(timestamp as text)::timestamptz) * 1000)::bigint 
       END
     );
@@ -116,6 +132,33 @@ create policy "Allow all operations" on messages for all using (true) with check
 
   return (
     <div className="absolute inset-0 z-50 flex flex-col bg-white dark:bg-black overflow-hidden animate-fade-in">
+      
+      {/* User Management Modal */}
+      <GenericModal isOpen={showUserModal} onClose={() => setShowUserModal(false)} title="Manage Users">
+          <div className="max-h-[60vh] overflow-y-auto no-scrollbar space-y-3">
+              {users.map(u => (
+                  <div key={u.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                      <div className="flex items-center gap-3">
+                          <img src={u.avatar} className="w-10 h-10 rounded-full" alt="av" />
+                          <div>
+                              <p className="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-1">
+                                  {u.username}
+                                  {u.isPremium && <Crown className="w-3 h-3 text-yellow-500 fill-yellow-500" />}
+                              </p>
+                              <p className="text-xs text-gray-500">{u.email}</p>
+                          </div>
+                      </div>
+                      <button 
+                         onClick={() => togglePremium(u)}
+                         className={`px-3 py-1.5 rounded-lg text-xs font-bold ${u.isPremium ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}
+                      >
+                          {u.isPremium ? 'Revoke' : 'Grant'}
+                      </button>
+                  </div>
+              ))}
+          </div>
+      </GenericModal>
+
       <div className="flex-none bg-white/90 dark:bg-black/90 border-b border-gray-200 dark:border-gray-800 p-4 flex items-center z-50 shadow-sm">
         <button onClick={() => navigate('/settings')} className="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors relative z-50 cursor-pointer">
           <ArrowLeft className="w-6 h-6 text-gray-900 dark:text-white" />
@@ -125,6 +168,21 @@ create policy "Allow all operations" on messages for all using (true) with check
 
       <main className="flex-1 overflow-y-auto p-4 space-y-8 max-w-md mx-auto w-full no-scrollbar pb-24">
         
+        {/* User Management Card */}
+        <div className="bg-gray-50 dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
+           <div className="flex items-center gap-3 mb-4 text-green-600 dark:text-green-400">
+              <Users className="w-6 h-6" />
+              <h3 className="font-bold text-lg">User Management</h3>
+           </div>
+           <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Reset Premium status or manage accounts.</p>
+           <button 
+             onClick={() => setShowUserModal(true)}
+             className="w-full py-3 bg-white dark:bg-black border border-gray-200 dark:border-gray-700 rounded-xl font-bold text-gray-800 dark:text-white shadow-sm"
+           >
+             Manage Users & Premium
+           </button>
+        </div>
+
         {/* Broadcast */}
         <div className="bg-gray-50 dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
            <div className="flex items-center gap-3 mb-4 text-blue-600 dark:text-blue-400">
@@ -144,27 +202,6 @@ create policy "Allow all operations" on messages for all using (true) with check
            >
              <Send className="w-4 h-4" /> Send to Everyone
            </button>
-        </div>
-
-        {/* Feature Toggles */}
-        <div className="bg-gray-50 dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
-          <h3 className="font-bold text-lg mb-4 text-gray-900 dark:text-white">Main Features</h3>
-          <div className="space-y-4">
-             {['home', 'chat', 'search', 'profile'].map((feat) => (
-                <div key={feat} className="flex items-center justify-between">
-                   <span className="capitalize font-medium text-gray-700 dark:text-gray-300">{feat}</span>
-                   <label className="relative inline-flex items-center cursor-pointer z-10">
-                     <input 
-                        type="checkbox" 
-                        checked={(localConfig.features as any)[feat]} 
-                        onChange={() => handleToggleFeature(feat as any)} 
-                        className="sr-only peer" 
-                     />
-                     <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
-                   </label>
-                </div>
-             ))}
-          </div>
         </div>
         
         {/* Database Schema Generator */}

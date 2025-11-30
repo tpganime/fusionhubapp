@@ -112,7 +112,8 @@ const mapUserFromDB = (dbUser: any): User => {
       isDeactivated: !!dbUser.is_deactivated,
       blockedUsers: Array.isArray(dbUser.blocked_users) ? dbUser.blocked_users : [],
       instagramLink: dbUser.instagram_link,
-      isPremium: !!dbUser.is_premium
+      isPremium: !!dbUser.is_premium,
+      premiumExpiry: dbUser.premium_expiry ? Number(dbUser.premium_expiry) : undefined
     };
   } catch (e) {
     console.error("Error mapping user:", e, dbUser);
@@ -148,7 +149,8 @@ const mapUserToDB = (user: User) => ({
   is_deactivated: user.isDeactivated,
   blocked_users: user.blockedUsers || [],
   instagram_link: user.instagramLink,
-  is_premium: user.isPremium
+  is_premium: user.isPremium,
+  premium_expiry: user.premiumExpiry
 });
 
 const mapMessageFromDB = (dbMsg: any): Message => {
@@ -284,15 +286,27 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const typingTimeoutRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
-  // -- PREMIUM RESTRICTIONS ENFORCEMENT --
+  // -- PREMIUM RESTRICTIONS ENFORCEMENT & EXPIRY CHECK --
   useEffect(() => {
-      if (currentUser && !currentUser.isPremium) {
-          // If animations enabled, force disable
-          if (enableAnimations) setEnableAnimations(false);
-          // If glass opacity not 30%, force 30%
-          if (glassOpacity !== 0.3) setGlassOpacity(0.3);
-          // If speed not balanced, force balanced
-          if (animationSpeed !== 'balanced') setAnimationSpeed('balanced');
+      if (currentUser) {
+          // Check for Expiry
+          if (currentUser.isPremium && currentUser.premiumExpiry) {
+              if (Date.now() > currentUser.premiumExpiry) {
+                  // Expired! Reset.
+                  console.log("Premium Expired. Resetting...");
+                  updateProfile({ ...currentUser, isPremium: false, premiumExpiry: undefined });
+                  return;
+              }
+          }
+
+          if (!currentUser.isPremium) {
+              // If animations enabled, force disable
+              if (enableAnimations) setEnableAnimations(false);
+              // If glass opacity not 30%, force 30%
+              if (glassOpacity !== 0.3) setGlassOpacity(0.3);
+              // If speed not balanced, force balanced
+              if (animationSpeed !== 'balanced') setAnimationSpeed('balanced');
+          }
       }
   }, [currentUser, enableAnimations, glassOpacity, animationSpeed]);
 
@@ -359,8 +373,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   useEffect(() => {
     document.documentElement.style.setProperty('--glass-opacity', glassOpacity.toString());
-    if (glassOpacity <= 0.05) document.documentElement.style.setProperty('--glass-filter', 'none');
-    else document.documentElement.style.setProperty('--glass-filter', 'blur(20px) saturate(180%)');
+    // If opacity is near 0, remove filter to make it perfectly clear
+    if (glassOpacity <= 0.05) {
+        document.documentElement.style.setProperty('--glass-filter', 'none');
+    } else {
+        document.documentElement.style.setProperty('--glass-filter', 'blur(20px) saturate(180%)');
+    }
     localStorage.setItem(STORAGE_KEYS.GLASS_OPACITY, glassOpacity.toString());
   }, [glassOpacity]);
 
@@ -1003,7 +1021,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
           if (currentUserRef.current && updatedUser.id === currentUserRef.current.id) {
              // Sync premium status to current session
-             setCurrentUser(prev => prev ? ({ ...prev, isPremium: updatedUser.isPremium }) : updatedUser);
+             setCurrentUser(prev => prev ? ({ ...prev, isPremium: updatedUser.isPremium, premiumExpiry: updatedUser.premiumExpiry }) : updatedUser);
 
             const oldRequests = currentUserRef.current.requests || [];
             const newRequests = updatedUser.requests || [];

@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Bell, User as UserIcon, Settings, MessageCircle, Shield, Crown } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -28,6 +29,7 @@ export const TopBar: React.FC = () => {
 
   const isOwnerUser = currentUser ? checkIsOwner(currentUser.email) : false;
   const isAdminUser = currentUser ? checkIsAdmin(currentUser.email) : false;
+  const isPremiumUser = currentUser ? !!currentUser.isPremium : false;
 
   return (
     <>
@@ -118,7 +120,7 @@ export const TopBar: React.FC = () => {
              </button>
           ) : (
              <button onClick={() => navigate('/profile')} className="relative group">
-                <div className={`w-10 h-10 rounded-full overflow-hidden border-2 border-white/80 dark:border-white/20 shadow-lg group-hover:scale-105 transition-transform ${enableAnimations ? 'animate-pop-in' : ''}`}>
+                <div className={`w-10 h-10 rounded-full overflow-hidden border-2 border-white/80 dark:border-white/20 shadow-lg group-hover:scale-105 transition-transform ${enableAnimations ? 'animate-pop-in' : ''} ${isPremiumUser ? 'border-yellow-400 ring-2 ring-yellow-400/30' : ''}`}>
                   {currentUser?.avatar ? (
                     <img src={currentUser.avatar} alt="Profile" className="w-full h-full object-cover" />
                   ) : (

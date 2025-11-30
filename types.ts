@@ -28,6 +28,7 @@ export interface User {
   blockedUsers: string[]; // list of IDs this user has blocked
   instagramLink?: string;
   isPremium?: boolean;
+  premiumExpiry?: number; // Timestamp when premium expires
 }
 
 export interface Message {

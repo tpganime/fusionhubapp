@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { ComingSoon } from '../components/ComingSoon';
@@ -149,6 +150,7 @@ export const ProfileScreen: React.FC = () => {
   
   const isAdminUser = !shouldMask && checkIsAdmin(profileUser.email);
   const isOwnerUser = !shouldMask && checkIsOwner(profileUser.email);
+  const isPremiumUser = !shouldMask && !!profileUser.isPremium;
 
   if (profileUser.isDeactivated && !isOwnProfile) {
       return (
@@ -398,6 +400,7 @@ export const ProfileScreen: React.FC = () => {
              )}
              {isOwnerUser && <Crown className="w-4 h-4 text-yellow-500 fill-yellow-500 ml-1 flex-shrink-0" />}
              {isAdminUser && !isOwnerUser && <ShieldCheck className="w-4 h-4 text-blue-500 ml-1 flex-shrink-0" />}
+             {isPremiumUser && !isOwnerUser && !isAdminUser && <Crown className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500 ml-1 flex-shrink-0" />}
           </div>
           <div className="flex items-center gap-4">
               {isOwnProfile ? (
@@ -421,7 +424,7 @@ export const ProfileScreen: React.FC = () => {
              <div className={`p-5 liquid-card flex items-center gap-5 ${enableAnimations ? 'animate-slide-up-fade' : ''}`}>
                 <div className="relative flex-shrink-0">
                    <div 
-                     className="w-20 h-20 rounded-full p-[2px] bg-gradient-to-tr from-blue-400 to-purple-500 cursor-pointer shadow-lg active:scale-95 transition-transform"
+                     className={`w-20 h-20 rounded-full p-[2px] cursor-pointer shadow-lg active:scale-95 transition-transform ${isPremiumUser ? 'bg-gradient-to-tr from-yellow-300 to-orange-500' : 'bg-gradient-to-tr from-blue-400 to-purple-500'}`}
                      onClick={() => !isEditing && !shouldMask && setShowFullAvatar(true)}
                    >
                       <img src={displayAvatar} alt="avatar" className="w-full h-full rounded-full object-cover border-2 border-white dark:border-black" />
@@ -436,8 +439,9 @@ export const ProfileScreen: React.FC = () => {
 
                 <div className="flex-1 min-w-0 space-y-1">
                    <div>
-                       <h2 className="text-xl font-bold text-gray-900 dark:text-white truncate leading-tight">
+                       <h2 className="text-xl font-bold text-gray-900 dark:text-white truncate leading-tight flex items-center gap-1">
                            {displayName}
+                           {isPremiumUser && !isAdminUser && <Crown className="w-4 h-4 text-yellow-500 fill-yellow-500" />}
                        </h2>
                        <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
                           {isAdminUser ? (isOwnerUser ? "Owner" : "Administrator") : "Member"}

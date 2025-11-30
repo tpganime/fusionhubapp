@@ -71,7 +71,7 @@ export const SearchScreen: React.FC = () => {
               <div 
                 key={user.id} 
                 onClick={() => navigate(`/user/${user.id}`)}
-                className={`liquid-card p-4 flex items-center justify-between transition-all hover:bg-white/40 dark:hover:bg-white/10 cursor-pointer group hover:scale-[1.02] transform-gpu will-change-transform ${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`}
+                className={`relative z-0 liquid-card p-4 flex items-center justify-between transition-all hover:bg-white/40 dark:hover:bg-white/10 cursor-pointer group hover:scale-[1.01] active:scale-[0.99] transform-gpu will-change-transform ${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`}
                 style={{ animationDelay: `${200 + (index * 60)}ms`, animationFillMode: 'both' }}
               >
                 <div className="flex items-center space-x-4">
@@ -103,7 +103,7 @@ export const SearchScreen: React.FC = () => {
                   {canMessage && (
                     <button
                       onClick={(e) => handleMessage(e, user)}
-                      className="p-2.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-colors border border-blue-500/20 active:scale-95"
+                      className="relative z-10 p-2.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-colors border border-blue-500/20 active:scale-95"
                     >
                       <MessageCircle className="w-5 h-5" />
                     </button>
@@ -114,7 +114,7 @@ export const SearchScreen: React.FC = () => {
                   ) : (
                     <button 
                       onClick={(e) => handleRequest(e, user.id)}
-                      className={`p-2.5 rounded-full transition-colors border active:scale-95 ${requested ? 'bg-orange-100 dark:bg-orange-900/20 text-orange-500 border-orange-200' : 'bg-gray-100/50 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-white/50 border-gray-200 dark:border-gray-700'}`}
+                      className={`relative z-10 p-2.5 rounded-full transition-colors border active:scale-95 ${requested ? 'bg-orange-100 dark:bg-orange-900/20 text-orange-500 border-orange-200' : 'bg-gray-100/50 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-white/50 border-gray-200 dark:border-gray-700'}`}
                       title={requested ? "Resend Request" : "Add Friend"}
                     >
                       {requested ? <RotateCw className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}

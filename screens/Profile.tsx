@@ -112,7 +112,10 @@ export const ProfileScreen: React.FC = () => {
   if (!profileUser) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-500">
-        User not found
+        <div className="text-center">
+            <h2 className="text-xl font-bold">User not found</h2>
+            <button onClick={() => navigate('/home')} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg">Go Home</button>
+        </div>
       </div>
     );
   }
@@ -187,6 +190,14 @@ export const ProfileScreen: React.FC = () => {
 
   const startChat = () => {
       navigate(`/chat?uid=${profileUser.id}`);
+  };
+
+  const handleBack = () => {
+      if (window.history.state && window.history.state.idx > 0) {
+        navigate(-1);
+      } else {
+        navigate('/home');
+      }
   };
 
   const isFriend = currentUser?.friends.includes(profileUser.id);
@@ -289,7 +300,7 @@ export const ProfileScreen: React.FC = () => {
                  </>
              ) : (
                  <>
-                     <button onClick={() => navigate(-1)} className="mr-3 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-white/10"><ArrowLeft className="w-6 h-6 text-gray-900 dark:text-white" /></button>
+                     <button onClick={handleBack} className="mr-2 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 active:scale-95 transition-transform"><ArrowLeft className="w-6 h-6 text-gray-900 dark:text-white" /></button>
                      <h1 className="text-lg font-bold text-gray-900 dark:text-white">{profileUser.username}</h1>
                  </>
              )}
@@ -309,7 +320,7 @@ export const ProfileScreen: React.FC = () => {
                 {/* Avatar Left */}
                 <div className="relative flex-shrink-0">
                    <div 
-                     className="w-20 h-20 rounded-full p-[2px] bg-gradient-to-tr from-blue-400 to-purple-500 cursor-pointer shadow-lg"
+                     className="w-20 h-20 rounded-full p-[2px] bg-gradient-to-tr from-blue-400 to-purple-500 cursor-pointer shadow-lg active:scale-95 transition-transform"
                      onClick={() => !isEditing && setShowFullAvatar(true)}
                    >
                       <img src={displayAvatar} alt="avatar" className="w-full h-full rounded-full object-cover border-2 border-white dark:border-black" />
@@ -407,13 +418,13 @@ export const ProfileScreen: React.FC = () => {
                 ) : (
                     <>
                        {isFriend ? (
-                          <button onClick={handleUnfriend} className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-sm hover:bg-red-50 dark:hover:bg-red-900/10 hover:text-red-600 flex items-center justify-center gap-2">
+                          <button onClick={handleUnfriend} className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-sm hover:bg-red-50 dark:hover:bg-red-900/10 hover:text-red-600 flex items-center justify-center gap-2 active:scale-95">
                               <UserMinus className="w-4 h-4" /> Following
                           </button>
                        ) : (
-                          <button onClick={() => sendFriendRequest(profileUser.id)} disabled={isRequested} className={`flex-1 py-3 rounded-xl font-bold text-sm text-white shadow-lg ${isRequested ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}>{isRequested ? 'Requested' : 'Follow'}</button>
+                          <button onClick={() => sendFriendRequest(profileUser.id)} disabled={isRequested} className={`flex-1 py-3 rounded-xl font-bold text-sm text-white shadow-lg active:scale-95 ${isRequested ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}>{isRequested ? 'Requested' : 'Follow'}</button>
                        )}
-                       <button onClick={startChat} disabled={(!canViewDetails && !profileUser.allowPrivateChat)} className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">Message</button>
+                       <button onClick={startChat} disabled={(!canViewDetails && !profileUser.allowPrivateChat)} className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors active:scale-95 disabled:opacity-50">Message</button>
                     </>
                 )}
                 <button onClick={handleShare} className="p-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors active:scale-95"><Share2 className="w-5 h-5" /></button>

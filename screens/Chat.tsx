@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
 import { ComingSoon } from '../components/ComingSoon';
 import { User } from '../types';
-import { Send, ArrowLeft, CheckCheck, ShieldCheck, Crown } from 'lucide-react';
+import { Send, ArrowLeft, CheckCheck, ShieldCheck, Crown, Info } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { BROADCAST_ID } from '../constants';
 
@@ -36,9 +36,10 @@ export const ChatScreen: React.FC = () => {
 
   const setSelectedUser = (user: User | null) => {
     if (user) {
-        setSearchParams({ uid: user.id });
+        // Use navigate to push to history, simpler than setSearchParams for some routers
+        navigate(`/chat?uid=${user.id}`);
     } else {
-        setSearchParams({});
+        navigate('/chat');
     }
   };
 
@@ -66,7 +67,10 @@ export const ChatScreen: React.FC = () => {
 
   useEffect(() => {
     if (conversation.length > 0) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      // Small timeout to ensure rendering is complete before scrolling
+      setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
     }
   }, [conversation.length, selectedUser?.id]);
 
@@ -86,19 +90,24 @@ export const ChatScreen: React.FC = () => {
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (inputText.trim() && selectedUser) {
-      const text = inputText;
-      setInputText(''); // Clear immediately for better UX
-      try {
-        await sendMessage(selectedUser.id, text);
-      } catch (error) {
-        console.error("Failed to send message", error);
-        setInputText(text); // Restore text on failure
-      }
+    if (!selectedUser) return;
+    
+    const text = inputText.trim();
+    if (!text) return;
+
+    setInputText(''); // Clear immediately for better UX
+    
+    try {
+      await sendMessage(selectedUser.id, text);
+    } catch (error) {
+      console.error("Failed to send message", error);
+      setInputText(text); // Restore text on failure
+      alert("Failed to send message. Please try again.");
     }
   };
 
   const handleProfileClick = (e: React.MouseEvent, userId?: string) => {
+    e.preventDefault();
     e.stopPropagation(); // Prevent any bubbling
     const targetId = userId || selectedUser?.id;
     if (targetId) {
@@ -116,7 +125,8 @@ export const ChatScreen: React.FC = () => {
           <div className="space-y-3">
             {chatUsers.length === 0 ? (
               <div className={`text-center py-10 opacity-50 ${enableAnimations ? 'animate-fade-in' : ''}`}>
-                <p>No active chats.</p>
+                <p className="text-gray-500">No active chats.</p>
+                <button onClick={() => navigate('/search')} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-bold">Start a chat</button>
               </div>
             ) : (
               chatUsers.map((user, index) => {
@@ -130,22 +140,21 @@ export const ChatScreen: React.FC = () => {
                 return (
                   <div
                     key={user.id}
-                    className={`w-full flex items-center p-4 liquid-card hover:bg-white/40 dark:hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-95 transform-gpu will-change-transform ${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`}
+                    className={`relative w-full flex items-center p-4 liquid-card hover:bg-white/40 dark:hover:bg-white/10 transition-all hover:scale-[1.01] active:scale-[0.98] transform-gpu will-change-transform ${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`}
                     style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'both' }}
+                    onClick={() => setSelectedUser(user)}
                   >
                     <button 
                         onClick={(e) => handleProfileClick(e, user.id)}
-                        className="relative flex-shrink-0 z-10"
+                        className="relative flex-shrink-0 z-20 cursor-pointer"
+                        style={{ pointerEvents: 'auto' }}
                     >
                       <img src={user.avatar} alt={user.username} className={`w-14 h-14 rounded-full object-cover border-2 ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-white/50'}`} />
                       {hasUnread && <span className="absolute top-0 right-0 w-4 h-4 bg-blue-500 rounded-full border-2 border-white animate-pulse"></span>}
                       {isOnline && !hasUnread && <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white dark:border-gray-800 shadow-sm animate-pulse-slow"></span>}
                     </button>
                     
-                    <button 
-                        onClick={() => setSelectedUser(user)}
-                        className="ml-4 text-left flex-1 min-w-0 h-full flex flex-col justify-center"
-                    >
+                    <div className="ml-4 flex-1 min-w-0 flex flex-col justify-center">
                       <div className="flex justify-between items-center mb-1">
                         <h3 className={`font-bold text-lg truncate flex items-center gap-1 ${hasUnread ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>
                             {user.name || user.username}
@@ -156,7 +165,7 @@ export const ChatScreen: React.FC = () => {
                       <p className={`text-sm truncate ${hasUnread ? 'font-bold text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
                         {lastMsg ? (lastMsg.senderId === currentUser?.id ? `You: ${lastMsg.content}` : lastMsg.content) : 'Tap to chat'}
                       </p>
-                    </button>
+                    </div>
                   </div>
                 );
               })
@@ -173,39 +182,43 @@ export const ChatScreen: React.FC = () => {
 
   return (
     <div className={`h-full flex flex-col no-scrollbar gpu-accelerated ${enableAnimations ? 'animate-fade-in' : ''}`} style={{ perspective: 'none', transformStyle: 'flat' }}>
-      {/* Liquid Header */}
-      <div className="fixed top-4 left-4 right-4 h-16 glass-panel px-4 flex items-center z-40 justify-between">
-        <div className="flex items-center gap-2 w-full">
-            <button 
-                onClick={() => setSelectedUser(null)} 
-                className="p-2 rounded-full hover:bg-white/20 transition-colors text-gray-800 dark:text-white flex items-center justify-center"
-            >
-                <ArrowLeft className="w-6 h-6" />
-            </button>
-            
-            <button 
-                onClick={(e) => handleProfileClick(e)}
-                className="flex items-center gap-3 hover:bg-white/20 dark:hover:bg-white/10 p-1.5 pr-4 rounded-full transition-all flex-1"
-            >
-                <div className={`relative flex-shrink-0 ${enableAnimations ? 'animate-pop-in' : ''}`}>
-                    <img src={selectedUser.avatar} alt="avatar" className={`w-10 h-10 rounded-full object-cover border ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-white/50'}`} />
-                    {isSelectedUserOnline && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border border-white dark:border-gray-800 shadow-sm animate-pulse"></span>}
-                </div>
-                <div className={`flex flex-col items-start min-w-0 ${enableAnimations ? 'animate-slide-up' : ''}`}>
-                    <span className="font-bold text-gray-900 dark:text-white text-sm flex items-center gap-1 truncate w-full">
-                        {selectedUser.name || selectedUser.username}
-                        {isOwnerUser ? <Crown className="w-3 h-3 text-yellow-500 fill-yellow-500 flex-shrink-0" /> : isAdminUser ? <ShieldCheck className="w-3 h-3 text-blue-500 flex-shrink-0" /> : null}
-                    </span>
-                    <span className={`text-[10px] font-bold ${isSelectedUserOnline ? 'text-green-500' : 'text-gray-400'}`}>
-                        {isSelectedUserOnline ? 'Online' : formatLastSeen(selectedUser.lastSeen)}
-                    </span>
-                </div>
-            </button>
-        </div>
+      
+      {/* Fixed Header */}
+      <div className="fixed top-0 left-0 right-0 z-50 px-4 pt-4 pb-2 bg-gradient-to-b from-gray-50/95 to-gray-50/0 dark:from-black/95 dark:to-black/0 pointer-events-none">
+          <div className="h-16 glass-panel px-4 flex items-center justify-between shadow-lg pointer-events-auto">
+            <div className="flex items-center gap-2 w-full">
+                <button 
+                    onClick={() => setSelectedUser(null)} 
+                    className="p-2 -ml-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-gray-800 dark:text-white flex items-center justify-center active:scale-95"
+                >
+                    <ArrowLeft className="w-6 h-6" />
+                </button>
+                
+                <button 
+                    onClick={(e) => handleProfileClick(e)}
+                    className="flex items-center gap-3 hover:bg-black/5 dark:hover:bg-white/10 p-1.5 pr-4 rounded-full transition-all flex-1 min-w-0 active:scale-95 text-left"
+                >
+                    <div className={`relative flex-shrink-0 ${enableAnimations ? 'animate-pop-in' : ''}`}>
+                        <img src={selectedUser.avatar} alt="avatar" className={`w-10 h-10 rounded-full object-cover border ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-white/50'}`} />
+                        {isSelectedUserOnline && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border border-white dark:border-gray-800 shadow-sm animate-pulse"></span>}
+                    </div>
+                    <div className={`flex flex-col items-start min-w-0 flex-1 ${enableAnimations ? 'animate-slide-up' : ''}`}>
+                        <span className="font-bold text-gray-900 dark:text-white text-sm flex items-center gap-1 truncate w-full">
+                            {selectedUser.name || selectedUser.username}
+                            {isOwnerUser ? <Crown className="w-3 h-3 text-yellow-500 fill-yellow-500 flex-shrink-0" /> : isAdminUser ? <ShieldCheck className="w-3 h-3 text-blue-500 flex-shrink-0" /> : null}
+                        </span>
+                        <span className={`text-[10px] font-bold ${isSelectedUserOnline ? 'text-green-500' : 'text-gray-400'}`}>
+                            {isSelectedUserOnline ? 'Online' : formatLastSeen(selectedUser.lastSeen)}
+                        </span>
+                    </div>
+                    <Info className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                </button>
+            </div>
+          </div>
       </div>
 
-      {/* Message List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2 pb-44 pt-24 no-scrollbar">
+      {/* Message List Area */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-2 pb-32 pt-24 no-scrollbar">
         {conversation.length === 0 ? (
            <div className={`text-center mt-20 opacity-50 ${enableAnimations ? 'animate-pop-in' : ''}`}>
              <div className="w-20 h-20 bg-white/30 rounded-full mx-auto mb-3 flex items-center justify-center text-3xl">👋</div>
@@ -222,17 +235,17 @@ export const ChatScreen: React.FC = () => {
                   className={`flex ${isMe ? 'justify-end' : 'justify-start'} transform-gpu will-change-transform ${shouldAnimate ? 'animate-slide-up-fade opacity-0' : ''}`} 
                   style={{ animationDelay: shouldAnimate ? `${(idx - (conversation.length - 10)) * 50}ms` : '0s', animationFillMode: 'both' }}
                 >
-                 <div className={`max-w-[80%] px-5 py-3 text-sm backdrop-blur-md shadow-sm border ${
+                 <div className={`max-w-[80%] px-4 py-2 text-sm shadow-sm border ${
                    isMe 
-                     ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-[1.5rem] rounded-br-sm border-transparent' 
-                     : 'bg-white/60 dark:bg-white/10 text-gray-800 dark:text-gray-200 rounded-[1.5rem] rounded-bl-sm border-white/40 dark:border-white/10'
+                     ? 'bg-blue-600 text-white rounded-[1.2rem] rounded-br-sm border-transparent' 
+                     : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-[1.2rem] rounded-bl-sm border-gray-100 dark:border-gray-700'
                  }`}>
                    {msg.content}
-                   <div className={`text-[9px] mt-1 flex items-center justify-end gap-1 ${isMe ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'}`}>
+                   <div className={`text-[9px] mt-1 flex items-center justify-end gap-1 ${isMe ? 'text-blue-200' : 'text-gray-400'}`}>
                      <span>{new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                      {isMe && (
                        <span title={msg.read ? "Read" : "Delivered"}>
-                           <CheckCheck size={14} className={msg.read ? "text-green-300" : "text-blue-200"} />
+                           <CheckCheck size={14} className={msg.read ? "text-green-300" : "text-blue-300/70"} />
                        </span>
                      )}
                    </div>
@@ -245,10 +258,10 @@ export const ChatScreen: React.FC = () => {
       </div>
 
       {/* Input Area */}
-      <div className={`fixed bottom-[6.5rem] left-0 right-0 px-4 z-[100] pointer-events-none ${enableAnimations ? 'animate-slide-up' : ''}`}>
+      <div className={`fixed bottom-24 left-0 right-0 px-4 z-40 ${enableAnimations ? 'animate-slide-up' : ''}`}>
         <form 
           onSubmit={handleSend} 
-          className="pointer-events-auto flex items-center gap-2 p-1.5 shadow-2xl sm:max-w-md sm:mx-auto bg-white/40 dark:bg-black/40 backdrop-blur-xl border border-white/30 dark:border-white/10 rounded-[2rem] w-full"
+          className="flex items-center gap-2 p-1.5 shadow-xl sm:max-w-md sm:mx-auto bg-white/80 dark:bg-black/60 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-[2rem] w-full"
         >
           <input
             type="text"
@@ -261,7 +274,7 @@ export const ChatScreen: React.FC = () => {
           <button 
             type="submit" 
             disabled={!inputText.trim()} 
-            className="p-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full text-white shadow-lg disabled:opacity-50 transition-all hover:scale-110 active:scale-95 flex-shrink-0 flex items-center justify-center"
+            className="p-3 bg-blue-600 rounded-full text-white shadow-lg disabled:opacity-50 transition-all hover:scale-110 active:scale-95 flex-shrink-0 flex items-center justify-center"
           >
             <Send className="w-5 h-5 ml-0.5" />
           </button>

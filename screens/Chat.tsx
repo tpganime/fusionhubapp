@@ -1,11 +1,11 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
 import { ComingSoon } from '../components/ComingSoon';
 import { User } from '../types';
 import { Send, ArrowLeft, CheckCheck, ShieldCheck, Crown } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { BROADCAST_ID } from '../constants';
 
 const formatLastSeen = (dateString?: string) => {
@@ -23,18 +23,24 @@ const formatLastSeen = (dateString?: string) => {
 
 export const ChatScreen: React.FC = () => {
   const { currentUser, users, messages, sendMessage, markConversationAsRead, enableAnimations, checkIsAdmin, checkIsOwner, checkIsOnline, appConfig } = useApp();
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  useEffect(() => {
-    if (location.state?.targetUser) {
-      setSelectedUser(location.state.targetUser);
-      window.history.replaceState({}, document.title);
+  // Derive selected user from URL query param 'uid'
+  const uid = searchParams.get('uid');
+  const selectedUser = useMemo(() => {
+    return users.find(u => u.id === uid) || null;
+  }, [users, uid]);
+
+  const setSelectedUser = (user: User | null) => {
+    if (user) {
+        setSearchParams({ uid: user.id });
+    } else {
+        setSearchParams({});
     }
-  }, [location.state]);
+  };
 
   if (!appConfig.features.chat) {
     return <ComingSoon title="Chat" />;
@@ -78,11 +84,19 @@ export const ChatScreen: React.FC = () => {
     }
   }, [selectedUser, messages, currentUser, markConversationAsRead]);
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (inputText.trim() && selectedUser) {
-      sendMessage(selectedUser.id, inputText);
-      setInputText('');
+      const text = inputText;
+      setInputText(''); // Clear immediately for better UX
+      await sendMessage(selectedUser.id, text);
+    }
+  };
+
+  const handleProfileClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent any bubbling
+    if (selectedUser) {
+        navigate(`/user/${selectedUser.id}`);
     }
   };
 
@@ -149,27 +163,31 @@ export const ChatScreen: React.FC = () => {
     <div className={`h-full flex flex-col no-scrollbar gpu-accelerated ${enableAnimations ? 'animate-fade-in' : ''}`} style={{ perspective: 'none', transformStyle: 'flat' }}>
       {/* Liquid Header */}
       <div className="fixed top-4 left-4 right-4 h-16 glass-panel px-4 flex items-center z-40 justify-between">
-        <div className="flex items-center gap-3">
-            <button onClick={() => setSelectedUser(null)} className="p-2 -ml-2 rounded-full hover:bg-white/20 transition-colors text-gray-800 dark:text-white">
-            <ArrowLeft className="w-6 h-6" />
-            </button>
+        <div className="flex items-center gap-2 w-full">
             <button 
-            onClick={() => navigate(`/user/${selectedUser.id}`)}
-            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+                onClick={() => setSelectedUser(null)} 
+                className="p-2 -ml-2 rounded-full hover:bg-white/20 transition-colors text-gray-800 dark:text-white"
             >
-            <div className={`relative ${enableAnimations ? 'animate-pop-in' : ''}`}>
-                <img src={selectedUser.avatar} alt="avatar" className={`w-10 h-10 rounded-full object-cover border ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-white/50'}`} />
-                {isSelectedUserOnline && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border border-white dark:border-gray-800 shadow-sm animate-pulse"></span>}
-            </div>
-            <div className={`flex flex-col items-start ${enableAnimations ? 'animate-slide-up' : ''}`}>
-                <span className="font-bold text-gray-900 dark:text-white text-sm flex items-center gap-1">
-                    {selectedUser.name || selectedUser.username}
-                    {isOwnerUser ? <Crown className="w-3 h-3 text-yellow-500 fill-yellow-500" /> : isAdminUser ? <ShieldCheck className="w-3 h-3 text-blue-500" /> : null}
-                </span>
-                <span className={`text-[10px] font-bold ${isSelectedUserOnline ? 'text-green-500' : 'text-gray-400'}`}>
-                    {isSelectedUserOnline ? 'Online' : formatLastSeen(selectedUser.lastSeen)}
-                </span>
-            </div>
+                <ArrowLeft className="w-6 h-6" />
+            </button>
+            
+            <button 
+                onClick={handleProfileClick}
+                className="flex items-center gap-3 hover:bg-white/20 dark:hover:bg-white/10 p-1.5 pr-4 rounded-full transition-all flex-1"
+            >
+                <div className={`relative ${enableAnimations ? 'animate-pop-in' : ''}`}>
+                    <img src={selectedUser.avatar} alt="avatar" className={`w-10 h-10 rounded-full object-cover border ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-white/50'}`} />
+                    {isSelectedUserOnline && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border border-white dark:border-gray-800 shadow-sm animate-pulse"></span>}
+                </div>
+                <div className={`flex flex-col items-start ${enableAnimations ? 'animate-slide-up' : ''}`}>
+                    <span className="font-bold text-gray-900 dark:text-white text-sm flex items-center gap-1">
+                        {selectedUser.name || selectedUser.username}
+                        {isOwnerUser ? <Crown className="w-3 h-3 text-yellow-500 fill-yellow-500" /> : isAdminUser ? <ShieldCheck className="w-3 h-3 text-blue-500" /> : null}
+                    </span>
+                    <span className={`text-[10px] font-bold ${isSelectedUserOnline ? 'text-green-500' : 'text-gray-400'}`}>
+                        {isSelectedUserOnline ? 'Online' : formatLastSeen(selectedUser.lastSeen)}
+                    </span>
+                </div>
             </button>
         </div>
       </div>
@@ -231,7 +249,7 @@ export const ChatScreen: React.FC = () => {
           <button 
             type="submit" 
             disabled={!inputText.trim()} 
-            className="p-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full text-white shadow-lg disabled:opacity-50 transition-all hover:scale-110 active:scale-95"
+            className="p-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full text-white shadow-lg disabled:opacity-50 transition-all hover:scale-110 active:scale-95 flex-shrink-0"
           >
             <Send className="w-5 h-5 ml-0.5" />
           </button>

@@ -186,7 +186,8 @@ export const ProfileScreen: React.FC = () => {
   };
 
   const startChat = () => {
-      navigate('/chat', { state: { targetUser: profileUser } });
+      // Use query param for persistence
+      navigate(`/chat?uid=${profileUser.id}`);
   };
 
   const isFriend = currentUser?.friends.includes(profileUser.id);

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Bell, User as UserIcon, Settings, MessageCircle, Shield, Crown } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -19,7 +20,7 @@ export const TopBar: React.FC = () => {
 
   const handleNotificationClick = (n: Notification) => {
     if (n.type === 'message' && n.data?.targetUser) {
-      navigate('/chat', { state: { targetUser: n.data.targetUser } });
+      navigate(`/chat?uid=${n.data.targetUser.id}`);
       setShowNotifs(false);
       markNotificationRead(n.id);
     }

@@ -33,7 +33,7 @@ export const SearchScreen: React.FC = () => {
 
   const handleMessage = (e: React.MouseEvent, user: any) => {
     e.stopPropagation();
-    navigate('/chat', { state: { targetUser: user } });
+    navigate(`/chat?uid=${user.id}`);
   };
 
   return (

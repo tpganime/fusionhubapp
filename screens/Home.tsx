@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { HOME_SHORTCUTS } from '../constants';
@@ -80,8 +81,11 @@ export const HomeScreen: React.FC = () => {
             </div>
         )}
 
-        {/* Greeting Liquid Card - Refined Motion */}
-        <div className={`relative overflow-hidden liquid-card p-6 mb-6 transform-gpu hover:scale-[1.02] hover:shadow-2xl transition-all duration-700 ${enableAnimations ? 'animate-scale-in' : ''}`}>
+        {/* Greeting Liquid Card - 3D Tilted & Refined Motion */}
+        <div 
+          className={`relative overflow-hidden liquid-card p-6 mb-6 transform-gpu hover:scale-[1.02] hover:shadow-2xl transition-all duration-700 ${enableAnimations ? 'animate-scale-in' : ''}`}
+          style={{ transform: 'rotateX(5deg) translateZ(0)' }} 
+        >
            {/* Fluid background effect */}
            <div className="absolute -top-20 -right-20 w-64 h-64 bg-gradient-to-br from-purple-300 to-blue-300 dark:from-purple-900/60 dark:to-blue-900/60 rounded-full blur-[80px] opacity-70 pointer-events-none animate-blob"></div>
            <div 
@@ -89,7 +93,7 @@ export const HomeScreen: React.FC = () => {
              style={{ animationDelay: '4s', animationDuration: '18s' }}
            ></div>
 
-           <div className="relative z-10">
+           <div className="relative z-10" style={{ transform: 'translateZ(20px)' }}>
              <h2 className={`text-sm font-medium text-gray-600 dark:text-gray-300 ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`} style={getDelay(0, 100)}>
                {timeData.greeting},
              </h2>

@@ -49,15 +49,15 @@
                 "100%": { opacity: "1" },
               },
               slideUp: {
-                "0%": { opacity: "0", transform: "perspective(1200px) rotateX(10deg) translate3d(0, 40px, 0) scale(0.95)" },
+                "0%": { opacity: "0", transform: "perspective(1200px) rotateX(15deg) translate3d(0, 40px, 20px) scale(0.9)" },
                 "100%": { opacity: "1", transform: "perspective(1200px) rotateX(0) translate3d(0, 0, 0) scale(1)" },
               },
               slideDown: {
-                 "0%": { opacity: "0", transform: "perspective(1200px) rotateX(-10deg) translate3d(0, -40px, 0) scale(0.95)" },
+                 "0%": { opacity: "0", transform: "perspective(1200px) rotateX(-15deg) translate3d(0, -40px, 20px) scale(0.9)" },
                  "100%": { opacity: "1", transform: "perspective(1200px) rotateX(0) translate3d(0, 0, 0) scale(1)" },
               },
               slideUpFade: {
-                "0%": { opacity: "0", transform: "perspective(1200px) rotateX(5deg) translate3d(0, 60px, 0) scale(0.98)" },
+                "0%": { opacity: "0", transform: "perspective(1200px) rotateX(10deg) translate3d(0, 60px, 0) scale(0.95)" },
                 "100%": { opacity: "1", transform: "perspective(1200px) rotateX(0) translate3d(0, 0, 0) scale(1)" },
               },
               scaleIn: {
@@ -227,11 +227,10 @@
 
       /* LIQUID TOGGLE SWITCH */
       .liquid-toggle {
-        --transition: 0.4s; /* Smoother color transition */
+        --transition: 0.6s; /* Smoother color transition */
         --ease: cubic-bezier(0.34, 1.56, 0.64, 1);
         --unchecked: #cbd5e1;
         --active-color: #22c55e;
-        /* Default mix */
         --checked: color-mix(in srgb, var(--active-color) calc(var(--complete) * 1%), var(--unchecked));
         --border: 3px; 
         --width: 52;   
@@ -248,21 +247,22 @@
         background: #0000;
         outline-offset: 2px;
         -webkit-tap-highlight-color: transparent;
+        transition: --complete 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
       }
 
-      /* Force color state based on aria-pressed for robustness */
+      /* Fallbacks for robust color state */
       .liquid-toggle[aria-pressed="false"] .indicator,
       .liquid-toggle[aria-pressed="false"] .indicator--masked,
       .liquid-toggle[aria-pressed="false"] .liquid__track {
          background: var(--unchecked);
-         transition: background 0.4s var(--ease);
+         transition: background 0.6s var(--ease);
       }
       
       .liquid-toggle[aria-pressed="true"] .indicator,
       .liquid-toggle[aria-pressed="true"] .indicator--masked,
       .liquid-toggle[aria-pressed="true"] .liquid__track {
          background: var(--active-color);
-         transition: background 0.4s var(--ease);
+         transition: background 0.6s var(--ease);
       }
 
       .liquid-toggle .knockout {
@@ -393,8 +393,8 @@
         position: absolute;
         top: 50%;
         transform: translate(-50%, -50%);
-        width: 28px; 
-        height: 20px;
+        width: 32px; 
+        height: 24px;
         border-radius: 999px;
         cursor: pointer;
         z-index: 2;
@@ -451,10 +451,7 @@
 </head>
   <body>
     <div id="root"></div>
-    
-    <!-- SVG Filters for Liquid Effects -->
     <svg width="0" height="0" class="sr-only" style="position:absolute;">
-        <!-- Liquid Slider Filter -->
         <filter id="mini-liquid-lens" x="-50%" y="-50%" width="200%" height="200%">
           <feImage x="0" y="0" result="normalMap" xlink:href="data:image/svg+xml;utf8,
           <svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'>
@@ -467,15 +464,11 @@
           <feDisplacementMap in="SourceGraphic" in2="normalMap" scale="-25" xChannelSelector="R" yChannelSelector="G" result="displaced" />
           <feMerge><feMergeNode in="displaced" /></feMerge>
         </filter>
-
-        <!-- Liquid Toggle Goo Filter -->
         <filter id="goo">
           <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur" />
           <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 16 -10" result="goo" />
           <feComposite in="SourceGraphic" in2="goo" operator="atop" />
         </filter>
-
-        <!-- Knockout Filter -->
         <filter id="knockout" colorInterpolationFilters="sRGB">
           <feColorMatrix result="knocked" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  -1 -1 -1 1 0" />
           <feComponentTransfer>
@@ -484,15 +477,12 @@
             <feFuncB type="linear" slope="3" intercept="-1" />
           </feComponentTransfer>
         </filter>
-
-        <!-- Remove Black Filter -->
         <filter id="remove-black" color-interpolation-filters="sRGB">
           <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  -255 -255 -255 0 1" result="black-pixels" />
           <feMorphology in="black-pixels" operator="dilate" radius="0.5" result="smoothed" />
           <feComposite in="SourceGraphic" in2="smoothed" operator="out" />
         </filter>
     </svg>
-
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>

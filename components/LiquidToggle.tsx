@@ -28,10 +28,7 @@ export const LiquidToggle: React.FC<LiquidToggleProps> = ({ checked, onChange })
       onClick={onChange}
       aria-pressed={checked}
       style={{ 
-        '--complete': checked ? 100 : 0,
-        // Inline transition ensures the variable animates smoothly without GSAP
-        // Using a spring-like cubic-bezier for the snap effect
-        transition: '--complete 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)' 
+        '--complete': checked ? 100 : 0
       } as React.CSSProperties}
     >
         <div className="knockout">

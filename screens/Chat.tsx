@@ -169,7 +169,7 @@ export const ChatScreen: React.FC = () => {
                 return (
                   <div
                     key={user.id}
-                    className={`relative w-full flex items-center p-4 liquid-card hover:bg-white/40 dark:hover:bg-white/10 transition-all active:scale-[0.98] ${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`}
+                    className={`relative w-full flex items-center p-4 bg-white dark:bg-white/5 rounded-3xl shadow-sm border border-transparent dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/10 transition-all active:scale-[0.98] ${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`}
                     style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'both' }}
                     onClick={() => setSelectedUser(user)}
                   >
@@ -207,7 +207,6 @@ export const ChatScreen: React.FC = () => {
   }
 
   // ---------------- VIEW: ACTIVE CONVERSATION ----------------
-  // Privacy / Blocking Check
   const isBlocked = currentUser?.blockedUsers.includes(selectedUser.id);
   const isBlockedBy = selectedUser.blockedUsers.includes(currentUser?.id || '');
   const shouldMask = isBlocked || isBlockedBy;
@@ -232,48 +231,46 @@ export const ChatScreen: React.FC = () => {
   }
 
   return (
-    <div className={`flex flex-col h-full bg-transparent ${enableAnimations ? 'animate-fade-in' : ''}`}>
+    <div className={`absolute inset-0 z-50 flex flex-col bg-white dark:bg-black ${enableAnimations ? 'animate-fade-in' : ''}`}>
       
       {/* Sticky Header */}
-      <div className="flex-none z-50 px-4 pt-4 pb-2 bg-gradient-to-b from-gray-50/95 to-gray-50/0 dark:from-black/95 dark:to-black/0">
-          <div className="h-16 glass-panel px-4 flex items-center justify-between shadow-lg">
-            <div className="flex items-center gap-2 w-full">
-                <button 
-                    onClick={() => setSelectedUser(null)} 
-                    className="p-2 -ml-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-gray-800 dark:text-white flex items-center justify-center active:scale-95"
-                >
-                    <ArrowLeft className="w-6 h-6" />
-                </button>
-                
-                {/* Header Profile Info */}
-                <button 
-                    onClick={(e) => handleProfileClick(e)}
-                    className="flex items-center gap-3 hover:bg-black/5 dark:hover:bg-white/10 p-1.5 pr-4 rounded-full transition-all flex-1 min-w-0 active:scale-95 text-left"
-                >
-                    <div className={`relative flex-shrink-0 ${enableAnimations ? 'animate-pop-in' : ''}`}>
-                        <img src={displayAvatar} alt="avatar" className={`w-10 h-10 rounded-full object-cover border ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-white/50'}`} />
-                        {isSelectedUserOnline && !isDeactivated && !isDisabled && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border border-white dark:border-gray-800 shadow-sm animate-pulse"></span>}
-                    </div>
-                    <div className={`flex flex-col items-start min-w-0 flex-1 ${enableAnimations ? 'animate-slide-up' : ''}`}>
-                        <span className="font-bold text-gray-900 dark:text-white text-sm flex items-center gap-1 truncate w-full">
-                            {displayName}
-                            {isOwnerUser ? <Crown className="w-3 h-3 text-yellow-500 fill-yellow-500 flex-shrink-0" /> : isAdminUser ? <ShieldCheck className="w-3 h-3 text-blue-500 flex-shrink-0" /> : null}
-                        </span>
-                        <span className={`text-[10px] font-bold ${isTyping ? 'text-blue-500 animate-pulse' : (isDeactivated || isDisabled) ? 'text-red-500' : isSelectedUserOnline ? 'text-green-500' : 'text-gray-400'}`}>
-                            {statusText}
-                        </span>
-                    </div>
-                    <Info className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                </button>
-            </div>
-          </div>
+      <div className="flex-none p-4 bg-white/95 dark:bg-black/95 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 shadow-sm z-50">
+        <div className="flex items-center gap-2">
+            <button 
+                onClick={() => setSelectedUser(null)} 
+                className="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-800 dark:text-white"
+            >
+                <ArrowLeft className="w-6 h-6" />
+            </button>
+            
+            {/* Header Profile Info */}
+            <button 
+                onClick={(e) => handleProfileClick(e)}
+                className="flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-900 p-1.5 pr-4 rounded-full transition-all flex-1 min-w-0 text-left"
+            >
+                <div className={`relative flex-shrink-0 ${enableAnimations ? 'animate-pop-in' : ''}`}>
+                    <img src={displayAvatar} alt="avatar" className={`w-10 h-10 rounded-full object-cover border ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-gray-200 dark:border-gray-700'}`} />
+                    {isSelectedUserOnline && !isDeactivated && !isDisabled && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border border-white dark:border-gray-800 shadow-sm animate-pulse"></span>}
+                </div>
+                <div className={`flex flex-col items-start min-w-0 flex-1 ${enableAnimations ? 'animate-slide-up' : ''}`}>
+                    <span className="font-bold text-gray-900 dark:text-white text-sm flex items-center gap-1 truncate w-full">
+                        {displayName}
+                        {isOwnerUser ? <Crown className="w-3 h-3 text-yellow-500 fill-yellow-500 flex-shrink-0" /> : isAdminUser ? <ShieldCheck className="w-3 h-3 text-blue-500 flex-shrink-0" /> : null}
+                    </span>
+                    <span className={`text-[10px] font-bold ${isTyping ? 'text-blue-500 animate-pulse' : (isDeactivated || isDisabled) ? 'text-red-500' : isSelectedUserOnline ? 'text-green-500' : 'text-gray-400'}`}>
+                        {statusText}
+                    </span>
+                </div>
+                <Info className="w-5 h-5 text-gray-400 flex-shrink-0" />
+            </button>
+        </div>
       </div>
 
       {/* Message List Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2 no-scrollbar">
+      <div className="flex-1 overflow-y-auto p-4 space-y-2 no-scrollbar bg-gray-50 dark:bg-black">
         {conversation.length === 0 ? (
            <div className={`text-center mt-20 opacity-50 ${enableAnimations ? 'animate-pop-in' : ''}`}>
-             <div className="w-20 h-20 bg-white/30 rounded-full mx-auto mb-3 flex items-center justify-center text-3xl">👋</div>
+             <div className="w-20 h-20 bg-gray-200 dark:bg-gray-800 rounded-full mx-auto mb-3 flex items-center justify-center text-3xl">👋</div>
              <p className="text-sm text-gray-500 dark:text-gray-400">Say hello!</p>
            </div>
         ) : (
@@ -290,7 +287,7 @@ export const ChatScreen: React.FC = () => {
                  <div className={`max-w-[80%] px-4 py-2 text-sm shadow-sm border ${
                    isMe 
                      ? 'bg-blue-600 text-white rounded-[1.2rem] rounded-br-sm border-transparent' 
-                     : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-[1.2rem] rounded-bl-sm border-gray-100 dark:border-gray-700'
+                     : 'bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 rounded-[1.2rem] rounded-bl-sm border-gray-100 dark:border-gray-800'
                  }`}>
                    {msg.content}
                    <div className={`text-[9px] mt-1 flex items-center justify-end gap-1 ${isMe ? 'text-blue-200' : 'text-gray-400'}`}>
@@ -310,10 +307,10 @@ export const ChatScreen: React.FC = () => {
       </div>
 
       {/* Input Area */}
-      <div className="flex-none p-4 pb-24 z-40 bg-gradient-to-t from-gray-50 via-gray-50/80 to-transparent dark:from-black dark:via-black/80">
+      <div className="flex-none p-4 pb-8 bg-white dark:bg-black border-t border-gray-100 dark:border-gray-800 z-50">
         <form 
           onSubmit={handleSend} 
-          className={`flex items-center gap-2 p-1.5 shadow-xl sm:max-w-md sm:mx-auto bg-white/90 dark:bg-black/90 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-[2rem] w-full ${isDisabled ? 'opacity-50 pointer-events-none' : ''}`}
+          className={`flex items-center gap-2 p-1.5 shadow-sm sm:max-w-md sm:mx-auto bg-gray-100 dark:bg-gray-900 border border-transparent rounded-[2rem] w-full ${isDisabled ? 'opacity-50 pointer-events-none' : ''}`}
         >
           <input
             type="text"
@@ -327,7 +324,7 @@ export const ChatScreen: React.FC = () => {
           <button 
             type="submit" 
             disabled={!inputText.trim() || isDisabled} 
-            className="p-3 bg-blue-600 rounded-full text-white shadow-lg disabled:opacity-50 transition-all hover:scale-110 active:scale-95 flex-shrink-0 flex items-center justify-center"
+            className="p-3 bg-blue-600 rounded-full text-white shadow-md disabled:opacity-50 transition-all hover:scale-105 active:scale-95 flex-shrink-0 flex items-center justify-center"
           >
             <Send className="w-5 h-5 ml-0.5" />
           </button>

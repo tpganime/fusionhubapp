@@ -87,7 +87,6 @@ alter table users add column if not exists gender text;
 alter table users add column if not exists is_deactivated boolean default false;
 alter table users add column if not exists blocked_users text[] default '{}';
 alter table users add column if not exists instagram_link text;
--- Also ensure these exist just in case
 alter table users add column if not exists is_private_profile boolean default false;
 alter table users add column if not exists allow_private_chat boolean default true;
 
@@ -101,12 +100,6 @@ alter table messages enable row level security;
 
 create policy "Allow all operations" on users for all using (true) with check (true);
 create policy "Allow all operations" on messages for all using (true) with check (true);
-
--- 5. Enable Realtime
--- You must manually enable Realtime in Supabase Dashboard > Database > Replication
--- But running this might help if your project supports it via SQL:
-alter publication supabase_realtime add table messages;
-alter publication supabase_realtime add table users;
 `;
 
   const copySql = () => {
@@ -115,10 +108,10 @@ alter publication supabase_realtime add table users;
   };
 
   return (
-    <div className="h-full flex flex-col transition-colors duration-300">
-      <div className="flex-none bg-white/60 dark:bg-dark-surface/80 backdrop-blur-md border-b border-white/50 dark:border-gray-800 p-4 flex items-center z-50">
-        <button onClick={() => navigate('/settings')} className="p-2 -ml-2 rounded-full hover:bg-white/40 dark:hover:bg-white/10 text-gray-900 dark:text-white transition-colors relative z-50 cursor-pointer">
-          <ArrowLeft className="w-6 h-6" />
+    <div className="absolute inset-0 z-50 flex flex-col bg-white dark:bg-black overflow-hidden animate-fade-in">
+      <div className="flex-none bg-white/90 dark:bg-black/90 border-b border-gray-200 dark:border-gray-800 p-4 flex items-center z-50 shadow-sm">
+        <button onClick={() => navigate('/settings')} className="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors relative z-50 cursor-pointer">
+          <ArrowLeft className="w-6 h-6 text-gray-900 dark:text-white" />
         </button>
         <h2 className="text-xl font-bold ml-2 text-gray-900 dark:text-white">Admin Panel</h2>
       </div>
@@ -126,7 +119,7 @@ alter publication supabase_realtime add table users;
       <main className="flex-1 overflow-y-auto p-4 space-y-8 max-w-md mx-auto w-full no-scrollbar pb-24">
         
         {/* Broadcast */}
-        <div className="bg-white/70 dark:bg-dark-surface rounded-3xl p-6 shadow-sm border border-white/50 dark:border-gray-800">
+        <div className="bg-gray-50 dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
            <div className="flex items-center gap-3 mb-4 text-blue-600 dark:text-blue-400">
               <Volume2 className="w-6 h-6" />
               <h3 className="font-bold text-lg">System Broadcast</h3>
@@ -135,7 +128,7 @@ alter publication supabase_realtime add table users;
              value={broadcastText}
              onChange={e => setBroadcastText(e.target.value)}
              placeholder="Type an announcement..."
-             className="w-full p-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 min-h-[100px] mb-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+             className="w-full p-3 bg-white dark:bg-black rounded-xl border border-gray-200 dark:border-gray-700 min-h-[100px] mb-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
            />
            <button 
              onClick={handleBroadcast}
@@ -147,7 +140,7 @@ alter publication supabase_realtime add table users;
         </div>
 
         {/* Feature Toggles */}
-        <div className="bg-white/70 dark:bg-dark-surface rounded-3xl p-6 shadow-sm border border-white/50 dark:border-gray-800">
+        <div className="bg-gray-50 dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
           <h3 className="font-bold text-lg mb-4 text-gray-900 dark:text-white">Main Features</h3>
           <div className="space-y-4">
              {['home', 'chat', 'search', 'profile'].map((feat) => (
@@ -166,30 +159,9 @@ alter publication supabase_realtime add table users;
              ))}
           </div>
         </div>
-
-        {/* Shortcuts Toggles */}
-        <div className="bg-white/70 dark:bg-dark-surface rounded-3xl p-6 shadow-sm border border-white/50 dark:border-gray-800">
-          <h3 className="font-bold text-lg mb-4 text-gray-900 dark:text-white">Shortcuts Availability</h3>
-          <div className="space-y-4">
-             {HOME_SHORTCUTS.map((s) => (
-                <div key={s.name} className="flex items-center justify-between">
-                   <span className="font-medium text-gray-700 dark:text-gray-300 text-sm truncate max-w-[150px]">{s.name}</span>
-                   <label className="relative inline-flex items-center cursor-pointer z-10">
-                     <input 
-                        type="checkbox" 
-                        checked={localConfig.features.shortcuts[s.name] ?? true} 
-                        onChange={() => handleToggleShortcut(s.name)} 
-                        className="sr-only peer" 
-                     />
-                     <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
-                   </label>
-                </div>
-             ))}
-          </div>
-        </div>
         
         {/* Database Schema Generator */}
-        <div className="bg-white/70 dark:bg-dark-surface rounded-3xl p-6 shadow-sm border border-white/50 dark:border-gray-800">
+        <div className="bg-gray-50 dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
            <div className="flex items-center gap-3 mb-4 text-purple-600 dark:text-purple-400">
               <Database className="w-6 h-6" />
               <h3 className="font-bold text-lg">Database Fixer</h3>

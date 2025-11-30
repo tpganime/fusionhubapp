@@ -11,6 +11,16 @@ import { SettingsScreen } from './screens/Settings';
 import { AdminPanelScreen } from './screens/AdminPanel';
 import { BottomNav } from './components/BottomNav';
 import { Bell, X, Trash2, Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
+// Helper hook to access navigation safely
+const useNavigateSafe = () => {
+    try {
+        return useNavigate();
+    } catch {
+        return (path: string) => window.location.hash = path;
+    }
+}
 
 const NotificationModal: React.FC = () => {
   const { showPermissionPrompt, enableNotifications, closePermissionPrompt } = useApp();
@@ -50,7 +60,7 @@ const NotificationModal: React.FC = () => {
 
 const SwitchAccountModal: React.FC = () => {
     const { isSwitchAccountModalOpen, openSwitchAccountModal, knownAccounts, currentUser, switchAccount, removeKnownAccount, logout } = useApp();
-    const navigate = useNavigateSafe(); // Helper needed since App is outside Router context usually, but here components are inside Router
+    const navigate = useNavigateSafe();
 
     if (!isSwitchAccountModalOpen) return null;
 
@@ -103,16 +113,6 @@ const SwitchAccountModal: React.FC = () => {
     );
 };
 
-// Helper hook to access navigation safely
-import { useNavigate } from 'react-router-dom';
-const useNavigateSafe = () => {
-    try {
-        return useNavigate();
-    } catch {
-        return (path: string) => window.location.hash = path;
-    }
-}
-
 const ProtectedLayout: React.FC = () => {
   const { currentUser } = useApp();
   
@@ -146,8 +146,17 @@ const MainRouter: React.FC = () => {
            <Route path="/profile" element={<ProfileScreen />} />
            <Route path="/user/:userId" element={<ProfileScreen />} />
          </Route>
-         <Route path="/settings" element={<div className="w-full sm:max-w-md sm:mx-auto mesh-bg h-[100dvh] shadow-2xl relative overflow-hidden transition-colors duration-300"><SettingsScreen /><SwitchAccountModal /></div>} />
-         <Route path="/admin" element={<div className="w-full sm:max-w-md sm:mx-auto mesh-bg h-[100dvh] shadow-2xl relative overflow-hidden transition-colors duration-300"><AdminPanelScreen /></div>} />
+         <Route path="/settings" element={
+            <div className="w-full sm:max-w-md sm:mx-auto mesh-bg h-[100dvh] shadow-2xl relative transition-colors duration-300">
+               <SettingsScreen />
+               <SwitchAccountModal />
+            </div>
+         } />
+         <Route path="/admin" element={
+            <div className="w-full sm:max-w-md sm:mx-auto mesh-bg h-[100dvh] shadow-2xl relative transition-colors duration-300">
+               <AdminPanelScreen />
+            </div>
+         } />
        </Routes>
     </Router>
   );

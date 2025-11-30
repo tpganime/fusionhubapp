@@ -53,24 +53,24 @@
                 "100%": { opacity: "1" },
               },
               slideUp: {
-                "0%": { opacity: "0", transform: "perspective(1200px) rotateX(15deg) translate3d(0, 40px, 20px) scale(0.9)" },
-                "100%": { opacity: "1", transform: "perspective(1200px) rotateX(0) translate3d(0, 0, 0) scale(1)" },
+                "0%": { opacity: "0", transform: "translate3d(0, 40px, 0)" },
+                "100%": { opacity: "1", transform: "translate3d(0, 0, 0)" },
               },
               slideDown: {
-                 "0%": { opacity: "0", transform: "perspective(1200px) rotateX(-15deg) translate3d(0, -40px, 20px) scale(0.9)" },
-                 "100%": { opacity: "1", transform: "perspective(1200px) rotateX(0) translate3d(0, 0, 0) scale(1)" },
+                 "0%": { opacity: "0", transform: "translate3d(0, -40px, 0)" },
+                 "100%": { opacity: "1", transform: "translate3d(0, 0, 0)" },
               },
               slideUpFade: {
-                "0%": { opacity: "0", transform: "perspective(1200px) rotateX(10deg) translate3d(0, 60px, 0) scale(0.95)" },
-                "100%": { opacity: "1", transform: "perspective(1200px) rotateX(0) translate3d(0, 0, 0) scale(1)" },
+                "0%": { opacity: "0", transform: "translate3d(0, 60px, 0)" },
+                "100%": { opacity: "1", transform: "translate3d(0, 0, 0)" },
               },
               scaleIn: {
-                "0%": { opacity: "0", transform: "scale(0.8) perspective(1200px) translateZ(-50px)" },
-                "100%": { opacity: "1", transform: "scale(1) perspective(1200px) translateZ(0)" },
+                "0%": { opacity: "0", transform: "scale(0.8)" },
+                "100%": { opacity: "1", transform: "scale(1)" },
               },
               popIn: {
-                 "0%": { opacity: "0", transform: "scale(0.5) perspective(1200px) translateZ(-100px)" },
-                 "100%": { opacity: "1", transform: "scale(1) perspective(1200px) translateZ(0)" },
+                 "0%": { opacity: "0", transform: "scale(0.5)" },
+                 "100%": { opacity: "1", transform: "scale(1)" },
               },
               bounceSoft: {
                 "0%, 100%": { transform: "translateY(0)" },
@@ -115,9 +115,6 @@
         -webkit-tap-highlight-color: transparent;
         transition: background-color 0.3s ease, color 0.3s ease;
         overscroll-behavior-y: none;
-        /* Global 3D Perspective for Mobile */
-        perspective: 1200px;
-        transform-style: preserve-3d;
       }
       .dark body {
         background-color: #000000;
@@ -145,25 +142,24 @@
             radial-gradient(circle at 100% 100%, rgba(40, 140, 100, 0.2) 0%, transparent 60%);
       }
 
-      /* 3D INTERACTION STYLES - GLOBAL */
+      /* STANDARD INTERACTION STYLES - NO 3D */
       button, a, .liquid-card, .glass-panel {
-        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, background 0.3s ease;
-        transform-style: preserve-3d;
-        backface-visibility: hidden;
-        touch-action: manipulation; /* Improved touch */
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.3s ease;
+        touch-action: manipulation;
+        position: relative;
       }
 
       /* Active State: Press In */
       button:active:not(:disabled), 
       a:active:not(.disabled) {
-        transform: scale(0.96) translateZ(-4px);
+        transform: scale(0.96);
       }
 
       /* Hover State: Lift Up (Desktop / Hover capable) */
       @media (hover: hover) {
         button:hover:not(:disabled):not(:active),
         a:hover:not(.disabled):not(:active) {
-           transform: translateY(-2px) translateZ(4px);
+           transform: translateY(-2px);
         }
       }
 
@@ -180,7 +176,6 @@
             inset 0 2px 20px rgba(255,255,255,0.6),
             0 1px 2px rgba(0,0,0,0.05);
         border-radius: 24px;
-        transform: translateZ(0);
       }
       .dark .glass-panel {
         background: rgba(20, 20, 20, var(--glass-opacity));
@@ -201,11 +196,10 @@
             inset 0 0 30px rgba(255,255,255,0.3),
             0 2px 4px rgba(0,0,0,0.05);
         border-radius: 32px;
-        transform: translateZ(0);
-        will-change: transform;
+        z-index: 1;
       }
       .liquid-card:active {
-        transform: scale(0.97) translateZ(-5px);
+        transform: scale(0.97);
         box-shadow: 0 10px 20px -5px rgba(0,0,0,0.1), inset 0 0 40px rgba(0,0,0,0.05);
       }
       .dark .liquid-card {
@@ -225,10 +219,9 @@
         -webkit-backdrop-filter: blur(10px);
         box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        transform: translateZ(0);
       }
       .liquid-input:focus {
-        transform: translateY(-2px) translateZ(2px);
+        transform: translateY(-2px);
         box-shadow: inset 0 2px 4px rgba(0,0,0,0.05), 0 10px 20px -5px rgba(0,0,0,0.1);
       }
       .dark .liquid-input {
@@ -245,7 +238,6 @@
       .gpu-accelerated { 
           transform: translate3d(0, 0, 0); 
           backface-visibility: hidden; 
-          perspective: 1200px; 
           will-change: transform, opacity; 
       }
 
@@ -292,7 +284,6 @@
         margin-top: 10px;
         margin-bottom: 10px;
         box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-        transform-style: preserve-3d;
       }
       .dark .slider-container { background: rgba(255, 255, 255, 0.1); }
 
@@ -354,21 +345,17 @@
       .slider-thumb-glass.active .slider-thumb-glass-overlay,
       .slider-thumb-glass.active .slider-thumb-glass-specular { opacity: 1; }
     </style>
-<script type="importmap">
+  <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@18.2.0",
-    "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime",
-    "react-dom": "https://esm.sh/react-dom@18.2.0",
-    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-    "react-router-dom": "https://esm.sh/react-router-dom@6.22.3?external=react,react-dom",
-    "@remix-run/router": "https://esm.sh/@remix-run/router@1.15.3",
-    "lucide-react": "https://esm.sh/lucide-react@0.344.0?external=react",
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.39.7",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
     "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
-    "vite": "https://aistudiocdn.com/vite@^7.2.4",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/"
+    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.6",
+    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.86.0",
+    "vite": "https://aistudiocdn.com/vite@^7.2.4"
   }
 }
 </script>

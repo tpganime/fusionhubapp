@@ -149,8 +149,8 @@ const mapUserToDB = (user: User) => ({
   is_deactivated: user.isDeactivated,
   blocked_users: user.blockedUsers || [],
   instagram_link: user.instagramLink,
-  is_premium: user.isPremium,
-  premium_expiry: user.premiumExpiry
+  is_premium: user.isPremium || false,
+  premium_expiry: user.premiumExpiry || null // Ensure null if undefined to avoid JSON conversion errors
 });
 
 const mapMessageFromDB = (dbMsg: any): Message => {
@@ -628,7 +628,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const { error } = await supabase.from('users').update(mapUserToDB(updatedUser)).eq('id', updatedUser.id);
         if (error) {
             console.error("Profile Update Error:", error);
-            alert(`Update Failed: ${error.message}`);
+            // Show exact error message to user for debugging
+            alert(`Update Failed: ${error.message}`); 
             return false;
         }
         return true;

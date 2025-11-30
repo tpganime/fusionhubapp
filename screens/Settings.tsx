@@ -10,6 +10,46 @@ import { LiquidToggle } from '../components/LiquidToggle';
 import { GenericModal } from '../components/GenericModal';
 import { GoogleGenAI } from "@google/genai";
 
+// Utility to compress images before sending to AI (Reduces payload size to prevent errors)
+const compressImageForAI = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1024; // Limit to 1024px for AI safety
+        const MAX_HEIGHT = 1024;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        // Returns base64 string
+        resolve(canvas.toDataURL('image/jpeg', 0.7)); 
+      };
+      img.onerror = (error) => reject(error);
+    };
+    reader.onerror = (error) => reject(error);
+  });
+};
+
 export const SettingsScreen: React.FC = () => {
   const { currentUser, updateProfile, logout, switchAccount, removeKnownAccount, knownAccounts, deleteAccount, deactivateAccount, theme, toggleTheme, enableAnimations, toggleAnimations, animationSpeed, setAnimationSpeed, enableLiquid, toggleLiquid, glassOpacity, setGlassOpacity, isAdmin, enableNotifications, notificationPermission, openSwitchAccountModal } = useApp();
   const navigate = useNavigate();
@@ -81,11 +121,26 @@ export const SettingsScreen: React.FC = () => {
       return `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
   };
 
-  const handleBuyPremium = () => {
+  const openUpiLink = () => {
       const upiUrl = generateUpiUrl();
       
-      // Try to open UPI app
-      window.location.href = upiUrl;
+      // Method 1: Anchor Click (Better for deep links)
+      const link = document.createElement('a');
+      link.href = upiUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Method 2: Fallback
+      setTimeout(() => {
+          window.location.href = upiUrl;
+      }, 500);
+  };
+
+  const handleBuyPremium = () => {
+      openUpiLink();
       
       // Open verification modal immediately
       setShowPaymentModal(true);
@@ -95,27 +150,22 @@ export const SettingsScreen: React.FC = () => {
   };
   
   const handleManualPayClick = () => {
-      window.location.href = generateUpiUrl();
+      openUpiLink();
   };
 
   const handleUploadScreenshot = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (file) {
           setPaymentStep('scanning');
-          setScanStatus("Encrypting image data...");
+          setScanStatus("Compressing & Encrypting...");
           
           try {
-              // 1. Convert File to Base64
-              const base64String = await new Promise<string>((resolve, reject) => {
-                  const reader = new FileReader();
-                  reader.readAsDataURL(file);
-                  reader.onload = () => resolve(reader.result as string);
-                  reader.onerror = reject;
-              });
+              // 1. Compress Image (Critical fix for "Internal Error" due to payload size)
+              const compressedBase64 = await compressImageForAI(file);
 
               // Extract raw base64 and mime type
-              const mimeType = base64String.substring(base64String.indexOf(':') + 1, base64String.indexOf(';'));
-              const base64Data = base64String.split(',')[1];
+              const mimeType = compressedBase64.substring(compressedBase64.indexOf(':') + 1, compressedBase64.indexOf(';'));
+              const base64Data = compressedBase64.split(',')[1];
 
               setScanStatus("Analyzing with Gemini AI...");
 
@@ -128,24 +178,20 @@ export const SettingsScreen: React.FC = () => {
                   contents: {
                       parts: [
                           { inlineData: { mimeType: mimeType, data: base64Data } },
-                          { text: `Analyze this payment receipt screenshot for verification.
+                          { text: `Analyze this image. It should be a payment receipt.
                             
-                            Criteria:
-                            1. Status: Look for "Successful", "Paid", "Completed", or a green tick indicating success.
-                            2. Amount: Look for 29, 29.00, Rs. 29, or ₹29. 
-                            3. Context: Must be a receipt from PhonePe, Paytm, Google Pay, or similar UPI app.
+                            Required Checks:
+                            1. Is it a successful payment? Look for "Successful", "Paid", "Completed", green checkmarks.
+                            2. Is the amount 29? Look for "₹29", "29.00", "Rs. 29". 
                             
-                            Return valid JSON only:
+                            Return strictly valid JSON:
                             {
                               "isValid": boolean,
                               "reason": string
                             }
-                            If amount is close (e.g. 30 or 20), mark valid as false and state reason.` 
+                            If amount is different or status is pending/failed, isValid must be false.` 
                           }
                       ]
-                  },
-                  config: {
-                      responseMimeType: "application/json"
                   }
               });
 
@@ -153,8 +199,13 @@ export const SettingsScreen: React.FC = () => {
               const resultText = response.text;
               if (!resultText) throw new Error("No response from AI");
               
-              // Robust parsing: strip markdown code blocks if present
-              const cleanedText = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
+              // Robust parsing: Find the JSON object inside the text (Gemini sometimes chats)
+              const jsonMatch = resultText.match(/\{[\s\S]*\}/);
+              if (!jsonMatch) {
+                  throw new Error("Invalid AI response format");
+              }
+              
+              const cleanedText = jsonMatch[0];
               let result;
               try {
                   result = JSON.parse(cleanedText);
@@ -174,13 +225,15 @@ export const SettingsScreen: React.FC = () => {
                       }
                   }, 1500);
               } else {
-                  setFailReason(result.reason || "Screenshot does not match valid payment criteria.");
+                  setFailReason(result.reason || "Screenshot does not show a successful payment of ₹29.");
                   setPaymentStep('failed');
               }
 
           } catch (error: any) {
               console.error("Payment Verification Failed:", error);
-              setFailReason("AI verification service is unavailable or the image format is not supported.");
+              // Show actual error for debugging
+              alert(`Scan Error: ${error.message}`); 
+              setFailReason(error.message || "AI scan failed. Please ensure the image is a clear screenshot.");
               setPaymentStep('failed');
           }
       }
@@ -226,11 +279,11 @@ export const SettingsScreen: React.FC = () => {
                     <div className="mb-6 space-y-3">
                         <button 
                             onClick={handleManualPayClick}
-                            className="w-full py-3 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl font-bold flex items-center justify-center gap-2 border border-gray-200 dark:border-gray-700 active:scale-95"
+                            className="w-full py-3 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl font-bold flex items-center justify-center gap-2 border border-gray-200 dark:border-gray-700 active:scale-95 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                         >
                             <ExternalLink className="w-4 h-4" /> Tap to Pay ₹29
                         </button>
-                        <p className="text-[10px] text-gray-400">If the app didn't open automatically, click above.</p>
+                        <p className="text-[10px] text-gray-400">Opens PhonePe, Paytm, or GPay.</p>
                     </div>
 
                     <div className="w-full h-px bg-gray-200 dark:bg-gray-700 mb-6"></div>
@@ -239,9 +292,9 @@ export const SettingsScreen: React.FC = () => {
                         <Upload className="w-8 h-8 text-blue-600 dark:text-blue-400" />
                     </div>
                     <p className="text-gray-600 dark:text-gray-300 mb-6 font-medium text-sm">
-                        After payment, please upload the screenshot to activate Premium.
+                        After payment, upload the receipt screenshot to activate Premium.
                     </p>
-                    <label className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold shadow-lg cursor-pointer hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+                    <label className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold shadow-lg cursor-pointer hover:opacity-90 transition-opacity flex items-center justify-center gap-2 active:scale-95">
                         <span>Upload Screenshot</span>
                         <input type="file" accept="image/*" className="hidden" onChange={handleUploadScreenshot} />
                     </label>
@@ -571,7 +624,7 @@ export const SettingsScreen: React.FC = () => {
             </button>
         </div>
 
-        <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-8 opacity-50 pb-10">FusionHub v1.4.0</p>
+        <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-8 opacity-50 pb-10">FusionHub v1.4.1</p>
 
       </main>
     </div>

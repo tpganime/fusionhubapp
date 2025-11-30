@@ -76,10 +76,10 @@ export const AdminPanelScreen: React.FC = () => {
       }
   };
 
-  const sqlCode = `-- FORCE FIX DATABASE SCHEMA V3
--- Run this in Supabase SQL Editor to fix "Internal Error" and "Invalid Syntax" issues.
+  const sqlCode = `-- DATABASE REPAIR SCRIPT V4
+-- Run this in Supabase SQL Editor to fix "Internal Error" (Type Mismatch)
 
--- 1. Create Tables (If missing)
+-- 1. Create Base Tables (if missing)
 create table if not exists users (
   id uuid primary key,
   username text,
@@ -102,7 +102,7 @@ create table if not exists messages (
   read boolean default false
 );
 
--- 2. Add Missing Columns (Safe to run)
+-- 2. Add Missing Columns (Safe)
 alter table users add column if not exists name text;
 alter table users add column if not exists birthdate text;
 alter table users add column if not exists gender text;
@@ -111,10 +111,20 @@ alter table users add column if not exists blocked_users text[] default '{}';
 alter table users add column if not exists instagram_link text;
 alter table users add column if not exists is_private_profile boolean default false;
 alter table users add column if not exists allow_private_chat boolean default true;
-alter table users add column if not exists is_premium boolean default false;
-alter table users add column if not exists premium_expiry bigint;
 
--- 3. FORCE TIMESTAMP FIX (Handles Type Conversion)
+-- 3. CRITICAL FIX: RESET PREMIUM COLUMNS
+-- This drops and recreates the columns to guarantee they are the correct type (BIGINT)
+-- WARNING: This will reset premium status for all users (safest way to fix the error)
+DO $$
+BEGIN
+    ALTER TABLE users DROP COLUMN IF EXISTS premium_expiry;
+    ALTER TABLE users DROP COLUMN IF EXISTS is_premium;
+    
+    ALTER TABLE users ADD COLUMN is_premium boolean DEFAULT false;
+    ALTER TABLE users ADD COLUMN premium_expiry bigint;
+END $$;
+
+-- 4. FIX MESSAGE TIMESTAMP
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'messages' AND column_name = 'timestamp') THEN
@@ -127,7 +137,7 @@ BEGIN
   END IF;
 END $$;
 
--- 4. Reset Policies (Fixes Permission Errors)
+-- 5. Reset Policies
 drop policy if exists "Allow all operations" on users;
 drop policy if exists "Allow all operations" on messages;
 
@@ -137,7 +147,7 @@ alter table messages enable row level security;
 create policy "Allow all operations" on users for all using (true) with check (true);
 create policy "Allow all operations" on messages for all using (true) with check (true);
 
--- 5. REFRESH SCHEMA CACHE
+-- 6. Refresh Cache
 NOTIFY pgrst, 'reload config';
 `;
 

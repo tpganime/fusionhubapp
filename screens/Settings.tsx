@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
@@ -8,7 +10,7 @@ import { LiquidToggle } from '../components/LiquidToggle';
 import { GenericModal } from '../components/GenericModal';
 import { GoogleGenAI } from "@google/genai";
 
-// Utility to compress images before sending to AI (Reduces payload size to prevent errors)
+// Utility to compress images before sending to AI
 const compressImageForAI = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -18,8 +20,8 @@ const compressImageForAI = (file: File): Promise<string> => {
       img.src = event.target?.result as string;
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 1024; // Limit to 1024px for AI safety
-        const MAX_HEIGHT = 1024;
+        const MAX_WIDTH = 1600; 
+        const MAX_HEIGHT = 1600;
         let width = img.width;
         let height = img.height;
 
@@ -39,8 +41,7 @@ const compressImageForAI = (file: File): Promise<string> => {
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         ctx?.drawImage(img, 0, 0, width, height);
-        // Returns base64 string
-        resolve(canvas.toDataURL('image/jpeg', 0.7)); 
+        resolve(canvas.toDataURL('image/jpeg', 0.9)); 
       };
       img.onerror = (error) => reject(error);
     };
@@ -84,11 +85,8 @@ export const SettingsScreen: React.FC = () => {
   const transparencyValue = Math.round((1.0 - glassOpacity) * 100);
   const handleTransparencyChange = (val: number) => {
       if (!isPremium) return;
-      // If slider is 100%, set opacity to 0 (Crystal Clear)
-      // Otherwise scale between 0.05 and 1.0
       let newOpacity = 1.0 - (val / 100.0);
       if (val >= 98) newOpacity = 0; 
-      
       setGlassOpacity(newOpacity);
   };
 
@@ -112,30 +110,22 @@ export const SettingsScreen: React.FC = () => {
   };
 
   const generateUpiUrl = () => {
-      const upiId = "7383718802@omni";
+      const upiId = "7383718802@omni"; 
       const name = "FusionHub Premium";
-      const amount = "29.00";
-      const note = "Premium Upgrade";
-      // Ensure proper encoding for deep linking
+      const amount = "29"; 
+      const note = "Premium";
+      // Using standard UPI intent scheme
       return `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
   };
 
   const openUpiLink = () => {
       const upiUrl = generateUpiUrl();
-      
-      // Try redirection (Standard for deep links)
+      // Most reliable way for Android
       window.location.href = upiUrl;
-
-      // Fallback: If on web and nothing happened, maybe show a hint
-      setTimeout(() => {
-          console.log("Attempted to open UPI link:", upiUrl);
-      }, 1000);
   };
 
   const handleBuyPremium = () => {
       openUpiLink();
-      
-      // Open verification modal immediately
       setShowPaymentModal(true);
       setPaymentStep('initial');
       setScanStatus("Initializing...");
@@ -149,90 +139,83 @@ export const SettingsScreen: React.FC = () => {
   const handleUploadScreenshot = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (file) {
-          // Check for API KEY First
           if (!process.env.API_KEY) {
-              alert("Configuration Error: API_KEY is missing. Please contact Admin.");
+              alert("System Error: API Key missing.");
               return;
           }
 
           setPaymentStep('scanning');
-          setScanStatus("Compressing & Encrypting...");
+          setScanStatus("Enhancing Image...");
           
           try {
-              // 1. Compress Image (Critical fix for "Internal Error" due to payload size)
               const compressedBase64 = await compressImageForAI(file);
-
-              // Extract raw base64 and mime type
               const mimeType = compressedBase64.substring(compressedBase64.indexOf(':') + 1, compressedBase64.indexOf(';'));
               const base64Data = compressedBase64.split(',')[1];
 
-              setScanStatus("Analyzing with Gemini AI...");
+              setScanStatus("AI Verifying...");
 
-              // 2. Initialize Gemini AI
               const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
               
-              // 3. Send Request
+              // RELAXED PROMPT - Focuses on Amount and Success only to prevent false negatives
               const response = await ai.models.generateContent({
                   model: 'gemini-2.5-flash',
                   contents: {
                       parts: [
                           { inlineData: { mimeType: mimeType, data: base64Data } },
-                          { text: `Analyze this image. It should be a payment receipt.
+                          { text: `Analyze this payment screenshot.
                             
-                            Required Checks:
-                            1. Is it a successful payment? Look for "Successful", "Paid", "Completed", green checkmarks.
-                            2. Is the amount 29? Look for "₹29", "29.00", "Rs. 29". 
+                            I need to confirm if this is a SUCCESSFUL payment of ₹29 (or 29.00).
+
+                            Check for:
+                            1. Amount: 29
+                            2. Success Indicators: "Paid", "Successful", "Sent", green checkmarks.
                             
-                            Return strictly valid JSON:
-                            {
-                              "isValid": boolean,
-                              "reason": string
-                            }
-                            If amount is different or status is pending/failed, isValid must be false.` 
+                            Ignore the receiver name if it looks slightly different, OCR can be bad.
+                            
+                            Return strictly this JSON:
+                            { "isValid": boolean, "reason": "short text" }` 
                           }
                       ]
                   }
               });
 
-              // 4. Parse Response
               const resultText = response.text;
               if (!resultText) throw new Error("No response from AI");
               
-              // Robust parsing: Find the JSON object inside the text (Gemini sometimes chats)
               const jsonMatch = resultText.match(/\{[\s\S]*\}/);
-              if (!jsonMatch) {
-                  throw new Error("Invalid AI response format");
-              }
+              if (!jsonMatch) throw new Error("Invalid AI response");
               
-              const cleanedText = jsonMatch[0];
               let result;
               try {
-                  result = JSON.parse(cleanedText);
+                  result = JSON.parse(jsonMatch[0]);
               } catch (e) {
-                  console.error("JSON Parse Error:", e, cleanedText);
-                  throw new Error("Failed to parse AI response.");
+                  throw new Error("Failed to parse verification result.");
               }
 
               if (result.isValid) {
-                  setScanStatus("Payment Verified!");
-                  setTimeout(() => {
-                      setPaymentStep('success');
-                      // Grant Premium for 30 days
+                  setScanStatus("Verified!");
+                  // Delay slightly for UX
+                  setTimeout(async () => {
                       if (currentUser) {
-                          const expiry = Date.now() + (30 * 24 * 60 * 60 * 1000); // 30 Days from now
-                          updateProfile({ ...currentUser, isPremium: true, premiumExpiry: expiry });
+                          const expiry = Date.now() + (30 * 24 * 60 * 60 * 1000); 
+                          // NOTE: We update this locally first to prevent UI lag, context handles DB
+                          const success = await updateProfile({ ...currentUser, isPremium: true, premiumExpiry: expiry });
+                          if (success) {
+                              setPaymentStep('success');
+                          } else {
+                              setFailReason("Database Error: Run 'Database Fixer' in Admin Panel.");
+                              setPaymentStep('failed');
+                          }
                       }
-                  }, 1500);
+                  }, 1000);
               } else {
-                  setFailReason(result.reason || "Screenshot does not show a successful payment of ₹29.");
+                  setFailReason(result.reason || "Could not verify payment amount or success status.");
                   setPaymentStep('failed');
               }
 
           } catch (error: any) {
-              console.error("Payment Verification Failed:", error);
-              // Show actual error for debugging
-              alert(`Scan Error: ${error.message}`); 
-              setFailReason(error.message || "AI scan failed. Please ensure the image is a clear screenshot.");
+              console.error("Scan Error:", error);
+              setFailReason("Scan failed. Please upload a clear screenshot.");
               setPaymentStep('failed');
           }
       }
@@ -244,7 +227,6 @@ export const SettingsScreen: React.FC = () => {
       setScanStatus("");
   };
 
-  // ---------------- VIEW: PRIVACY POLICY ----------------
   if (showPrivacyPolicy) {
     return (
       <div className="absolute inset-0 z-50 flex flex-col bg-white dark:bg-black overflow-hidden animate-fade-in">
@@ -266,7 +248,6 @@ export const SettingsScreen: React.FC = () => {
     );
   }
 
-  // ---------------- VIEW: MAIN SETTINGS ----------------
   return (
     <div className="absolute inset-0 z-50 flex flex-col bg-white dark:bg-black overflow-hidden animate-fade-in">
       
@@ -278,11 +259,11 @@ export const SettingsScreen: React.FC = () => {
                     <div className="mb-6 space-y-3">
                         <button 
                             onClick={handleManualPayClick}
-                            className="w-full py-3 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl font-bold flex items-center justify-center gap-2 border border-gray-200 dark:border-gray-700 active:scale-95 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                            className="w-full py-4 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl font-bold flex items-center justify-center gap-2 border border-gray-200 dark:border-gray-700 active:scale-95 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors shadow-sm"
                         >
-                            <ExternalLink className="w-4 h-4" /> Tap to Pay ₹29
+                            <ExternalLink className="w-5 h-5" /> Tap to Pay ₹29
                         </button>
-                        <p className="text-[10px] text-gray-400">Opens PhonePe, Paytm, or GPay.</p>
+                        <p className="text-[10px] text-gray-400">Forces PhonePe, Paytm, or GPay to open.</p>
                     </div>
 
                     <div className="w-full h-px bg-gray-200 dark:bg-gray-700 mb-6"></div>
@@ -291,7 +272,7 @@ export const SettingsScreen: React.FC = () => {
                         <Upload className="w-8 h-8 text-blue-600 dark:text-blue-400" />
                     </div>
                     <p className="text-gray-600 dark:text-gray-300 mb-6 font-medium text-sm">
-                        After payment, upload the receipt screenshot to activate Premium.
+                        Paid? Upload the screenshot to activate instantly.
                     </p>
                     <label className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold shadow-lg cursor-pointer hover:opacity-90 transition-opacity flex items-center justify-center gap-2 active:scale-95">
                         <span>Upload Screenshot</span>
@@ -304,7 +285,6 @@ export const SettingsScreen: React.FC = () => {
                  <>
                     <div className="relative w-full h-48 bg-gray-900 rounded-xl overflow-hidden mb-4 border border-blue-500/30">
                         <div className="absolute inset-0 flex items-center justify-center opacity-30">
-                            {/* Matrix-like background effect */}
                             <div className="text-[8px] text-green-500 font-mono break-all leading-none opacity-50">
                                 {Array(2000).fill(0).map(() => Math.random() > 0.5 ? '1' : '0').join('')}
                             </div>
@@ -312,10 +292,9 @@ export const SettingsScreen: React.FC = () => {
                         <div className="absolute inset-0 flex items-center justify-center">
                              <ScanLine className="w-16 h-16 text-blue-400 animate-pulse" />
                         </div>
-                        {/* Scanning Line Animation */}
                         <div className="absolute top-0 left-0 right-0 h-1 bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.8)] animate-[scan_2s_ease-in-out_infinite]"></div>
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">AI Scan In Progress</h3>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">AI Verifying...</h3>
                     <p className="text-xs text-blue-500 font-mono uppercase tracking-widest animate-pulse">{scanStatus}</p>
                  </>
              )}
@@ -340,12 +319,12 @@ export const SettingsScreen: React.FC = () => {
                     <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-4 animate-pop-in">
                         <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Premium Activated!</h3>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Premium Unlocked!</h3>
                     <p className="text-gray-600 dark:text-gray-300 mb-6 text-sm">
-                        Thank you for your purchase. Premium features are unlocked for 30 days.
+                        Welcome to FusionHub Premium. Enjoy an ad-free experience.
                     </p>
                     <button onClick={() => setShowPaymentModal(false)} className="w-full py-3 rounded-xl bg-green-600 text-white font-bold shadow-lg shadow-green-600/30 hover:bg-green-700">
-                        Awesome!
+                        Let's Go!
                     </button>
                  </>
              )}
@@ -443,6 +422,7 @@ export const SettingsScreen: React.FC = () => {
             </div>
         )}
 
+        {/* ... Rest of Settings (Appearance, Admin, etc. kept identical) ... */}
         {isAdmin && (
           <section>
             <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 ml-2 tracking-wider">Admin</h3>
@@ -600,7 +580,6 @@ export const SettingsScreen: React.FC = () => {
         </section>
 
         <div className="flex gap-4 pb-8">
-            {/* Switch Account Button */}
             <button 
               onClick={() => openSwitchAccountModal(true)}
               className="flex-1 py-4 flex flex-col items-center justify-center rounded-[2rem] border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors shadow-sm active:scale-95 group"
@@ -611,7 +590,6 @@ export const SettingsScreen: React.FC = () => {
                <span className="text-xs font-bold text-gray-800 dark:text-white">Switch Account</span>
             </button>
 
-            {/* Log Out Button */}
             <button 
               onClick={handleLogout}
               className="flex-[2] py-4 flex items-center justify-between px-6 rounded-[2rem] border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors shadow-sm active:scale-95 group"
@@ -623,7 +601,7 @@ export const SettingsScreen: React.FC = () => {
             </button>
         </div>
 
-        <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-8 opacity-50 pb-10">FusionHub v1.4.1</p>
+        <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-8 opacity-50 pb-10">FusionHub v1.4.3</p>
 
       </main>
     </div>

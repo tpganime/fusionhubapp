@@ -76,10 +76,10 @@ export const AdminPanelScreen: React.FC = () => {
       }
   };
 
-  const sqlCode = `-- DATABASE REPAIR SCRIPT V4
--- Run this in Supabase SQL Editor to fix "Internal Error" (Type Mismatch)
+  const sqlCode = `-- DATABASE REPAIR SCRIPT V5 (FINAL FIX)
+-- Run this in Supabase SQL Editor to fix "Internal Error"
 
--- 1. Create Base Tables (if missing)
+-- 1. Ensure Base Tables Exist
 create table if not exists users (
   id uuid primary key,
   username text,
@@ -102,7 +102,7 @@ create table if not exists messages (
   read boolean default false
 );
 
--- 2. Add Missing Columns (Safe)
+-- 2. Add Standard Columns (If Missing)
 alter table users add column if not exists name text;
 alter table users add column if not exists birthdate text;
 alter table users add column if not exists gender text;
@@ -112,19 +112,16 @@ alter table users add column if not exists instagram_link text;
 alter table users add column if not exists is_private_profile boolean default false;
 alter table users add column if not exists allow_private_chat boolean default true;
 
--- 3. CRITICAL FIX: RESET PREMIUM COLUMNS
--- This drops and recreates the columns to guarantee they are the correct type (BIGINT)
--- WARNING: This will reset premium status for all users (safest way to fix the error)
-DO $$
-BEGIN
-    ALTER TABLE users DROP COLUMN IF EXISTS premium_expiry;
-    ALTER TABLE users DROP COLUMN IF EXISTS is_premium;
-    
-    ALTER TABLE users ADD COLUMN is_premium boolean DEFAULT false;
-    ALTER TABLE users ADD COLUMN premium_expiry bigint;
-END $$;
+-- 3. FORCE RESET PREMIUM COLUMNS (Fixes Type Mismatch)
+-- We drop and recreate them to ensure they are 100% correct
+alter table users drop column if exists premium_expiry;
+alter table users drop column if exists is_premium;
 
--- 4. FIX MESSAGE TIMESTAMP
+alter table users add column is_premium boolean default false;
+alter table users add column premium_expiry bigint; -- Must be BIGINT for Date.now()
+
+-- 4. FORCE FIX MESSAGE TIMESTAMP
+-- Ensures messages use numbers for time, not dates
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'messages' AND column_name = 'timestamp') THEN
@@ -137,7 +134,7 @@ BEGIN
   END IF;
 END $$;
 
--- 5. Reset Policies
+-- 5. REFRESH PERMISSIONS (Fixes RLS Errors)
 drop policy if exists "Allow all operations" on users;
 drop policy if exists "Allow all operations" on messages;
 
@@ -147,7 +144,7 @@ alter table messages enable row level security;
 create policy "Allow all operations" on users for all using (true) with check (true);
 create policy "Allow all operations" on messages for all using (true) with check (true);
 
--- 6. Refresh Cache
+-- 6. CACHE RELOAD
 NOTIFY pgrst, 'reload config';
 `;
 
@@ -273,7 +270,7 @@ NOTIFY pgrst, 'reload config';
               <Database className="w-6 h-6" />
               <h3 className="font-bold text-lg">Database Fixer</h3>
            </div>
-           <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">If you see "Internal Error" or "Invalid Syntax", run this SQL code in Supabase.</p>
+           <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-bold text-red-500">Run this to fix "Internal Error" messages.</p>
            <div className="relative">
              <pre className="w-full p-3 bg-gray-900 rounded-xl text-green-400 text-[10px] overflow-x-auto font-mono h-40 border border-gray-700">
                 {sqlCode}

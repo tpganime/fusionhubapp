@@ -131,27 +131,35 @@ const mapUserFromDB = (dbUser: any): User => {
   }
 };
 
-const mapUserToDB = (user: User) => ({
-  id: user.id,
-  username: user.username,
-  name: user.name,
-  email: user.email,
-  password: user.password,
-  avatar: user.avatar,
-  description: user.description,
-  birthdate: user.birthdate,
-  gender: user.gender,
-  is_private_profile: user.isPrivateProfile,
-  allow_private_chat: user.allowPrivateChat,
-  friends: user.friends || [],
-  requests: user.requests || [],
-  last_seen: user.lastSeen,
-  is_deactivated: user.isDeactivated,
-  blocked_users: user.blockedUsers || [],
-  instagram_link: user.instagramLink,
-  is_premium: user.isPremium || false,
-  premium_expiry: user.premiumExpiry || null // Ensure null if undefined to avoid JSON conversion errors
-});
+const mapUserToDB = (user: User) => {
+    // Safety check for premium expiry to prevent DB errors
+    let expiry = null;
+    if (user.premiumExpiry && !isNaN(user.premiumExpiry)) {
+        expiry = user.premiumExpiry;
+    }
+
+    return {
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      email: user.email,
+      password: user.password,
+      avatar: user.avatar,
+      description: user.description,
+      birthdate: user.birthdate,
+      gender: user.gender,
+      is_private_profile: user.isPrivateProfile,
+      allow_private_chat: user.allowPrivateChat,
+      friends: user.friends || [],
+      requests: user.requests || [],
+      last_seen: user.lastSeen,
+      is_deactivated: user.isDeactivated,
+      blocked_users: user.blockedUsers || [],
+      instagram_link: user.instagramLink,
+      is_premium: user.isPremium || false,
+      premium_expiry: expiry 
+    };
+};
 
 const mapMessageFromDB = (dbMsg: any): Message => {
   const ts = Number(dbMsg.timestamp);

@@ -10,7 +10,7 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.CAMERA" />
     
-    <!-- Permission for Unity Ads -->
+    <!-- Permission for Unity Ads (Critical for Android 13+) -->
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 
     <application

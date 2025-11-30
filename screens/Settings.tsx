@@ -1,8 +1,9 @@
 
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lock, Trash2, Power, ChevronRight, Moon, Sun, Zap, LayoutDashboard, Bell, Droplets, Sliders, ArrowRight as ArrowRightIcon, Users, Shield, MessageCircle, AlertTriangle, Copy, Gauge } from 'lucide-react';
+import { ArrowLeft, Lock, Trash2, Power, ChevronRight, Moon, Sun, Zap, LayoutDashboard, Bell, Droplets, Sliders, ArrowRight as ArrowRightIcon, Users, Shield, MessageCircle, AlertTriangle, Copy, Gauge, Crown, Upload, CheckCircle2 } from 'lucide-react';
 import { PRIVACY_POLICY_TEXT } from '../constants';
 import { LiquidSlider } from '../components/LiquidSlider';
 import { LiquidToggle } from '../components/LiquidToggle';
@@ -16,8 +17,11 @@ export const SettingsScreen: React.FC = () => {
   // Modal States
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentStep, setPaymentStep] = useState<'initial' | 'upload' | 'scanning' | 'success'>('initial');
   
   const isNotificationGranted = notificationPermission === 'granted';
+  const isPremium = !!currentUser?.isPremium;
 
   if (!currentUser) return null;
 
@@ -38,8 +42,14 @@ export const SettingsScreen: React.FC = () => {
 
   const transparencyValue = Math.round((1.0 - glassOpacity) * 100);
   const handleTransparencyChange = (val: number) => {
+      if (!isPremium) return;
       const newOpacity = 1.0 - (val / 100.0);
       setGlassOpacity(Math.max(0, Math.min(1, newOpacity)));
+  };
+
+  const handleAnimationSpeedChange = (speed: 'fast' | 'balanced' | 'relaxed') => {
+      if (!isPremium) return;
+      setAnimationSpeed(speed);
   };
 
   const togglePrivateProfile = async () => {
@@ -54,6 +64,38 @@ export const SettingsScreen: React.FC = () => {
 
   const handleBack = () => {
       navigate('/home');
+  };
+
+  const handleBuyPremium = () => {
+      // Create UPI Intent
+      const upiId = "733718802@omni";
+      const name = "FusionHub Premium";
+      const amount = "29.00";
+      const note = "Premium Upgrade";
+      
+      const upiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
+      
+      // Try to open UPI app
+      window.location.href = upiUrl;
+      
+      // Open verification modal immediately
+      setShowPaymentModal(true);
+      setPaymentStep('initial');
+  };
+
+  const handleUploadScreenshot = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files[0]) {
+          setPaymentStep('scanning');
+          
+          // Simulate AI Scan
+          setTimeout(() => {
+              setPaymentStep('success');
+              // Grant Premium
+              if (currentUser) {
+                  updateProfile({ ...currentUser, isPremium: true });
+              }
+          }, 4000);
+      }
   };
 
   // ---------------- VIEW: PRIVACY POLICY ----------------
@@ -82,6 +124,56 @@ export const SettingsScreen: React.FC = () => {
   return (
     <div className="absolute inset-0 z-50 flex flex-col bg-white dark:bg-black overflow-hidden animate-fade-in">
       
+      {/* Payment Verification Modal */}
+      <GenericModal isOpen={showPaymentModal} onClose={() => setShowPaymentModal(false)} title="Verify Payment">
+         <div className="text-center">
+             {paymentStep === 'initial' && (
+                 <>
+                    <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mx-auto mb-4 animate-bounce-soft">
+                        <Upload className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <p className="text-gray-600 dark:text-gray-300 mb-6 font-medium text-sm">
+                        Please upload a screenshot of your successful payment of <strong>₹29</strong> to activate Premium instantly.
+                    </p>
+                    <label className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold shadow-lg cursor-pointer hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+                        <span>Upload Screenshot</span>
+                        <input type="file" accept="image/*" className="hidden" onChange={handleUploadScreenshot} />
+                    </label>
+                 </>
+             )}
+
+             {paymentStep === 'scanning' && (
+                 <>
+                    <div className="relative w-full h-48 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden mb-4 border border-blue-500/30">
+                        <div className="absolute inset-0 flex items-center justify-center">
+                             <img src="https://via.placeholder.com/300x200?text=Receipt" className="opacity-50 object-cover" alt="receipt" />
+                        </div>
+                        {/* Scanning Line Animation */}
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.8)] animate-[scan_2s_ease-in-out_infinite]"></div>
+                        <div className="absolute inset-0 bg-blue-500/10 animate-pulse"></div>
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">AI Verifying...</h3>
+                    <p className="text-xs text-gray-500 animate-pulse">Scanning transaction details</p>
+                 </>
+             )}
+
+             {paymentStep === 'success' && (
+                 <>
+                    <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-4 animate-pop-in">
+                        <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Premium Activated!</h3>
+                    <p className="text-gray-600 dark:text-gray-300 mb-6 text-sm">
+                        Thank you for your purchase. All features have been unlocked.
+                    </p>
+                    <button onClick={() => setShowPaymentModal(false)} className="w-full py-3 rounded-xl bg-green-600 text-white font-bold shadow-lg shadow-green-600/30 hover:bg-green-700">
+                        Awesome!
+                    </button>
+                 </>
+             )}
+         </div>
+      </GenericModal>
+
       {/* Deactivate Modal */}
       <GenericModal isOpen={showDeactivateModal} onClose={() => setShowDeactivateModal(false)} title="Deactivate Account">
           <div className="text-center">
@@ -128,6 +220,46 @@ export const SettingsScreen: React.FC = () => {
       {/* Scrollable Content */}
       <main className="flex-1 overflow-y-auto px-5 pt-6 pb-40 space-y-6 max-w-md mx-auto w-full no-scrollbar relative z-10">
         
+        {/* PREMIUM CARD */}
+        {!isPremium ? (
+             <div className="bg-gradient-to-br from-yellow-400 to-orange-500 rounded-3xl p-6 text-white shadow-xl shadow-orange-500/20 relative overflow-hidden group">
+                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl transform translate-x-10 -translate-y-10 group-hover:scale-150 transition-transform duration-700"></div>
+                 <div className="relative z-10">
+                     <div className="flex items-center gap-3 mb-2">
+                         <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                             <Crown className="w-6 h-6 text-white fill-white" />
+                         </div>
+                         <h3 className="text-2xl font-black italic tracking-tight">FusionHub Premium</h3>
+                     </div>
+                     <p className="text-white/90 text-sm mb-4 font-medium leading-relaxed">
+                         Unlock exclusive features and remove ads for just <span className="text-white font-black text-lg">₹29</span>.
+                     </p>
+                     <ul className="space-y-2 mb-6 text-xs font-bold text-white/80">
+                         <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Remove All Ads</li>
+                         <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Unlock Animations</li>
+                         <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Custom Glass Transparency</li>
+                         <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Adjust Animation Speed</li>
+                     </ul>
+                     <button 
+                        onClick={handleBuyPremium}
+                        className="w-full py-3 bg-white text-orange-600 rounded-xl font-bold shadow-lg hover:bg-orange-50 transition-colors active:scale-95"
+                     >
+                         Get Premium Now
+                     </button>
+                 </div>
+             </div>
+        ) : (
+            <div className="bg-gradient-to-br from-gray-800 to-black border border-gray-700 rounded-3xl p-6 relative overflow-hidden">
+                 <div className="absolute top-0 right-0 p-4 opacity-10"><Crown className="w-32 h-32 text-yellow-500" /></div>
+                 <div className="relative z-10 flex items-center justify-between">
+                     <div>
+                         <h3 className="text-xl font-bold text-white flex items-center gap-2">Premium Active <CheckCircle2 className="w-5 h-5 text-green-400" /></h3>
+                         <p className="text-gray-400 text-xs mt-1">Thanks for supporting FusionHub!</p>
+                     </div>
+                 </div>
+            </div>
+        )}
+
         {isAdmin && (
           <section>
             <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 ml-2 tracking-wider">Admin</h3>
@@ -165,11 +297,14 @@ export const SettingsScreen: React.FC = () => {
             </div>
             
             {enableLiquid && (
-               <div className="p-5 animate-slide-up">
+               <div className={`p-5 animate-slide-up ${!isPremium ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
                    <div className="flex items-center gap-4 mb-3">
                        <div className="p-2.5 bg-gray-100 dark:bg-gray-800 rounded-xl text-gray-600 dark:text-gray-300 shadow-md"><Sliders className="w-5 h-5" /></div>
                        <div className="flex flex-col flex-1">
-                          <span className="font-bold text-gray-900 dark:text-white text-sm">Transparency</span>
+                          <div className="flex items-center gap-2">
+                              <span className="font-bold text-gray-900 dark:text-white text-sm">Transparency</span>
+                              {!isPremium && <Lock className="w-3 h-3 text-yellow-500" />}
+                          </div>
                           <span className="text-[10px] text-gray-500 dark:text-gray-400">{transparencyValue}%</span>
                        </div>
                    </div>
@@ -177,23 +312,31 @@ export const SettingsScreen: React.FC = () => {
                </div>
             )}
 
-            <div className="p-5 flex items-center justify-between">
+            <div className={`p-5 flex items-center justify-between ${!isPremium ? 'opacity-50 pointer-events-none' : ''}`}>
                <div className="flex items-center gap-4">
                  <div className="p-2.5 bg-pink-100 dark:bg-pink-900/50 rounded-xl text-pink-600 dark:text-pink-300 shadow-md"><Zap className="w-5 h-5" /></div>
-                 <span className="font-bold text-gray-900 dark:text-white text-sm">Animations</span>
+                 <div className="flex flex-col">
+                     <div className="flex items-center gap-2">
+                        <span className="font-bold text-gray-900 dark:text-white text-sm">Animations</span>
+                        {!isPremium && <Lock className="w-3 h-3 text-yellow-500" />}
+                     </div>
+                 </div>
                </div>
                <div><LiquidToggle checked={enableAnimations} onChange={toggleAnimations} /></div>
             </div>
 
             {enableAnimations && (
-               <div className="p-5 animate-slide-up">
+               <div className={`p-5 animate-slide-up ${!isPremium ? 'opacity-50 pointer-events-none' : ''}`}>
                    <div className="flex items-center gap-4 mb-3">
                        <div className="p-2.5 bg-orange-100 dark:bg-orange-900/50 rounded-xl text-orange-600 dark:text-orange-300 shadow-md"><Gauge className="w-5 h-5" /></div>
-                       <span className="font-bold text-gray-900 dark:text-white text-sm">Speed</span>
+                       <div className="flex items-center gap-2">
+                           <span className="font-bold text-gray-900 dark:text-white text-sm">Speed</span>
+                           {!isPremium && <Lock className="w-3 h-3 text-yellow-500" />}
+                       </div>
                    </div>
                    <div className="flex gap-2 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
                       {(['fast', 'balanced', 'relaxed'] as const).map((speed) => (
-                        <button key={speed} onClick={() => setAnimationSpeed(speed)} className={`flex-1 py-1.5 text-xs font-bold rounded-lg capitalize transition-all cursor-pointer ${animationSpeed === speed ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500'}`}>{speed}</button>
+                        <button key={speed} onClick={() => handleAnimationSpeedChange(speed)} className={`flex-1 py-1.5 text-xs font-bold rounded-lg capitalize transition-all cursor-pointer ${animationSpeed === speed ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500'}`}>{speed}</button>
                       ))}
                    </div>
                </div>

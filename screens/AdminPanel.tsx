@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
@@ -77,6 +78,7 @@ alter table users add column if not exists blocked_users text[] default '{}';
 alter table users add column if not exists instagram_link text;
 alter table users add column if not exists is_private_profile boolean default false;
 alter table users add column if not exists allow_private_chat boolean default true;
+alter table users add column if not exists is_premium boolean default false;
 
 -- 3. FORCE TIMESTAMP FIX (Handles Type Conversion)
 -- This converts any text timestamps to bigint numbers to prevent "invalid input syntax"

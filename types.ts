@@ -1,4 +1,5 @@
 
+
 export enum Gender {
   MALE = 'Male',
   FEMALE = 'Female',
@@ -26,6 +27,7 @@ export interface User {
   isDeactivated?: boolean;
   blockedUsers: string[]; // list of IDs this user has blocked
   instagramLink?: string;
+  isPremium?: boolean;
 }
 
 export interface Message {

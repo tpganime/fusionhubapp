@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useContext, useState, useEffect, useLayoutEffect, ReactNode, useRef } from 'react';
 import { User, Message, Notification as AppNotification, Gender, AppConfig, AnimationSpeed } from '../types';
 import { supabase } from '../lib/supabase';
@@ -110,7 +111,8 @@ const mapUserFromDB = (dbUser: any): User => {
       lastSeen: dbUser.last_seen,
       isDeactivated: !!dbUser.is_deactivated,
       blockedUsers: Array.isArray(dbUser.blocked_users) ? dbUser.blocked_users : [],
-      instagramLink: dbUser.instagram_link
+      instagramLink: dbUser.instagram_link,
+      isPremium: !!dbUser.is_premium
     };
   } catch (e) {
     console.error("Error mapping user:", e, dbUser);
@@ -145,7 +147,8 @@ const mapUserToDB = (user: User) => ({
   last_seen: user.lastSeen,
   is_deactivated: user.isDeactivated,
   blocked_users: user.blockedUsers || [],
-  instagram_link: user.instagramLink
+  instagram_link: user.instagramLink,
+  is_premium: user.isPremium
 });
 
 const mapMessageFromDB = (dbMsg: any): Message => {
@@ -167,7 +170,6 @@ const mapMessageToDB = (msg: Message) => ({
   sender_id: msg.senderId,
   receiver_id: msg.receiverId,
   content: msg.content,
-  // SEND AS NUMBER (BIGINT) to fix invalid input syntax
   timestamp: msg.timestamp, 
   read: msg.read
 });
@@ -281,6 +283,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const notificationsRef = useRef<AppNotification[]>([]);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const typingTimeoutRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  // -- PREMIUM RESTRICTIONS ENFORCEMENT --
+  useEffect(() => {
+      if (currentUser && !currentUser.isPremium) {
+          // If animations enabled, force disable
+          if (enableAnimations) setEnableAnimations(false);
+          // If glass opacity not 30%, force 30%
+          if (glassOpacity !== 0.3) setGlassOpacity(0.3);
+          // If speed not balanced, force balanced
+          if (animationSpeed !== 'balanced') setAnimationSpeed('balanced');
+      }
+  }, [currentUser, enableAnimations, glassOpacity, animationSpeed]);
 
   useEffect(() => { currentUserRef.current = currentUser; }, [currentUser]);
   useEffect(() => { usersRef.current = users; }, [users]);
@@ -827,7 +841,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
-  const toggleAnimations = () => setEnableAnimations(prev => !prev);
+  
+  // Restricted toggles
+  const toggleAnimations = () => {
+      if (currentUser && !currentUser.isPremium) return;
+      setEnableAnimations(prev => !prev);
+  };
   const toggleLiquid = () => setEnableLiquid(prev => !prev);
   
   const openSwitchAccountModal = (isOpen: boolean) => setIsSwitchAccountModalOpen(isOpen);
@@ -983,6 +1002,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           });
 
           if (currentUserRef.current && updatedUser.id === currentUserRef.current.id) {
+             // Sync premium status to current session
+             setCurrentUser(prev => prev ? ({ ...prev, isPremium: updatedUser.isPremium }) : updatedUser);
+
             const oldRequests = currentUserRef.current.requests || [];
             const newRequests = updatedUser.requests || [];
             
@@ -1026,8 +1048,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                      });
                    }
                 }
-            } else {
-                setCurrentUser(updatedUser);
             }
           }
         }

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lock, Eye, Trash2, LogOut, Shield, ChevronRight, Moon, Sun, Zap, LayoutDashboard, Bell, Droplets, Sliders, Power, Gauge, ArrowRight as ArrowRightIcon, Users, Plus, X } from 'lucide-react';
+import { ArrowLeft, Lock, Eye, Trash2, LogOut, Shield, ChevronRight, Moon, Sun, Zap, LayoutDashboard, Bell, Droplets, Sliders, Power, Gauge, ArrowRight as ArrowRightIcon, Users, Plus, X, MessageCircle } from 'lucide-react';
 import { PRIVACY_POLICY_TEXT } from '../constants';
 import { LiquidSlider } from '../components/LiquidSlider';
 import { LiquidToggle } from '../components/LiquidToggle';
@@ -41,6 +41,16 @@ export const SettingsScreen: React.FC = () => {
       setGlassOpacity(Math.max(0, Math.min(1, newOpacity)));
   };
 
+  const togglePrivateProfile = async () => {
+    if (!currentUser) return;
+    await updateProfile({ ...currentUser, isPrivateProfile: !currentUser.isPrivateProfile });
+  };
+
+  const toggleAllowMessages = async () => {
+    if (!currentUser) return;
+    await updateProfile({ ...currentUser, allowPrivateChat: !currentUser.allowPrivateChat });
+  };
+
   if (showPrivacyPolicy) {
     return (
       <div className={`h-full overflow-y-auto no-scrollbar ${enableAnimations ? 'animate-fade-in' : ''}`}>
@@ -58,9 +68,9 @@ export const SettingsScreen: React.FC = () => {
   }
 
   return (
-    <div className={`h-full overflow-y-auto pb-32 no-scrollbar ${enableAnimations ? 'animate-fade-in' : ''}`}>
+    <div className={`h-full overflow-y-auto pb-40 no-scrollbar ${enableAnimations ? 'animate-fade-in' : ''}`}>
       
-      <div className="sticky top-4 mx-4 z-50 glass-panel p-3 flex items-center mb-6">
+      <div className="sticky top-4 mx-4 z-50 glass-panel p-3 flex items-center mb-6 shadow-lg">
         <button onClick={() => navigate('/profile')} className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
           <ArrowLeft className="w-6 h-6 text-gray-900 dark:text-white" />
         </button>
@@ -72,8 +82,8 @@ export const SettingsScreen: React.FC = () => {
         {isAdmin && (
           <section>
             <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 ml-2 tracking-wider">Admin</h3>
-            <div className="liquid-card overflow-hidden">
-               <button onClick={() => navigate('/admin')} className="w-full p-5 flex items-center justify-between hover:bg-white/20 transition-colors group">
+            <div className="liquid-card">
+               <button onClick={() => navigate('/admin')} className="w-full p-5 flex items-center justify-between hover:bg-white/20 transition-colors group rounded-3xl">
                  <div className="flex items-center gap-4">
                    <div className="p-2.5 bg-gradient-to-br from-red-500 to-orange-500 rounded-xl text-white shadow-lg"><LayoutDashboard className="w-5 h-5" /></div>
                    <span className="font-bold text-gray-900 dark:text-white">Admin Panel</span>
@@ -86,7 +96,7 @@ export const SettingsScreen: React.FC = () => {
 
         <section>
           <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 ml-2 tracking-wider">Appearance</h3>
-          <div className="liquid-card overflow-hidden divide-y divide-gray-200/30 dark:divide-white/10">
+          <div className="liquid-card divide-y divide-gray-200/30 dark:divide-white/10">
              <div className="p-5 flex items-center justify-between">
                <div className="flex items-center gap-4">
                  <div className={`p-2.5 rounded-xl shadow-md ${theme === 'dark' ? 'bg-indigo-900 text-indigo-300' : 'bg-yellow-100 text-yellow-600'}`}>
@@ -151,9 +161,40 @@ export const SettingsScreen: React.FC = () => {
         </section>
 
         <section>
+          <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 ml-2 tracking-wider">Privacy</h3>
+          <div className="liquid-card divide-y divide-gray-200/30 dark:divide-white/10">
+            <div className="p-5 flex items-center justify-between">
+               <div className="flex items-center gap-4">
+                 <div className="p-2.5 bg-gray-100 dark:bg-gray-800 rounded-xl text-gray-600 dark:text-gray-300 shadow-md">
+                    <Lock className="w-5 h-5" />
+                 </div>
+                 <div className="flex flex-col">
+                    <span className="font-bold text-gray-900 dark:text-white text-sm">Private Profile</span>
+                    <span className="text-[10px] text-gray-500 dark:text-gray-400">Only friends can see your info</span>
+                 </div>
+               </div>
+               <LiquidToggle checked={currentUser.isPrivateProfile} onChange={togglePrivateProfile} />
+            </div>
+
+            <div className="p-5 flex items-center justify-between">
+               <div className="flex items-center gap-4">
+                 <div className="p-2.5 bg-gray-100 dark:bg-gray-800 rounded-xl text-gray-600 dark:text-gray-300 shadow-md">
+                    <MessageCircle className="w-5 h-5" />
+                 </div>
+                 <div className="flex flex-col">
+                    <span className="font-bold text-gray-900 dark:text-white text-sm">Allow Messages</span>
+                    <span className="text-[10px] text-gray-500 dark:text-gray-400">Receive chats from everyone</span>
+                 </div>
+               </div>
+               <LiquidToggle checked={currentUser.allowPrivateChat} onChange={toggleAllowMessages} />
+            </div>
+          </div>
+        </section>
+
+        <section>
           <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 ml-2 tracking-wider">Legal</h3>
-          <div className="liquid-card overflow-hidden">
-            <button onClick={() => setShowPrivacyPolicy(true)} className="w-full p-5 flex items-center justify-between hover:bg-white/20 transition-colors">
+          <div className="liquid-card">
+            <button onClick={() => setShowPrivacyPolicy(true)} className="w-full p-5 flex items-center justify-between hover:bg-white/20 transition-colors rounded-3xl">
                <div className="flex items-center gap-4">
                  <div className="p-2.5 bg-green-100 dark:bg-green-900/50 rounded-xl text-green-600 dark:text-green-300 shadow-md"><Shield className="w-5 h-5" /></div>
                  <span className="font-bold text-gray-900 dark:text-white text-sm">Privacy Policy</span>
@@ -165,14 +206,14 @@ export const SettingsScreen: React.FC = () => {
 
         <section>
           <h3 className="text-xs font-bold text-red-500/70 uppercase mb-3 ml-2 tracking-wider">Danger Zone</h3>
-          <div className="liquid-card overflow-hidden divide-y divide-gray-200/30 dark:divide-white/10">
-            <button onClick={handleDeactivate} className="w-full p-5 flex items-center justify-between text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800/20">
+          <div className="liquid-card divide-y divide-gray-200/30 dark:divide-white/10">
+            <button onClick={handleDeactivate} className="w-full p-5 flex items-center justify-between text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800/20 first:rounded-t-3xl last:rounded-b-3xl">
                <div className="flex items-center gap-4">
                  <div className="p-2.5 bg-gray-200 dark:bg-gray-800 rounded-xl"><Power className="w-5 h-5" /></div>
                  <span className="font-bold">Deactivate</span>
                </div>
             </button>
-            <button onClick={handleDelete} className="w-full p-5 flex items-center justify-between text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
+            <button onClick={handleDelete} className="w-full p-5 flex items-center justify-between text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 first:rounded-t-3xl last:rounded-b-3xl">
                <div className="flex items-center gap-4">
                  <div className="p-2.5 bg-red-100 dark:bg-red-900/30 rounded-xl"><Trash2 className="w-5 h-5" /></div>
                  <span className="font-bold">Delete</span>
@@ -181,7 +222,7 @@ export const SettingsScreen: React.FC = () => {
           </div>
         </section>
 
-        <div className="flex gap-4">
+        <div className="flex gap-4 pb-8">
             {/* Switch Account Button */}
             <button 
               onClick={() => openSwitchAccountModal(true)}
@@ -193,7 +234,7 @@ export const SettingsScreen: React.FC = () => {
                <span className="text-xs font-bold text-gray-800 dark:text-white">Switch Account</span>
             </button>
 
-            {/* Glass Capsule Log Out Button */}
+            {/* Log Out Button */}
             <button 
               onClick={handleLogout}
               className="flex-[2] py-4 flex items-center justify-between px-6 rounded-[2rem] border border-white/40 dark:border-white/10 bg-white/30 dark:bg-white/5 backdrop-blur-xl shadow-lg hover:bg-white/40 transition-all active:scale-95 group"
@@ -205,7 +246,7 @@ export const SettingsScreen: React.FC = () => {
             </button>
         </div>
 
-        <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-8 opacity-50">FusionHub v1.3.4 LIQUID</p>
+        <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-8 opacity-50 pb-10">FusionHub v1.3.5 LIQUID</p>
 
       </main>
     </div>

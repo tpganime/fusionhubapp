@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
@@ -71,7 +72,10 @@ create table if not exists users (
   allow_private_chat boolean default true,
   friends text[] default '{}',
   requests text[] default '{}',
-  last_seen timestamptz default now()
+  last_seen timestamptz default now(),
+  is_deactivated boolean default false,
+  blocked_users text[] default '{}',
+  instagram_link text
 );
 
 create table if not exists messages (
@@ -87,6 +91,9 @@ create table if not exists messages (
 alter table users add column if not exists name text;
 alter table users add column if not exists birthdate text;
 alter table users add column if not exists gender text;
+alter table users add column if not exists is_deactivated boolean default false;
+alter table users add column if not exists blocked_users text[] default '{}';
+alter table users add column if not exists instagram_link text;
 
 -- 3. Enable Public Access (For this specific app architecture)
 alter table users enable row level security;
@@ -102,15 +109,15 @@ create policy "Allow all operations" on messages for all using (true) with check
   };
 
   return (
-    <div className="h-full overflow-y-auto pb-24 transition-colors duration-300 scrollbar-hide">
-      <div className="sticky top-0 bg-white/60 dark:bg-dark-surface/80 backdrop-blur-md border-b border-white/50 dark:border-gray-800 p-4 flex items-center z-50">
-        <button onClick={() => navigate('/settings')} className="p-2 -ml-2 rounded-full hover:bg-white/40 dark:hover:bg-white/10 text-gray-900 dark:text-white">
+    <div className="h-full flex flex-col transition-colors duration-300">
+      <div className="flex-none bg-white/60 dark:bg-dark-surface/80 backdrop-blur-md border-b border-white/50 dark:border-gray-800 p-4 flex items-center z-50">
+        <button onClick={() => navigate('/settings')} className="p-2 -ml-2 rounded-full hover:bg-white/40 dark:hover:bg-white/10 text-gray-900 dark:text-white transition-colors relative z-50 cursor-pointer">
           <ArrowLeft className="w-6 h-6" />
         </button>
         <h2 className="text-xl font-bold ml-2 text-gray-900 dark:text-white">Admin Panel</h2>
       </div>
 
-      <main className="p-4 space-y-8 max-w-md mx-auto">
+      <main className="flex-1 overflow-y-auto p-4 space-y-8 max-w-md mx-auto w-full no-scrollbar pb-24">
         
         {/* Broadcast */}
         <div className="bg-white/70 dark:bg-dark-surface rounded-3xl p-6 shadow-sm border border-white/50 dark:border-gray-800">
@@ -127,7 +134,7 @@ create policy "Allow all operations" on messages for all using (true) with check
            <button 
              onClick={handleBroadcast}
              disabled={sending || !broadcastText.trim()}
-             className="w-full py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+             className="w-full py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50 relative z-10"
            >
              <Send className="w-4 h-4" /> Send to Everyone
            </button>
@@ -140,7 +147,7 @@ create policy "Allow all operations" on messages for all using (true) with check
              {['home', 'chat', 'search', 'profile'].map((feat) => (
                 <div key={feat} className="flex items-center justify-between">
                    <span className="capitalize font-medium text-gray-700 dark:text-gray-300">{feat}</span>
-                   <label className="relative inline-flex items-center cursor-pointer">
+                   <label className="relative inline-flex items-center cursor-pointer z-10">
                      <input 
                         type="checkbox" 
                         checked={(localConfig.features as any)[feat]} 
@@ -161,7 +168,7 @@ create policy "Allow all operations" on messages for all using (true) with check
              {HOME_SHORTCUTS.map((s) => (
                 <div key={s.name} className="flex items-center justify-between">
                    <span className="font-medium text-gray-700 dark:text-gray-300 text-sm truncate max-w-[150px]">{s.name}</span>
-                   <label className="relative inline-flex items-center cursor-pointer">
+                   <label className="relative inline-flex items-center cursor-pointer z-10">
                      <input 
                         type="checkbox" 
                         checked={localConfig.features.shortcuts[s.name] ?? true} 
@@ -188,7 +195,7 @@ create policy "Allow all operations" on messages for all using (true) with check
              </pre>
              <button 
                 onClick={copySql}
-                className="absolute top-2 right-2 p-2 bg-white/20 hover:bg-white/30 rounded-lg text-white transition-colors"
+                className="absolute top-2 right-2 p-2 bg-white/20 hover:bg-white/30 rounded-lg text-white transition-colors z-10"
              >
                 <Copy className="w-4 h-4" />
              </button>
@@ -197,7 +204,7 @@ create policy "Allow all operations" on messages for all using (true) with check
 
         <button 
            onClick={saveConfig}
-           className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-2xl font-bold shadow-lg transform transition-transform active:scale-95 flex items-center justify-center gap-2"
+           className="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-2xl font-bold shadow-lg transform transition-transform active:scale-95 flex items-center justify-center gap-2 relative z-10"
         >
            <Save className="w-5 h-5" /> Save Configuration
         </button>

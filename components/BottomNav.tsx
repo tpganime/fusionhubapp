@@ -9,6 +9,12 @@ export const BottomNav: React.FC = () => {
   const location = useLocation();
   const { openSwitchAccountModal } = useApp();
 
+  // Hide BottomNav when in an active chat conversation
+  // This prevents the input field from being covered by the nav bar on mobile
+  const isChatConversation = location.pathname === '/chat' && location.search.includes('uid=');
+
+  if (isChatConversation) return null;
+
   const tabs = [
     { id: 'home', path: '/home', icon: Home, label: 'Home' },
     { id: 'chat', path: '/chat', icon: MessageCircle, label: 'Chat' },
@@ -32,7 +38,7 @@ export const BottomNav: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center pointer-events-none px-4 animate-slide-up">
+    <div className="fixed bottom-6 left-0 right-0 z-40 flex justify-center pointer-events-none px-4 animate-slide-up">
       {/* 3D Glass Capsule */}
       <div className="pointer-events-auto relative flex items-center p-2 rounded-[3rem] shadow-[0_20px_50px_0_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.5),inset_0_-1px_0_rgba(0,0,0,0.1)] border border-white/40 dark:border-white/10 backdrop-blur-3xl bg-gradient-to-b from-white/60 to-white/30 dark:from-white/10 dark:to-black/30">
         

@@ -233,9 +233,9 @@ export const ChatScreen: React.FC = () => {
   return (
     <div className={`absolute inset-0 z-50 flex flex-col bg-white dark:bg-black ${enableAnimations ? 'animate-fade-in' : ''}`}>
       
-      {/* Sticky Header */}
-      <div className="flex-none p-4 bg-white/95 dark:bg-black/95 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 shadow-sm z-50">
-        <div className="flex items-center gap-2">
+      {/* Fixed Header - z-50 to stay on top */}
+      <div className="flex-none fixed top-0 left-0 right-0 bg-white/95 dark:bg-black/95 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 shadow-sm z-[60] h-16 sm:max-w-md sm:mx-auto">
+        <div className="flex items-center gap-2 h-full px-4">
             <button 
                 onClick={() => setSelectedUser(null)} 
                 className="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-800 dark:text-white"
@@ -249,7 +249,7 @@ export const ChatScreen: React.FC = () => {
                 className="flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-900 p-1.5 pr-4 rounded-full transition-all flex-1 min-w-0 text-left"
             >
                 <div className={`relative flex-shrink-0 ${enableAnimations ? 'animate-pop-in' : ''}`}>
-                    <img src={displayAvatar} alt="avatar" className={`w-10 h-10 rounded-full object-cover border ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-gray-200 dark:border-gray-700'}`} />
+                    <img src={displayAvatar} alt="avatar" className={`w-9 h-9 rounded-full object-cover border ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-gray-200 dark:border-gray-700'}`} />
                     {isSelectedUserOnline && !isDeactivated && !isDisabled && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border border-white dark:border-gray-800 shadow-sm animate-pulse"></span>}
                 </div>
                 <div className={`flex flex-col items-start min-w-0 flex-1 ${enableAnimations ? 'animate-slide-up' : ''}`}>
@@ -266,8 +266,8 @@ export const ChatScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Message List Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2 no-scrollbar bg-gray-50 dark:bg-black">
+      {/* Message List Area - pt-16 for header space */}
+      <div className="flex-1 overflow-y-auto pt-20 px-4 pb-4 space-y-2 no-scrollbar bg-gray-50 dark:bg-black">
         {conversation.length === 0 ? (
            <div className={`text-center mt-20 opacity-50 ${enableAnimations ? 'animate-pop-in' : ''}`}>
              <div className="w-20 h-20 bg-gray-200 dark:bg-gray-800 rounded-full mx-auto mb-3 flex items-center justify-center text-3xl">👋</div>
@@ -306,11 +306,11 @@ export const ChatScreen: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area */}
-      <div className="flex-none p-4 pb-8 bg-white dark:bg-black border-t border-gray-100 dark:border-gray-800 z-50">
+      {/* Input Area - Adjusted for mobile visibility */}
+      <div className="flex-none p-3 pb-6 bg-white dark:bg-black border-t border-gray-100 dark:border-gray-800 z-[60] shadow-[0_-5px_20px_rgba(0,0,0,0.03)]">
         <form 
           onSubmit={handleSend} 
-          className={`flex items-center gap-2 p-1.5 shadow-sm sm:max-w-md sm:mx-auto bg-gray-100 dark:bg-gray-900 border border-transparent rounded-[2rem] w-full ${isDisabled ? 'opacity-50 pointer-events-none' : ''}`}
+          className={`flex items-end gap-2 p-1.5 shadow-sm sm:max-w-md sm:mx-auto bg-gray-100 dark:bg-gray-900 border border-transparent rounded-[1.5rem] w-full ${isDisabled ? 'opacity-50 pointer-events-none' : ''}`}
         >
           <input
             type="text"
@@ -319,12 +319,12 @@ export const ChatScreen: React.FC = () => {
             placeholder={isDisabled ? "Messaging unavailable" : "Type a message..."}
             autoComplete="off"
             disabled={isDisabled}
-            className="flex-1 bg-transparent px-5 py-3 focus:outline-none text-sm text-gray-900 dark:text-white placeholder-gray-500 font-medium min-w-0"
+            className="flex-1 bg-transparent px-4 py-3 focus:outline-none text-sm text-gray-900 dark:text-white placeholder-gray-500 font-medium min-w-0 max-h-32 overflow-y-auto"
           />
           <button 
             type="submit" 
             disabled={!inputText.trim() || isDisabled} 
-            className="p-3 bg-blue-600 rounded-full text-white shadow-md disabled:opacity-50 transition-all hover:scale-105 active:scale-95 flex-shrink-0 flex items-center justify-center"
+            className="p-3 bg-blue-600 rounded-full text-white shadow-md disabled:opacity-50 transition-all hover:scale-105 active:scale-95 flex-shrink-0 flex items-center justify-center mb-0.5 mr-0.5"
           >
             <Send className="w-5 h-5 ml-0.5" />
           </button>

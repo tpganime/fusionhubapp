@@ -3,11 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lock, Trash2, Power, ChevronRight, Moon, Sun, Zap, LayoutDashboard, Bell, Droplets, Sliders, ArrowRight as ArrowRightIcon, Users, Shield, MessageCircle, AlertTriangle, Copy, Gauge, Crown, Upload, CheckCircle2, ScanLine } from 'lucide-react';
+import { ArrowLeft, Lock, Trash2, Power, ChevronRight, Moon, Sun, Zap, LayoutDashboard, Bell, Droplets, Sliders, ArrowRight as ArrowRightIcon, Users, Shield, MessageCircle, AlertTriangle, Copy, Gauge, Crown, Upload, CheckCircle2, ScanLine, XCircle } from 'lucide-react';
 import { PRIVACY_POLICY_TEXT } from '../constants';
 import { LiquidSlider } from '../components/LiquidSlider';
 import { LiquidToggle } from '../components/LiquidToggle';
 import { GenericModal } from '../components/GenericModal';
+import { GoogleGenAI } from "@google/genai";
 
 export const SettingsScreen: React.FC = () => {
   const { currentUser, updateProfile, logout, switchAccount, removeKnownAccount, knownAccounts, deleteAccount, deactivateAccount, theme, toggleTheme, enableAnimations, toggleAnimations, animationSpeed, setAnimationSpeed, enableLiquid, toggleLiquid, glassOpacity, setGlassOpacity, isAdmin, enableNotifications, notificationPermission, openSwitchAccountModal } = useApp();
@@ -18,8 +19,9 @@ export const SettingsScreen: React.FC = () => {
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentStep, setPaymentStep] = useState<'initial' | 'upload' | 'scanning' | 'success'>('initial');
+  const [paymentStep, setPaymentStep] = useState<'initial' | 'scanning' | 'success' | 'failed'>('initial');
   const [scanStatus, setScanStatus] = useState("Initializing...");
+  const [failReason, setFailReason] = useState("");
   
   const isNotificationGranted = notificationPermission === 'granted';
   const isPremium = !!currentUser?.isPremium;
@@ -87,39 +89,93 @@ export const SettingsScreen: React.FC = () => {
       setShowPaymentModal(true);
       setPaymentStep('initial');
       setScanStatus("Initializing...");
+      setFailReason("");
   };
 
-  const handleUploadScreenshot = (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (e.target.files && e.target.files[0]) {
+  const handleUploadScreenshot = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
           setPaymentStep('scanning');
+          setScanStatus("Encrypting image data...");
           
-          // Simulation sequence for "Real AI" feel
-          const steps = [
-              { msg: "Uploading receipt...", delay: 1000 },
-              { msg: "Preprocessing image...", delay: 1200 },
-              { msg: "AI OCR extracting text...", delay: 2000 },
-              { msg: "Identifying transaction ID...", delay: 1500 },
-              { msg: "Verifying with bank server...", delay: 2000 },
-              { msg: "Payment confirmed!", delay: 1000 }
-          ];
+          try {
+              // 1. Convert File to Base64
+              const base64String = await new Promise<string>((resolve, reject) => {
+                  const reader = new FileReader();
+                  reader.readAsDataURL(file);
+                  reader.onload = () => resolve(reader.result as string);
+                  reader.onerror = reject;
+              });
 
-          let totalDelay = 0;
-          steps.forEach(step => {
-              setTimeout(() => {
-                  setScanStatus(step.msg);
-              }, totalDelay);
-              totalDelay += step.delay;
-          });
+              // Extract raw base64 and mime type
+              // Data URL format: data:[<mediatype>][;base64],<data>
+              const mimeType = base64String.substring(base64String.indexOf(':') + 1, base64String.indexOf(';'));
+              const base64Data = base64String.split(',')[1];
 
-          setTimeout(() => {
-              setPaymentStep('success');
-              // Grant Premium for 30 days
-              if (currentUser) {
-                  const expiry = Date.now() + (30 * 24 * 60 * 60 * 1000); // 30 Days from now
-                  updateProfile({ ...currentUser, isPremium: true, premiumExpiry: expiry });
+              setScanStatus("Analyzing with Gemini AI...");
+
+              // 2. Initialize Gemini AI
+              const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+              
+              // 3. Send Request
+              const response = await ai.models.generateContent({
+                  model: 'gemini-2.5-flash',
+                  contents: {
+                      parts: [
+                          { inlineData: { mimeType: mimeType, data: base64Data } },
+                          { text: `Analyze this payment receipt screenshot. 
+                            Strictly verify the following criteria:
+                            1. Is the transaction status "Successful", "Paid", or "Completed"?
+                            2. Is the amount exactly ₹29 (or 29)?
+                            3. Is it a valid payment app receipt (PhonePe, Paytm, Google Pay, etc.)?
+                            
+                            Return a JSON object with this structure:
+                            {
+                              "isValid": boolean,
+                              "reason": string (Short explanation of why it passed or failed, e.g. "Amount is 50, expected 29" or "Payment Failed status")
+                            }
+                            Do not include markdown code blocks.` 
+                          }
+                      ]
+                  },
+                  config: {
+                      responseMimeType: "application/json"
+                  }
+              });
+
+              // 4. Parse Response
+              const resultText = response.text;
+              if (!resultText) throw new Error("No response from AI");
+              
+              const result = JSON.parse(resultText);
+
+              if (result.isValid) {
+                  setScanStatus("Payment Verified!");
+                  setTimeout(() => {
+                      setPaymentStep('success');
+                      // Grant Premium for 30 days
+                      if (currentUser) {
+                          const expiry = Date.now() + (30 * 24 * 60 * 60 * 1000); // 30 Days from now
+                          updateProfile({ ...currentUser, isPremium: true, premiumExpiry: expiry });
+                      }
+                  }, 1500);
+              } else {
+                  setFailReason(result.reason || "Screenshot does not match valid payment criteria.");
+                  setPaymentStep('failed');
               }
-          }, totalDelay + 500);
+
+          } catch (error: any) {
+              console.error("Payment Verification Failed:", error);
+              setFailReason("AI verification service is unavailable or the image format is not supported.");
+              setPaymentStep('failed');
+          }
       }
+  };
+
+  const resetPaymentModal = () => {
+      setPaymentStep('initial');
+      setFailReason("");
+      setScanStatus("");
   };
 
   // ---------------- VIEW: PRIVACY POLICY ----------------
@@ -183,6 +239,21 @@ export const SettingsScreen: React.FC = () => {
                     </div>
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">AI Scan In Progress</h3>
                     <p className="text-xs text-blue-500 font-mono uppercase tracking-widest animate-pulse">{scanStatus}</p>
+                 </>
+             )}
+
+             {paymentStep === 'failed' && (
+                 <>
+                    <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4 animate-shake">
+                        <XCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Verification Failed</h3>
+                    <p className="text-red-500 dark:text-red-400 mb-6 text-sm font-medium bg-red-50 dark:bg-red-900/10 p-3 rounded-lg border border-red-100 dark:border-red-900/20">
+                        {failReason}
+                    </p>
+                    <button onClick={resetPaymentModal} className="w-full py-3 rounded-xl bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-bold hover:bg-gray-300 dark:hover:bg-gray-600">
+                        Try Again
+                    </button>
                  </>
              )}
 

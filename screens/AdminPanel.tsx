@@ -28,19 +28,6 @@ export const AdminPanelScreen: React.FC = () => {
     }));
   };
 
-  const handleToggleShortcut = (name: string) => {
-    setLocalConfig(prev => ({
-      ...prev,
-      features: {
-        ...prev.features,
-        shortcuts: {
-          ...prev.features.shortcuts,
-          [name]: !prev.features.shortcuts[name]
-        }
-      }
-    }));
-  };
-
   const saveConfig = async () => {
     await updateAppConfig(localConfig);
     alert('Configuration saved & broadcasted to all users.');
@@ -55,9 +42,10 @@ export const AdminPanelScreen: React.FC = () => {
     alert('Message sent to all users.');
   };
 
-  const sqlCode = `-- Run this in your Supabase SQL Editor to fix 'Messages not sending' and other errors.
+  const sqlCode = `-- FORCE FIX DATABASE SCHEMA
+-- Run this in Supabase SQL Editor to fix "Internal Error" and "Invalid Syntax" issues.
 
--- 1. Create Tables (If they don't exist yet)
+-- 1. Create Tables (If missing)
 create table if not exists users (
   id uuid primary key,
   username text,
@@ -76,11 +64,11 @@ create table if not exists messages (
   sender_id text,
   receiver_id text,
   content text,
-  timestamp bigint,  -- Changed to bigint for proper ordering
+  timestamp bigint, 
   read boolean default false
 );
 
--- 2. Add Missing Columns to 'users' (Safe to run multiple times)
+-- 2. Add Missing Columns (Safe to run)
 alter table users add column if not exists name text;
 alter table users add column if not exists birthdate text;
 alter table users add column if not exists gender text;
@@ -90,11 +78,28 @@ alter table users add column if not exists instagram_link text;
 alter table users add column if not exists is_private_profile boolean default false;
 alter table users add column if not exists allow_private_chat boolean default true;
 
--- 3. Reset Policies (Fixes "policy already exists" or permission errors)
+-- 3. FORCE TIMESTAMP FIX (Handles Type Conversion)
+-- This converts any text timestamps to bigint numbers to prevent "invalid input syntax"
+DO $$
+BEGIN
+  -- Only run if column exists
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'messages' AND column_name = 'timestamp') THEN
+    -- Alter column type with casting logic
+    ALTER TABLE messages ALTER COLUMN timestamp TYPE bigint USING (
+      CASE 
+        -- If it's already a number string, cast to bigint
+        WHEN cast(timestamp as text) ~ '^[0-9]+$' THEN cast(timestamp as text)::bigint 
+        -- If it's an ISO date string, convert to epoch milliseconds
+        ELSE (extract(epoch from cast(timestamp as text)::timestamptz) * 1000)::bigint 
+      END
+    );
+  END IF;
+END $$;
+
+-- 4. Reset Policies (Fixes Permission Errors)
 drop policy if exists "Allow all operations" on users;
 drop policy if exists "Allow all operations" on messages;
 
--- 4. Enable Public Access (RLS)
 alter table users enable row level security;
 alter table messages enable row level security;
 
@@ -166,9 +171,9 @@ create policy "Allow all operations" on messages for all using (true) with check
               <Database className="w-6 h-6" />
               <h3 className="font-bold text-lg">Database Fixer</h3>
            </div>
-           <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">If messages aren't sending or user updates fail, copy and run this code in Supabase SQL Editor.</p>
+           <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">If you see "Internal Error" or "Invalid Syntax", run this SQL code in Supabase.</p>
            <div className="relative">
-             <pre className="w-full p-3 bg-gray-900 rounded-xl text-green-400 text-[10px] overflow-x-auto font-mono h-32 border border-gray-700">
+             <pre className="w-full p-3 bg-gray-900 rounded-xl text-green-400 text-[10px] overflow-x-auto font-mono h-40 border border-gray-700">
                 {sqlCode}
              </pre>
              <button 

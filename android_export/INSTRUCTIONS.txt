@@ -6,16 +6,23 @@ FUSIONHUB ANDROID APP SETUP GUIDE
    - Language: Java
    - Minimum SDK: API 24 (Android 7.0)
 
-2. Copy Code:
+2. **CRITICAL: Add Unity Ads Dependency**
+   - Open `Gradle Scripts` -> `build.gradle (Module: app)`.
+   - Inside the `dependencies { ... }` block, add this line:
+     `implementation 'com.unity3d.ads:unity-ads:4.9.2'`
+   - Click "Sync Now" at the top right of Android Studio.
+
+3. Copy Code:
    - Copy contents of `android_export/AndroidManifest.xml` -> `app/src/main/AndroidManifest.xml`
    - Copy contents of `android_export/activity_main.xml` -> `app/src/main/res/layout/activity_main.xml`
    - Copy contents of `android_export/MainActivity.java` -> `app/src/main/java/com/[your-package]/MainActivity.java`
 
-3. Configure:
-   - In MainActivity.java, change the package name at the top to match your project.
-   - In MainActivity.java, change the APP_URL string to your deployed website URL (e.g. https://your-app.vercel.app).
+4. Configure:
+   - In `MainActivity.java`, ensure `package com.fusionhub.app;` matches your actual package name (e.g., `com.example.fusionhub`).
+   - In `MainActivity.java`, change the `APP_URL` string to your deployed website URL (e.g. https://your-app.vercel.app).
 
-4. Build & Run:
+5. Build & Run:
    - Press the Play button in Android Studio to run on your emulator or connected device.
+   - The app will now show a Unity Ad every 3rd time it is fully launched (killed and reopened).
 
 Note: Ensure your web app is deployed (Vercel/Netlify) before running the Android app, as it loads the live URL.

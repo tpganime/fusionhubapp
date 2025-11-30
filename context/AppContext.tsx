@@ -664,10 +664,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (error) {
             console.error("Message Send Error:", error);
             setMessages(prev => prev.filter(m => m.id !== newMsg.id));
-            if (error.code === '42P01') { // undefined_table
-                alert("System Error: The 'messages' table does not exist. Please ask the Admin to run the database setup in Admin Panel.");
+            
+            // Helpful Error Handling for User
+            if (error.message.includes('Internal error') || error.message.includes('invalid input syntax')) {
+                 alert("DATABASE ERROR: The database needs to be updated. Please go to Settings -> Admin Panel -> Database Fixer and run the code.");
+            } else if (error.code === '42P01') { 
+                alert("System Error: The 'messages' table does not exist. Please ask the Admin to run the database setup.");
             } else {
-                alert("Failed to send message: " + error.message);
+                alert(`Failed to send message: ${error.message}`);
             }
         }
     } catch (e) {

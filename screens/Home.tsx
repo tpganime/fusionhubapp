@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 import { HOME_SHORTCUTS } from '../constants';
 import { TopBar } from '../components/TopBar';
 import { ComingSoon } from '../components/ComingSoon';
-import { ExternalLink, Lock, Bell, ArrowRight } from 'lucide-react';
+import { Lock, Bell, ArrowRight } from 'lucide-react';
 
 export const HomeScreen: React.FC = () => {
   const { currentUser, enableAnimations, appConfig, enableNotifications } = useApp();
@@ -56,13 +56,13 @@ export const HomeScreen: React.FC = () => {
   };
 
   return (
-    <div className="h-full overflow-y-auto pb-32 no-scrollbar gpu-accelerated">
+    <div className="h-full overflow-y-auto pb-32 no-scrollbar">
       <TopBar />
       <main className="px-5 pt-2">
         
         {/* Notification Permission Liquid Banner - Heavy pop in */}
         {showNotifBanner && (
-            <div className={`mb-6 p-5 liquid-card flex items-center justify-between transform-gpu ${enableAnimations ? 'animate-pop-in' : ''}`} style={{ animationDelay: '100ms' }}>
+            <div className={`mb-6 p-5 liquid-card flex items-center justify-between ${enableAnimations ? 'animate-pop-in' : ''}`} style={{ animationDelay: '100ms' }}>
                 <div className="flex items-center gap-4">
                     <div className="p-3 bg-blue-500/20 rounded-full text-blue-600 dark:text-blue-300 shadow-inner">
                         <Bell className="w-6 h-6 animate-bounce-soft" />
@@ -83,8 +83,7 @@ export const HomeScreen: React.FC = () => {
 
         {/* Greeting Liquid Card - 3D Tilted & Refined Motion */}
         <div 
-          className={`relative overflow-hidden liquid-card p-6 mb-6 transform-gpu hover:scale-[1.02] hover:shadow-2xl transition-all duration-700 ${enableAnimations ? 'animate-scale-in' : ''}`}
-          style={{ transform: 'rotateX(5deg) translateZ(0)' }} 
+          className={`relative overflow-hidden liquid-card p-6 mb-6 hover:scale-[1.02] hover:shadow-2xl transition-all duration-700 ${enableAnimations ? 'animate-scale-in' : ''}`}
         >
            {/* Fluid background effect */}
            <div className="absolute -top-20 -right-20 w-64 h-64 bg-gradient-to-br from-purple-300 to-blue-300 dark:from-purple-900/60 dark:to-blue-900/60 rounded-full blur-[80px] opacity-70 pointer-events-none animate-blob"></div>
@@ -125,7 +124,7 @@ export const HomeScreen: React.FC = () => {
                        href={shortcut.url}
                        target="_blank"
                        rel="noopener noreferrer"
-                       className={`group relative overflow-hidden liquid-card p-5 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] hover:-translate-y-2 transition-all duration-500 transform-gpu ${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`}
+                       className={`group relative overflow-hidden liquid-card p-5 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] hover:-translate-y-2 transition-all duration-500 ${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`}
                        style={getDelay(index, 300)}
                      >
                         <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-4 group-hover:translate-x-0 duration-500 ease-out">
@@ -148,7 +147,7 @@ export const HomeScreen: React.FC = () => {
                  return (
                      <div 
                        key={shortcut.name}
-                       className={`group relative overflow-hidden liquid-card p-5 opacity-60 cursor-not-allowed transform-gpu grayscale hover:grayscale-0 transition-all duration-500 ${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`}
+                       className={`group relative overflow-hidden liquid-card p-5 opacity-60 cursor-not-allowed grayscale hover:grayscale-0 transition-all duration-500 ${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`}
                        style={getDelay(index, 300)}
                      >
                         <div className="absolute top-3 right-3">

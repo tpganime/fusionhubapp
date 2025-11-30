@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
 import { ComingSoon } from '../components/ComingSoon';
-import { Search as SearchIcon, UserPlus, Check, MessageCircle, ShieldCheck, Crown, RotateCw } from 'lucide-react';
+import { Search as SearchIcon, UserPlus, MessageCircle, ShieldCheck, Crown, RotateCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const SearchScreen: React.FC = () => {
@@ -37,12 +37,12 @@ export const SearchScreen: React.FC = () => {
   };
 
   return (
-    <div className="h-full overflow-y-auto pb-32 no-scrollbar gpu-accelerated">
+    <div className="h-full overflow-y-auto pb-32 no-scrollbar">
       <TopBar />
       <main className="px-5 pt-2">
         <h1 className={`text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`} style={{ animationFillMode: 'both' }}>Discover</h1>
         
-        <div className={`relative mb-6 transform-gpu ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`} style={{ animationDelay: '100ms', animationFillMode: 'both' }}>
+        <div className={`relative mb-6 ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`} style={{ animationDelay: '100ms', animationFillMode: 'both' }}>
           <SearchIcon className="absolute left-5 top-4 text-gray-500 w-5 h-5 z-10" />
           <input
             type="text"
@@ -71,7 +71,7 @@ export const SearchScreen: React.FC = () => {
               <div 
                 key={user.id} 
                 onClick={() => navigate(`/user/${user.id}`)}
-                className={`relative z-0 liquid-card p-4 flex items-center justify-between transition-all hover:bg-white/40 dark:hover:bg-white/10 cursor-pointer group hover:scale-[1.01] active:scale-[0.99] transform-gpu will-change-transform ${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`}
+                className={`relative z-0 liquid-card p-4 flex items-center justify-between transition-all hover:bg-white/40 dark:hover:bg-white/10 cursor-pointer group hover:scale-[1.01] active:scale-[0.99] ${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`}
                 style={{ animationDelay: `${200 + (index * 60)}ms`, animationFillMode: 'both' }}
               >
                 <div className="flex items-center space-x-4">

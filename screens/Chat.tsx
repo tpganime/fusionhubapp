@@ -36,7 +36,6 @@ export const ChatScreen: React.FC = () => {
 
   const setSelectedUser = (user: User | null) => {
     if (user) {
-        // Use navigate to push to history, simpler than setSearchParams for some routers
         navigate(`/chat?uid=${user.id}`);
     } else {
         navigate('/chat');
@@ -67,7 +66,6 @@ export const ChatScreen: React.FC = () => {
 
   useEffect(() => {
     if (conversation.length > 0) {
-      // Small timeout to ensure rendering is complete before scrolling
       setTimeout(() => {
           messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 100);
@@ -95,31 +93,32 @@ export const ChatScreen: React.FC = () => {
     const text = inputText.trim();
     if (!text) return;
 
-    setInputText(''); // Clear immediately for better UX
+    setInputText('');
     
     try {
       await sendMessage(selectedUser.id, text);
     } catch (error) {
       console.error("Failed to send message", error);
-      setInputText(text); // Restore text on failure
+      setInputText(text); // Restore on error
       alert("Failed to send message. Please try again.");
     }
   };
 
   const handleProfileClick = (e: React.MouseEvent, userId?: string) => {
     e.preventDefault();
-    e.stopPropagation(); // Prevent any bubbling
+    e.stopPropagation(); 
     const targetId = userId || selectedUser?.id;
     if (targetId) {
         navigate(`/user/${targetId}`);
     }
   };
 
+  // ---------------- VIEW: CHAT LIST ----------------
   if (!selectedUser) {
     return (
-      <div className="h-full overflow-y-auto pb-32 no-scrollbar gpu-accelerated" style={{ perspective: 'none', transformStyle: 'flat' }}>
+      <div className="flex flex-col h-full bg-transparent">
         <TopBar />
-        <main className="px-5 pt-2">
+        <div className="flex-1 overflow-y-auto no-scrollbar px-5 pt-2 pb-24">
           <h1 className={`text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`} style={{ animationFillMode: 'both' }}>Messages</h1>
           
           <div className="space-y-3">
@@ -140,14 +139,13 @@ export const ChatScreen: React.FC = () => {
                 return (
                   <div
                     key={user.id}
-                    className={`relative w-full flex items-center p-4 liquid-card hover:bg-white/40 dark:hover:bg-white/10 transition-all hover:scale-[1.01] active:scale-[0.98] transform-gpu will-change-transform ${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`}
+                    className={`relative w-full flex items-center p-4 liquid-card hover:bg-white/40 dark:hover:bg-white/10 transition-all active:scale-[0.98] ${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`}
                     style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'both' }}
                     onClick={() => setSelectedUser(user)}
                   >
                     <button 
                         onClick={(e) => handleProfileClick(e, user.id)}
                         className="relative flex-shrink-0 z-20 cursor-pointer"
-                        style={{ pointerEvents: 'auto' }}
                     >
                       <img src={user.avatar} alt={user.username} className={`w-14 h-14 rounded-full object-cover border-2 ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-white/50'}`} />
                       {hasUnread && <span className="absolute top-0 right-0 w-4 h-4 bg-blue-500 rounded-full border-2 border-white animate-pulse"></span>}
@@ -171,21 +169,22 @@ export const ChatScreen: React.FC = () => {
               })
             )}
           </div>
-        </main>
+        </div>
       </div>
     );
   }
 
+  // ---------------- VIEW: ACTIVE CONVERSATION ----------------
   const isOwnerUser = checkIsOwner(selectedUser.email);
   const isAdminUser = checkIsAdmin(selectedUser.email);
   const isSelectedUserOnline = checkIsOnline(selectedUser.id);
 
   return (
-    <div className={`h-full flex flex-col no-scrollbar gpu-accelerated ${enableAnimations ? 'animate-fade-in' : ''}`} style={{ perspective: 'none', transformStyle: 'flat' }}>
+    <div className={`flex flex-col h-full bg-transparent ${enableAnimations ? 'animate-fade-in' : ''}`}>
       
-      {/* Fixed Header */}
-      <div className="fixed top-0 left-0 right-0 z-50 px-4 pt-4 pb-2 bg-gradient-to-b from-gray-50/95 to-gray-50/0 dark:from-black/95 dark:to-black/0 pointer-events-none">
-          <div className="h-16 glass-panel px-4 flex items-center justify-between shadow-lg pointer-events-auto">
+      {/* Sticky Header */}
+      <div className="flex-none z-50 px-4 pt-4 pb-2 bg-gradient-to-b from-gray-50/95 to-gray-50/0 dark:from-black/95 dark:to-black/0">
+          <div className="h-16 glass-panel px-4 flex items-center justify-between shadow-lg">
             <div className="flex items-center gap-2 w-full">
                 <button 
                     onClick={() => setSelectedUser(null)} 
@@ -194,6 +193,7 @@ export const ChatScreen: React.FC = () => {
                     <ArrowLeft className="w-6 h-6" />
                 </button>
                 
+                {/* Header Profile Info - Clickable */}
                 <button 
                     onClick={(e) => handleProfileClick(e)}
                     className="flex items-center gap-3 hover:bg-black/5 dark:hover:bg-white/10 p-1.5 pr-4 rounded-full transition-all flex-1 min-w-0 active:scale-95 text-left"
@@ -217,8 +217,8 @@ export const ChatScreen: React.FC = () => {
           </div>
       </div>
 
-      {/* Message List Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2 pb-32 pt-24 no-scrollbar">
+      {/* Message List Area - Scrollable Flex Item */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-2 no-scrollbar">
         {conversation.length === 0 ? (
            <div className={`text-center mt-20 opacity-50 ${enableAnimations ? 'animate-pop-in' : ''}`}>
              <div className="w-20 h-20 bg-white/30 rounded-full mx-auto mb-3 flex items-center justify-center text-3xl">👋</div>
@@ -232,7 +232,7 @@ export const ChatScreen: React.FC = () => {
              return (
                <div 
                   key={msg.id} 
-                  className={`flex ${isMe ? 'justify-end' : 'justify-start'} transform-gpu will-change-transform ${shouldAnimate ? 'animate-slide-up-fade opacity-0' : ''}`} 
+                  className={`flex ${isMe ? 'justify-end' : 'justify-start'} ${shouldAnimate ? 'animate-slide-up-fade opacity-0' : ''}`} 
                   style={{ animationDelay: shouldAnimate ? `${(idx - (conversation.length - 10)) * 50}ms` : '0s', animationFillMode: 'both' }}
                 >
                  <div className={`max-w-[80%] px-4 py-2 text-sm shadow-sm border ${
@@ -257,11 +257,11 @@ export const ChatScreen: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area */}
-      <div className={`fixed bottom-24 left-0 right-0 px-4 z-40 ${enableAnimations ? 'animate-slide-up' : ''}`}>
+      {/* Input Area - Fixed at bottom within flex container, leaving space for BottomNav */}
+      <div className="flex-none p-4 pb-24 z-40 bg-gradient-to-t from-gray-50 via-gray-50/80 to-transparent dark:from-black dark:via-black/80">
         <form 
           onSubmit={handleSend} 
-          className="flex items-center gap-2 p-1.5 shadow-xl sm:max-w-md sm:mx-auto bg-white/80 dark:bg-black/60 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-[2rem] w-full"
+          className="flex items-center gap-2 p-1.5 shadow-xl sm:max-w-md sm:mx-auto bg-white/90 dark:bg-black/90 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-[2rem] w-full"
         >
           <input
             type="text"

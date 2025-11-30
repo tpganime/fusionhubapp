@@ -1,9 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { TopBar } from '../components/TopBar';
 import { ComingSoon } from '../components/ComingSoon';
-import { Camera, ArrowLeft, Lock, Link as LinkIcon, ShieldCheck, Crown, X, Settings, MessageCircle, ChevronDown, AlignJustify, Copy, Share2, Activity, Calendar, BarChart3, Mail, UserMinus, User as UserIcon } from 'lucide-react';
+import { Camera, ArrowLeft, Lock, ShieldCheck, Crown, X, Settings, AlignJustify, Share2, Activity, UserMinus, User as UserIcon } from 'lucide-react';
 import { Gender } from '../types';
 import { useParams, useNavigate } from 'react-router-dom';
 
@@ -193,7 +192,8 @@ export const ProfileScreen: React.FC = () => {
   };
 
   const handleBack = () => {
-      if (window.history.state && window.history.state.idx > 0) {
+      // Safer back navigation check
+      if (window.history.length > 1) {
         navigate(-1);
       } else {
         navigate('/home');
@@ -213,7 +213,7 @@ export const ProfileScreen: React.FC = () => {
 
   // Stats for Modal
   const weeklyStats = isOwnProfile ? getWeeklyStats() : [];
-  const maxMs = Math.max(...weeklyStats.map(s => s.ms), 60000); // Minimum 1 min scale
+  const maxMs = Math.max(...weeklyStats.map(s => s.ms), 60000); 
   const totalMs = weeklyStats.reduce((acc, curr) => acc + curr.ms, 0);
   const avgMs = Math.round(totalMs / 7);
 
@@ -231,7 +231,7 @@ export const ProfileScreen: React.FC = () => {
   };
 
   return (
-    <div className={`h-full overflow-y-auto pb-32 no-scrollbar relative gpu-accelerated bg-white dark:bg-black ${enableAnimations ? 'animate-fade-in' : ''}`}>
+    <div className={`h-full flex flex-col bg-white dark:bg-black ${enableAnimations ? 'animate-fade-in' : ''}`}>
       
       {/* Full Avatar Modal */}
       {showFullAvatar && (
@@ -289,30 +289,30 @@ export const ProfileScreen: React.FC = () => {
         </div>
       )}
 
-      {/* Header */}
-      <div className="fixed top-0 left-0 right-0 h-14 bg-white/90 dark:bg-black/90 backdrop-blur-md z-40 flex items-center justify-between px-4 sm:max-w-md sm:mx-auto border-b border-gray-100 dark:border-gray-800 transition-all duration-300">
+      {/* Header - Fixed Height */}
+      <div className="flex-none h-14 bg-white/90 dark:bg-black/90 backdrop-blur-md z-40 flex items-center justify-between px-4 sm:max-w-md sm:mx-auto border-b border-gray-100 dark:border-gray-800 transition-all duration-300">
           <div className="flex items-center gap-1">
              {isOwnProfile ? (
                  <>
                      <Lock className="w-3 h-3 text-gray-800 dark:text-white" />
-                     <h1 className="text-xl font-bold text-gray-900 dark:text-white">{profileUser.username}</h1>
-                     <ChevronDown className="w-4 h-4 text-gray-800 dark:text-white mt-1" />
+                     <h1 className="text-xl font-bold text-gray-900 dark:text-white truncate max-w-[150px]">{profileUser.username}</h1>
                  </>
              ) : (
                  <>
                      <button onClick={handleBack} className="mr-2 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 active:scale-95 transition-transform"><ArrowLeft className="w-6 h-6 text-gray-900 dark:text-white" /></button>
-                     <h1 className="text-lg font-bold text-gray-900 dark:text-white">{profileUser.username}</h1>
+                     <h1 className="text-lg font-bold text-gray-900 dark:text-white truncate max-w-[150px]">{profileUser.username}</h1>
                  </>
              )}
-             {isOwnerUser && <Crown className="w-4 h-4 text-yellow-500 fill-yellow-500 ml-1" />}
-             {isAdminUser && !isOwnerUser && <ShieldCheck className="w-4 h-4 text-blue-500 ml-1" />}
+             {isOwnerUser && <Crown className="w-4 h-4 text-yellow-500 fill-yellow-500 ml-1 flex-shrink-0" />}
+             {isAdminUser && !isOwnerUser && <ShieldCheck className="w-4 h-4 text-blue-500 ml-1 flex-shrink-0" />}
           </div>
           <div className="flex items-center gap-4">
               {isOwnProfile ? <button><Settings className="w-6 h-6 text-gray-900 dark:text-white" onClick={() => navigate('/settings')}/></button> : <button><AlignJustify className="w-6 h-6 text-gray-900 dark:text-white" /></button>}
           </div>
       </div>
 
-      <div className="pt-16 px-4">
+      {/* Main Content - Scrollable */}
+      <div className="flex-1 overflow-y-auto pt-4 px-4 pb-32 no-scrollbar">
          {/* User Info Section - Style Updated */}
          <div className="mb-6">
              <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">User Info</h2>
@@ -364,7 +364,7 @@ export const ProfileScreen: React.FC = () => {
          {/* Bio / Description */}
          <div className={`mb-6 ${enableAnimations ? 'animate-slide-up-fade' : ''}`} style={{ animationDelay: '100ms' }}>
              <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Bio</h2>
-             <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 text-sm text-gray-600 dark:text-gray-300 leading-relaxed min-h-[80px]">
+             <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 text-sm text-gray-600 dark:text-gray-300 leading-relaxed min-h-[80px] break-words">
                  {displayDescription || "No bio available."}
              </div>
          </div>

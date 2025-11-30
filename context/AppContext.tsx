@@ -70,9 +70,9 @@ const STORAGE_KEYS = {
   ANIM_SPEED: 'fh_anim_speed_v1',
   LIQUID: 'fh_liquid_v1',
   GLASS_OPACITY: 'fh_glass_opacity_v1',
-  CACHE_USERS: 'fh_cache_users_v1',
-  CACHE_MESSAGES: 'fh_cache_messages_v1',
-  CACHE_NOTIFICATIONS: 'fh_cache_notifications_v1',
+  CACHE_USERS: 'fh_cache_users_v2', // Version bumped to ensure clean slate if structure changed
+  CACHE_MESSAGES: 'fh_cache_messages_v2',
+  CACHE_NOTIFICATIONS: 'fh_cache_notifications_v2',
   LAST_RESET: 'fh_last_reset_date',
   KNOWN_ACCOUNTS: 'fh_known_accounts_v1'
 };
@@ -271,21 +271,27 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => { usersRef.current = users; }, [users]);
   useEffect(() => { notificationsRef.current = notifications; }, [notifications]);
   
-  // -- BACKGROUND CACHING --
+  // -- BACKGROUND CACHING WITH DEBOUNCE --
   useEffect(() => {
-    if (users.length > 0) setTimeout(() => localStorage.setItem(STORAGE_KEYS.CACHE_USERS, JSON.stringify(users)), 0);
+    if (users.length > 0) {
+      const timer = setTimeout(() => localStorage.setItem(STORAGE_KEYS.CACHE_USERS, JSON.stringify(users)), 500);
+      return () => clearTimeout(timer);
+    }
   }, [users]);
 
   useEffect(() => {
-    if (messages.length > 0) setTimeout(() => localStorage.setItem(STORAGE_KEYS.CACHE_MESSAGES, JSON.stringify(messages)), 0);
+    if (messages.length > 0) {
+      const timer = setTimeout(() => localStorage.setItem(STORAGE_KEYS.CACHE_MESSAGES, JSON.stringify(messages)), 500);
+      return () => clearTimeout(timer);
+    }
   }, [messages]);
 
   useEffect(() => {
-    setTimeout(() => localStorage.setItem(STORAGE_KEYS.KNOWN_ACCOUNTS, JSON.stringify(knownAccounts)), 0);
+      localStorage.setItem(STORAGE_KEYS.KNOWN_ACCOUNTS, JSON.stringify(knownAccounts));
   }, [knownAccounts]);
 
   useEffect(() => {
-    setTimeout(() => localStorage.setItem(STORAGE_KEYS.CACHE_NOTIFICATIONS, JSON.stringify(notifications)), 0);
+    localStorage.setItem(STORAGE_KEYS.CACHE_NOTIFICATIONS, JSON.stringify(notifications));
   }, [notifications]);
 
   const checkIsOwner = (email: string) => email.toLowerCase() === OWNER_EMAIL.toLowerCase();
@@ -580,14 +586,27 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const sendMessage = async (receiverId: string, content: string) => {
     if (!currentUser) return;
     const newMsg: Message = { id: generateUUID(), senderId: currentUser.id, receiverId, content, timestamp: Date.now(), read: false };
+    
+    // Optimistic Update
     setMessages(prev => [...prev, newMsg]);
     playSendSound();
     
-    const { error } = await supabase.from('messages').insert(mapMessageToDB(newMsg));
-    if (error) {
-        console.error("Message Send Error:", error);
-        triggerNotification("Error", "Message failed to send.");
+    // Explicitly cache immediately for responsiveness
+    const currentCache = JSON.parse(localStorage.getItem(STORAGE_KEYS.CACHE_MESSAGES) || '[]');
+    localStorage.setItem(STORAGE_KEYS.CACHE_MESSAGES, JSON.stringify([...currentCache, newMsg]));
+
+    try {
+        const { error } = await supabase.from('messages').insert(mapMessageToDB(newMsg));
+        if (error) {
+            console.error("Message Send Error:", error);
+            triggerNotification("Error", "Message failed to send.");
+            // Rollback
+            setMessages(prev => prev.filter(m => m.id !== newMsg.id));
+        }
+    } catch (e) {
+        console.error("Network Exception:", e);
         setMessages(prev => prev.filter(m => m.id !== newMsg.id));
+        alert("Failed to send message due to network error.");
     }
   };
 
@@ -617,7 +636,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             
             setTimeout(async () => {
                 await supabase.from('users').update({ requests: [...filtered, currentUser.id] }).eq('id', targetUserId);
-            }, 800); // Increased delay to 800ms for robust event triggering
+            }, 800); 
         } else {
             await supabase.from('users').update({ requests: [...currentRequests, currentUser.id] }).eq('id', targetUserId);
         }
@@ -714,16 +733,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       try {
         const savedId = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
         try {
+            // Priority: Load Cache First
             const cachedUsers = JSON.parse(localStorage.getItem(STORAGE_KEYS.CACHE_USERS) || '[]');
-            if (cachedUsers.length) { setUsers(cachedUsers); syncConfigFromUsers(cachedUsers); }
+            if (cachedUsers.length) { 
+                setUsers(cachedUsers); 
+                syncConfigFromUsers(cachedUsers); 
+            }
             const cachedMsgs = JSON.parse(localStorage.getItem(STORAGE_KEYS.CACHE_MESSAGES) || '[]');
             if (cachedMsgs.length) setMessages(cachedMsgs);
+            
             if (savedId && cachedUsers.length) {
                 const found = cachedUsers.find((u: User) => u.id === savedId);
                 if (found) setCurrentUser(found);
             }
         } catch(e) {}
 
+        // Then Fetch Network
         const { data: usersData, error: userError } = await supabase.from('users').select('*');
         if (userError) throw userError;
         
@@ -732,7 +757,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             setUsers(mappedUsers);
             syncConfigFromUsers(mappedUsers);
             
-            const { data: msgsData } = await supabase.from('messages').select('*').order('timestamp', { ascending: false }).limit(100);
+            const { data: msgsData } = await supabase.from('messages').select('*').order('timestamp', { ascending: false }).limit(200); // Increased limit
             if (msgsData) setMessages(msgsData.map(mapMessageFromDB).reverse());
 
             if (savedId) {

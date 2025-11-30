@@ -118,25 +118,20 @@ export const SettingsScreen: React.FC = () => {
       const name = "FusionHub Premium";
       const amount = "29.00";
       const note = "Premium Upgrade";
+      // Ensure proper encoding for deep linking
       return `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
   };
 
   const openUpiLink = () => {
       const upiUrl = generateUpiUrl();
       
-      // Method 1: Anchor Click (Better for deep links)
-      const link = document.createElement('a');
-      link.href = upiUrl;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      // Method 2: Fallback
+      // Try redirection (Standard for deep links)
+      window.location.href = upiUrl;
+
+      // Fallback: If on web and nothing happened, maybe show a hint
       setTimeout(() => {
-          window.location.href = upiUrl;
-      }, 500);
+          console.log("Attempted to open UPI link:", upiUrl);
+      }, 1000);
   };
 
   const handleBuyPremium = () => {
@@ -156,6 +151,12 @@ export const SettingsScreen: React.FC = () => {
   const handleUploadScreenshot = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (file) {
+          // Check for API KEY First
+          if (!process.env.API_KEY) {
+              alert("Configuration Error: API_KEY is missing. Please contact Admin.");
+              return;
+          }
+
           setPaymentStep('scanning');
           setScanStatus("Compressing & Encrypting...");
           

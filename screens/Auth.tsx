@@ -142,25 +142,7 @@ export const AuthScreen: React.FC = () => {
       {/* Liquid Glass Card */}
       <div className={`w-full max-w-md liquid-card p-10 z-10 ${enableAnimations ? 'animate-scale-in' : ''}`}>
         <div className="text-center mb-8 flex flex-col items-center">
-            <svg 
-              viewBox="0 0 100 100" 
-              className={`w-24 h-24 mb-4 drop-shadow-lg ${enableAnimations ? 'animate-float' : ''}`}
-              style={{ animationDuration: '6s' }}
-              fill="none" 
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <defs>
-                <linearGradient id="logo_grad_auth" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#3B82F6" />
-                  <stop offset="100%" stopColor="#8B5CF6" />
-                </linearGradient>
-              </defs>
-              <circle cx="50" cy="50" r="15" fill="url(#logo_grad_auth)" />
-              <ellipse cx="50" cy="50" rx="40" ry="12" stroke="url(#logo_grad_auth)" strokeWidth="6" transform="rotate(0 50 50)" />
-              <ellipse cx="50" cy="50" rx="40" ry="12" stroke="url(#logo_grad_auth)" strokeWidth="6" transform="rotate(60 50 50)" />
-              <ellipse cx="50" cy="50" rx="40" ry="12" stroke="url(#logo_grad_auth)" strokeWidth="6" transform="rotate(120 50 50)" />
-            </svg>
-            <h1 className={`text-4xl font-black bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent drop-shadow-sm ${animClass}`} style={getDelay(100)}>
+            <h1 className={`text-5xl font-instagram bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent drop-shadow-sm ${animClass}`} style={getDelay(100)}>
             FusionHub
             </h1>
             <h2 className={`text-lg font-bold text-gray-800 dark:text-gray-100 mt-2 ${animClass}`} style={getDelay(200)}>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { ComingSoon } from '../components/ComingSoon';
@@ -56,6 +57,12 @@ const calculateAge = (birthDateString?: string) => {
     return age;
 };
 
+interface Stat {
+    day: string;
+    date: string;
+    ms: number;
+}
+
 export const ProfileScreen: React.FC = () => {
   const { currentUser, users, updateProfile, sendFriendRequest, unfriend, checkIsAdmin, checkIsOwner, enableAnimations, appConfig, getTimeSpent, getWeeklyStats } = useApp();
   const { userId } = useParams<{ userId: string }>();
@@ -65,6 +72,7 @@ export const ProfileScreen: React.FC = () => {
 
   const [timeSpent, setTimeSpent] = useState("0m");
   const [showStatsModal, setShowStatsModal] = useState(false);
+  const [selectedStat, setSelectedStat] = useState<Stat | null>(null);
   
   // New Modal States
   const [showShareModal, setShowShareModal] = useState(false);
@@ -78,6 +86,11 @@ export const ProfileScreen: React.FC = () => {
           return () => clearInterval(interval);
       }
   }, [isOwnProfile, getTimeSpent]);
+
+  // Reset selected stat when modal closes
+  useEffect(() => {
+      if (!showStatsModal) setSelectedStat(null);
+  }, [showStatsModal]);
 
   if (!appConfig.features.profile && !isOwnProfile) {
     return <ComingSoon title="Profile" />;
@@ -219,6 +232,10 @@ export const ProfileScreen: React.FC = () => {
       return (<span><span className="text-5xl">{mins}</span><span className="text-3xl">m</span></span>);
   };
 
+  const currentDisplayStat = selectedStat ? selectedStat.ms : avgMs;
+  const currentDisplayLabel = selectedStat ? `Time Spent on ${selectedStat.day}` : 'Daily Average';
+  const currentDisplayDesc = selectedStat ? `Usage for ${selectedStat.date}` : 'Average time you spent per day using the FusionHub app on this device in the last week.';
+
   return (
     <div className={`h-full flex flex-col bg-white dark:bg-black ${enableAnimations ? 'animate-fade-in' : ''}`}>
       
@@ -268,7 +285,7 @@ export const ProfileScreen: React.FC = () => {
           </div>
       </GenericModal>
 
-      {/* Stats Modal */}
+      {/* Stats Modal - Now Interactive */}
       {showStatsModal && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowStatsModal(false)}></div>
@@ -278,13 +295,12 @@ export const ProfileScreen: React.FC = () => {
                 </button>
                 
                 <div className="flex flex-col items-center mb-8">
-                    <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 tracking-wide">Time on FusionHub</h3>
+                    <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 tracking-wide">{currentDisplayLabel}</h3>
                     <div className="mt-2 font-black bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500 bg-clip-text text-transparent">
-                        {formatBigTime(avgMs)}
+                        {formatBigTime(currentDisplayStat)}
                     </div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mt-1">Daily Average</p>
                     <p className="text-[11px] text-gray-400 text-center mt-3 leading-relaxed max-w-[240px]">
-                        Average time you spent per day using the FusionHub app on this device in the last week.
+                        {currentDisplayDesc}
                     </p>
                 </div>
                 
@@ -293,16 +309,21 @@ export const ProfileScreen: React.FC = () => {
                         const heightPercent = Math.max((stat.ms / maxMs) * 100, 4);
                         const isToday = i === 6;
                         const label = isToday ? 'Today' : stat.day;
+                        const isSelected = selectedStat?.date === stat.date;
                         
                         return (
-                            <div key={i} className="flex-1 flex flex-col items-center gap-2 group relative">
-                                <div className="w-full relative flex items-end h-full bg-gray-100 dark:bg-gray-900 rounded-md overflow-hidden">
+                            <div 
+                              key={i} 
+                              onClick={() => setSelectedStat(stat)}
+                              className="flex-1 flex flex-col items-center gap-2 group relative cursor-pointer"
+                            >
+                                <div className="w-full relative flex items-end h-full bg-gray-100 dark:bg-gray-900 rounded-md overflow-hidden hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors">
                                     <div 
-                                      className={`w-full rounded-md transition-all duration-1000 ease-out bg-[#60A5FA]`}
+                                      className={`w-full rounded-md transition-all duration-1000 ease-out ${isSelected ? 'bg-orange-500' : isToday ? 'bg-[#60A5FA]' : 'bg-blue-300 dark:bg-blue-800'}`}
                                       style={{ height: `${heightPercent}%` }}
                                     ></div>
                                 </div>
-                                <span className={`text-[9px] font-bold uppercase ${isToday ? 'text-black dark:text-white' : 'text-gray-400'}`}>
+                                <span className={`text-[9px] font-bold uppercase ${isSelected ? 'text-orange-500' : isToday ? 'text-black dark:text-white' : 'text-gray-400'}`}>
                                     {label.substring(0, 1)}
                                 </span>
                             </div>

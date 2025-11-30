@@ -6,12 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>FusionHub</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Grand+Hotel&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
         darkMode: 'class',
         theme: {
           extend: {
+            fontFamily: {
+              instagram: ['"Grand Hotel"', 'cursive'],
+              sans: ['Inter', 'sans-serif'],
+            },
             colors: {
               dark: {
                 bg: '#000000',
@@ -244,7 +248,7 @@
           will-change: transform, opacity; 
       }
 
-      /* SIMPLIFIED LIQUID TOGGLE - RED/GREEN */
+      /* RED / GREEN TOGGLE */
       .liquid-toggle {
         width: 52px;
         height: 32px;
@@ -264,7 +268,7 @@
       .liquid-toggle .toggle-circle {
         width: 24px;
         height: 24px;
-        background: white;
+        background: white; /* Always white */
         border-radius: 50%;
         box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -303,7 +307,8 @@
       .slider-thumb-glass {
         position: absolute;
         top: 50%;
-        transform: translate(-50%, -50%);
+        /* Explicit vertical center adjustment */
+        transform: translate(-50%, -50%); 
         width: 32px; 
         height: 24px;
         border-radius: 999px;
@@ -316,10 +321,11 @@
             inset 0 -2px 4px rgba(0,0,0,0.1);
         overflow: hidden;
         transition: transform 0.15s ease, height 0.15s ease;
-        transform: translateZ(2px);
+        /* Ensure it sits above properly */
+        margin-top: 0px; 
       }
       .slider-thumb-glass:active { 
-         transform: translate(-50%, -50%) scaleY(0.98) scaleX(1.1) translateZ(4px); 
+         transform: translate(-50%, -50%) scaleY(0.98) scaleX(1.1); 
          box-shadow: 0 8px 15px 0 rgba(0, 30, 63, 0.15);
       }
 

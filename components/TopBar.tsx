@@ -34,25 +34,7 @@ export const TopBar: React.FC = () => {
       <div className={`fixed top-4 left-4 right-4 h-16 px-5 flex items-center justify-between z-40 glass-panel shadow-lg ${enableAnimations ? 'animate-slide-down' : ''}`}>
         {/* Left Side: Brand with New SVG Logo */}
         <div className="flex items-center gap-3">
-           <svg 
-             viewBox="0 0 100 100" 
-             className="w-9 h-9 drop-shadow-md animate-float"
-             style={{ animationDuration: '8s' }}
-             fill="none" 
-             xmlns="http://www.w3.org/2000/svg"
-           >
-             <defs>
-               <linearGradient id="logo_grad_top" x1="0%" y1="0%" x2="100%" y2="100%">
-                 <stop offset="0%" stopColor="#3B82F6" />
-                 <stop offset="100%" stopColor="#8B5CF6" />
-               </linearGradient>
-             </defs>
-             <circle cx="50" cy="50" r="15" fill="url(#logo_grad_top)" />
-             <ellipse cx="50" cy="50" rx="40" ry="12" stroke="url(#logo_grad_top)" strokeWidth="6" transform="rotate(0 50 50)" />
-             <ellipse cx="50" cy="50" rx="40" ry="12" stroke="url(#logo_grad_top)" strokeWidth="6" transform="rotate(60 50 50)" />
-             <ellipse cx="50" cy="50" rx="40" ry="12" stroke="url(#logo_grad_top)" strokeWidth="6" transform="rotate(120 50 50)" />
-           </svg>
-           <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-gray-600 dark:from-white dark:to-gray-300">
+           <h1 className="text-3xl pt-1 font-instagram bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-gray-600 dark:from-white dark:to-gray-300">
              FusionHub
            </h1>
         </div>

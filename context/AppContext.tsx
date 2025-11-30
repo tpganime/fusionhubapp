@@ -167,7 +167,8 @@ const mapMessageToDB = (msg: Message) => ({
   sender_id: msg.senderId,
   receiver_id: msg.receiverId,
   content: msg.content,
-  timestamp: new Date(msg.timestamp).toISOString(),
+  // SEND AS NUMBER (BIGINT) to fix invalid input syntax
+  timestamp: msg.timestamp, 
   read: msg.read
 });
 

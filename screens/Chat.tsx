@@ -306,8 +306,8 @@ export const ChatScreen: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area - Adjusted for mobile visibility */}
-      <div className="flex-none p-3 pb-6 bg-white dark:bg-black border-t border-gray-100 dark:border-gray-800 z-[60] shadow-[0_-5px_20px_rgba(0,0,0,0.03)]">
+      {/* Input Area - Adjusted for mobile visibility with pb-8 */}
+      <div className="flex-none p-3 pb-8 bg-white dark:bg-black border-t border-gray-100 dark:border-gray-800 z-[60] shadow-[0_-5px_20px_rgba(0,0,0,0.03)]">
         <form 
           onSubmit={handleSend} 
           className={`flex items-end gap-2 p-1.5 shadow-sm sm:max-w-md sm:mx-auto bg-gray-100 dark:bg-gray-900 border border-transparent rounded-[1.5rem] w-full ${isDisabled ? 'opacity-50 pointer-events-none' : ''}`}

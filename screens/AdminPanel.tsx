@@ -76,7 +76,7 @@ create table if not exists messages (
   sender_id text,
   receiver_id text,
   content text,
-  timestamp text,
+  timestamp bigint,  -- Changed to bigint for proper ordering
   read boolean default false
 );
 

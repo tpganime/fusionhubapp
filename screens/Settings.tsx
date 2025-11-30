@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
@@ -114,7 +112,7 @@ export const SettingsScreen: React.FC = () => {
   };
 
   const generateUpiUrl = () => {
-      const upiId = "733718802@omni";
+      const upiId = "7383718802@omni";
       const name = "FusionHub Premium";
       const amount = "29.00";
       const note = "Premium Upgrade";

@@ -58,17 +58,14 @@ export const ChatScreen: React.FC = () => {
 
   const conversation = selectedUser ? getConversation(selectedUser.id) : [];
 
-  // Scroll to bottom when conversation length changes (new message arrival)
   useEffect(() => {
     if (conversation.length > 0) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [conversation.length, selectedUser?.id]);
 
-  // Mark as read logic
   useEffect(() => {
     if (selectedUser && currentUser) {
-      // Check if there are unread messages to avoid unnecessary updates
       const hasUnread = conversation.some(m => 
         m.senderId === selectedUser.id && 
         m.receiverId === currentUser.id && 
@@ -91,7 +88,7 @@ export const ChatScreen: React.FC = () => {
 
   if (!selectedUser) {
     return (
-      <div className="h-full overflow-y-auto pb-32 no-scrollbar gpu-accelerated">
+      <div className="h-full overflow-y-auto pb-32 no-scrollbar gpu-accelerated" style={{ perspective: 'none', transformStyle: 'flat' }}>
         <TopBar />
         <main className="px-5 pt-2">
           <h1 className={`text-2xl font-bold mb-4 px-1 text-gray-900 dark:text-white ${enableAnimations ? 'animate-slide-up opacity-0' : ''}`} style={{ animationFillMode: 'both' }}>Messages</h1>
@@ -149,7 +146,7 @@ export const ChatScreen: React.FC = () => {
   const isSelectedUserOnline = checkIsOnline(selectedUser.id);
 
   return (
-    <div className={`h-full flex flex-col no-scrollbar gpu-accelerated ${enableAnimations ? 'animate-fade-in' : ''}`}>
+    <div className={`h-full flex flex-col no-scrollbar gpu-accelerated ${enableAnimations ? 'animate-fade-in' : ''}`} style={{ perspective: 'none', transformStyle: 'flat' }}>
       {/* Liquid Header */}
       <div className="fixed top-4 left-4 right-4 h-16 glass-panel px-4 flex items-center z-40 justify-between">
         <div className="flex items-center gap-3">
@@ -187,7 +184,6 @@ export const ChatScreen: React.FC = () => {
         ) : (
            conversation.map((msg, idx) => {
              const isMe = msg.senderId === currentUser?.id;
-             // Animate only the last few messages to preserve performance on long lists
              const shouldAnimate = enableAnimations && idx >= conversation.length - 10;
              
              return (

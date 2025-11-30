@@ -49,24 +49,24 @@
                 "100%": { opacity: "1" },
               },
               slideUp: {
-                "0%": { opacity: "0", transform: "perspective(1000px) rotateX(20deg) translate3d(0, 40px, 0) scale(0.9)" },
-                "100%": { opacity: "1", transform: "perspective(1000px) rotateX(0) translate3d(0, 0, 0) scale(1)" },
+                "0%": { opacity: "0", transform: "perspective(1200px) rotateX(10deg) translate3d(0, 40px, 0) scale(0.95)" },
+                "100%": { opacity: "1", transform: "perspective(1200px) rotateX(0) translate3d(0, 0, 0) scale(1)" },
               },
               slideDown: {
-                 "0%": { opacity: "0", transform: "perspective(1000px) rotateX(-20deg) translate3d(0, -40px, 0) scale(0.9)" },
-                 "100%": { opacity: "1", transform: "perspective(1000px) rotateX(0) translate3d(0, 0, 0) scale(1)" },
+                 "0%": { opacity: "0", transform: "perspective(1200px) rotateX(-10deg) translate3d(0, -40px, 0) scale(0.95)" },
+                 "100%": { opacity: "1", transform: "perspective(1200px) rotateX(0) translate3d(0, 0, 0) scale(1)" },
               },
               slideUpFade: {
-                "0%": { opacity: "0", transform: "perspective(1000px) rotateX(10deg) translate3d(0, 60px, 0) scale(0.95)" },
-                "100%": { opacity: "1", transform: "perspective(1000px) rotateX(0) translate3d(0, 0, 0) scale(1)" },
+                "0%": { opacity: "0", transform: "perspective(1200px) rotateX(5deg) translate3d(0, 60px, 0) scale(0.98)" },
+                "100%": { opacity: "1", transform: "perspective(1200px) rotateX(0) translate3d(0, 0, 0) scale(1)" },
               },
               scaleIn: {
-                "0%": { opacity: "0", transform: "scale(0.8) perspective(1000px) translateZ(-50px)" },
-                "100%": { opacity: "1", transform: "scale(1) perspective(1000px) translateZ(0)" },
+                "0%": { opacity: "0", transform: "scale(0.8) perspective(1200px) translateZ(-50px)" },
+                "100%": { opacity: "1", transform: "scale(1) perspective(1200px) translateZ(0)" },
               },
               popIn: {
-                 "0%": { opacity: "0", transform: "scale(0.5) perspective(1000px) translateZ(-100px)" },
-                 "100%": { opacity: "1", transform: "scale(1) perspective(1000px) translateZ(0)" },
+                 "0%": { opacity: "0", transform: "scale(0.5) perspective(1200px) translateZ(-100px)" },
+                 "100%": { opacity: "1", transform: "scale(1) perspective(1200px) translateZ(0)" },
               },
               bounceSoft: {
                 "0%, 100%": { transform: "translateY(0)" },
@@ -88,7 +88,6 @@
       }
     </script>
     <style>
-      /* Register property for smooth transition of --complete variable */
       @property --complete {
         syntax: '<number>';
         inherits: true;
@@ -112,6 +111,9 @@
         -webkit-tap-highlight-color: transparent;
         transition: background-color 0.3s ease, color 0.3s ease;
         overscroll-behavior-y: none;
+        /* Global 3D Perspective for Mobile */
+        perspective: 1200px;
+        transform-style: preserve-3d;
       }
       .dark body {
         background-color: #000000;
@@ -143,37 +145,57 @@
         background: rgba(255, 255, 255, var(--glass-opacity));
         backdrop-filter: var(--glass-filter);
         -webkit-backdrop-filter: var(--glass-filter);
-        border: 1px solid rgba(255, 255, 255, 0.4);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        border-right: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 10px 30px -5px rgba(0,0,0,0.1), inset 0 0 0 1px rgba(255,255,255,0.3), inset 0 5px 15px rgba(255,255,255,0.5);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        border-right: 1px solid rgba(255, 255, 255, 0.3);
+        /* Volumetric 3D Shadow */
+        box-shadow: 
+            0 25px 50px -12px rgba(0,0,0,0.15), 
+            inset 0 0 0 1px rgba(255,255,255,0.4), 
+            inset 0 2px 20px rgba(255,255,255,0.6),
+            0 1px 2px rgba(0,0,0,0.05);
         border-radius: 24px;
         transition: background 0.3s ease, backdrop-filter 0.3s ease;
         transform-style: preserve-3d;
+        transform: translateZ(0);
       }
       .dark .glass-panel {
         background: rgba(20, 20, 20, var(--glass-opacity));
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 10px 30px -5px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.05), inset 0 5px 15px rgba(255,255,255,0.1);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.05), inset 0 2px 20px rgba(255,255,255,0.1);
       }
 
       .liquid-card {
         background: linear-gradient(135deg, rgba(255, 255, 255, calc(var(--glass-opacity) + 0.15)) 0%, rgba(255, 255, 255, calc(var(--glass-opacity) - 0.05)) 100%);
         backdrop-filter: var(--glass-filter);
         -webkit-backdrop-filter: var(--glass-filter);
-        border: 1px solid rgba(255, 255, 255, 0.5);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        box-shadow: 0 15px 35px -10px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.8), inset 0 -1px 0 rgba(0,0,0,0.05), inset 0 0 20px rgba(255,255,255,0.2);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        /* Deep 3D Shadow Stack - Mobile Optimized */
+        box-shadow: 
+            0 30px 60px -12px rgba(0,0,0,0.25), 
+            inset 0 1px 0 rgba(255,255,255,0.9), 
+            inset 0 -1px 0 rgba(0,0,0,0.05), 
+            inset 0 0 30px rgba(255,255,255,0.3),
+            0 2px 4px rgba(0,0,0,0.05);
         border-radius: 32px;
         transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+        transform-style: preserve-3d;
         transform: translateZ(0);
+        will-change: transform;
       }
       .liquid-card:active {
-        transform: scale(0.96) translateY(2px);
+        /* Haptic press IN effect */
+        transform: scale(0.97) translateZ(-5px);
+        box-shadow: 0 10px 20px -5px rgba(0,0,0,0.1), inset 0 0 40px rgba(0,0,0,0.05);
       }
       .dark .liquid-card {
         background: linear-gradient(135deg, rgba(50, 50, 50, calc(var(--glass-opacity) + 0.2)) 0%, rgba(20, 20, 20, var(--glass-opacity)) 100%);
-        border: 1px solid rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 
+            0 30px 60px -12px rgba(0,0,0,0.6), 
+            inset 0 1px 0 rgba(255,255,255,0.1), 
+            inset 0 0 30px rgba(255,255,255,0.05);
       }
 
       .liquid-input {
@@ -196,15 +218,20 @@
       body.no-liquid .liquid-card { background: #ffffff; backdrop-filter: none; }
       body.no-liquid.dark .liquid-card { background: #1c1c1e; border: 1px solid #2c2c2e; }
       
-      .gpu-accelerated { transform: translate3d(0, 0, 0); backface-visibility: hidden; perspective: 1000px; will-change: transform, opacity; }
+      .gpu-accelerated { 
+          transform: translate3d(0, 0, 0); 
+          backface-visibility: hidden; 
+          perspective: 1200px; 
+          will-change: transform, opacity; 
+      }
 
-      /* ---- LIQUID TOGGLE SWITCH STYLES ---- */
+      /* LIQUID TOGGLE SWITCH */
       .liquid-toggle {
-        --transition: 0.2s;
-        --ease: ease-out;
-        --unchecked: #cbd5e1; /* Gray for Off state */
-        --active-color: #22c55e; /* Green for On state */
-        /* Mix color based on complete percentage. 0% complete = 100% unchecked (gray). 100% complete = 100% active (green) */
+        --transition: 0.4s; /* Smoother color transition */
+        --ease: cubic-bezier(0.34, 1.56, 0.64, 1);
+        --unchecked: #cbd5e1;
+        --active-color: #22c55e;
+        /* Default mix */
         --checked: color-mix(in srgb, var(--active-color) calc(var(--complete) * 1%), var(--unchecked));
         --border: 3px; 
         --width: 52;   
@@ -223,18 +250,19 @@
         -webkit-tap-highlight-color: transparent;
       }
 
-      .liquid-toggle .indicator, 
-      .liquid-toggle .indicator--masked {
-        border-radius: 100px;
-        pointer-events: none;
-        height: 100%;
-        width: 100%;
-        background: var(--checked);
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        translate: -50% -50%;
-        transition: background calc(var(--transition) * 0.5) ease-out;
+      /* Force color state based on aria-pressed for robustness */
+      .liquid-toggle[aria-pressed="false"] .indicator,
+      .liquid-toggle[aria-pressed="false"] .indicator--masked,
+      .liquid-toggle[aria-pressed="false"] .liquid__track {
+         background: var(--unchecked);
+         transition: background 0.4s var(--ease);
+      }
+      
+      .liquid-toggle[aria-pressed="true"] .indicator,
+      .liquid-toggle[aria-pressed="true"] .indicator--masked,
+      .liquid-toggle[aria-pressed="true"] .liquid__track {
+         background: var(--active-color);
+         transition: background 0.4s var(--ease);
       }
 
       .liquid-toggle .knockout {
@@ -257,7 +285,7 @@
         left: var(--border);
         border-radius: 100px;
         translate: calc((var(--complete) / 100) * (100cqi - 60cqi - (0 * var(--border)))) -50%;
-        transition-property: height, width, margin, scale;
+        transition-property: height, width, margin, scale, translate;
         transition-duration: var(--transition);
         transition-timing-function: var(--ease);
         will-change: height, width, margin;
@@ -284,7 +312,6 @@
         content: '';
         height: calc((var(--height) * 1px) - (0 * var(--border)));
         width: calc((var(--width) * 1px) - (0 * var(--border)));
-        background: var(--checked);
         border-radius: 100px;
         position: absolute;
         top: 50%;
@@ -305,7 +332,7 @@
         left: var(--border);
         border-radius: 100px;
         translate: calc((var(--complete) / 100) * (100cqi - 100% - (2 * var(--border)))) -50%;
-        transition-property: scale;
+        transition-property: scale, translate;
         transition-duration: var(--transition);
         transition-timing-function: var(--ease);
       }
@@ -319,7 +346,6 @@
         transition: opacity var(--transition) var(--ease);
       }
 
-      /* Active/Pressed States */
       .liquid-toggle[data-active='true'] .indicator--masked .mask {
         height: calc((100% - (2 * var(--border))) * 1.4);
         width: calc((60% - (2 * var(--border))) * 1.4);
@@ -348,6 +374,7 @@
         border-radius: 999px;
         margin-top: 10px;
         margin-bottom: 10px;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
       }
       .dark .slider-container { background: rgba(255, 255, 255, 0.1); }
 
@@ -359,9 +386,9 @@
         width: 0%;
         z-index: 1;
         pointer-events: none;
+        box-shadow: 0 0 10px rgba(54, 129, 238, 0.5);
       }
 
-      /* SMALLER BUBBLE SIZE AS REQUESTED */
       .slider-thumb-glass {
         position: absolute;
         top: 50%;
@@ -372,7 +399,10 @@
         cursor: pointer;
         z-index: 2;
         background-color: #fff;
-        box-shadow: 0 1px 8px 0 rgba(0, 30, 63, 0.1), 0 0 2px 0 rgba(0, 9, 20, 0.1);
+        box-shadow: 
+            0 4px 10px 0 rgba(0, 30, 63, 0.2), 
+            0 0 2px 0 rgba(0, 9, 20, 0.1),
+            inset 0 -2px 4px rgba(0,0,0,0.1);
         overflow: hidden;
         transition: transform 0.15s ease, height 0.15s ease;
       }

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lock, Trash2, Power, ChevronRight, Moon, Sun, Zap, LayoutDashboard, Bell, Droplets, Sliders, ArrowRight as ArrowRightIcon, Users, Shield, MessageCircle, AlertTriangle, Copy, Gauge, Crown, Upload, CheckCircle2, ScanLine, XCircle } from 'lucide-react';
+import { ArrowLeft, Lock, Trash2, Power, ChevronRight, Moon, Sun, Zap, LayoutDashboard, Bell, Droplets, Sliders, ArrowRight as ArrowRightIcon, Users, Shield, MessageCircle, AlertTriangle, Copy, Gauge, Crown, Upload, CheckCircle2, ScanLine, XCircle, ExternalLink } from 'lucide-react';
 import { PRIVACY_POLICY_TEXT } from '../constants';
 import { LiquidSlider } from '../components/LiquidSlider';
 import { LiquidToggle } from '../components/LiquidToggle';
@@ -73,14 +73,16 @@ export const SettingsScreen: React.FC = () => {
       navigate('/home');
   };
 
-  const handleBuyPremium = () => {
-      // Create UPI Intent
+  const generateUpiUrl = () => {
       const upiId = "733718802@omni";
       const name = "FusionHub Premium";
       const amount = "29.00";
       const note = "Premium Upgrade";
-      
-      const upiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
+      return `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
+  };
+
+  const handleBuyPremium = () => {
+      const upiUrl = generateUpiUrl();
       
       // Try to open UPI app
       window.location.href = upiUrl;
@@ -90,6 +92,10 @@ export const SettingsScreen: React.FC = () => {
       setPaymentStep('initial');
       setScanStatus("Initializing...");
       setFailReason("");
+  };
+  
+  const handleManualPayClick = () => {
+      window.location.href = generateUpiUrl();
   };
 
   const handleUploadScreenshot = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,7 +114,6 @@ export const SettingsScreen: React.FC = () => {
               });
 
               // Extract raw base64 and mime type
-              // Data URL format: data:[<mediatype>][;base64],<data>
               const mimeType = base64String.substring(base64String.indexOf(':') + 1, base64String.indexOf(';'));
               const base64Data = base64String.split(',')[1];
 
@@ -123,18 +128,19 @@ export const SettingsScreen: React.FC = () => {
                   contents: {
                       parts: [
                           { inlineData: { mimeType: mimeType, data: base64Data } },
-                          { text: `Analyze this payment receipt screenshot. 
-                            Strictly verify the following criteria:
-                            1. Is the transaction status "Successful", "Paid", or "Completed"?
-                            2. Is the amount exactly ₹29 (or 29)?
-                            3. Is it a valid payment app receipt (PhonePe, Paytm, Google Pay, etc.)?
+                          { text: `Analyze this payment receipt screenshot for verification.
                             
-                            Return a JSON object with this structure:
+                            Criteria:
+                            1. Status: Look for "Successful", "Paid", "Completed", or a green tick indicating success.
+                            2. Amount: Look for 29, 29.00, Rs. 29, or ₹29. 
+                            3. Context: Must be a receipt from PhonePe, Paytm, Google Pay, or similar UPI app.
+                            
+                            Return valid JSON only:
                             {
                               "isValid": boolean,
-                              "reason": string (Short explanation of why it passed or failed, e.g. "Amount is 50, expected 29" or "Payment Failed status")
+                              "reason": string
                             }
-                            Do not include markdown code blocks.` 
+                            If amount is close (e.g. 30 or 20), mark valid as false and state reason.` 
                           }
                       ]
                   },
@@ -147,7 +153,15 @@ export const SettingsScreen: React.FC = () => {
               const resultText = response.text;
               if (!resultText) throw new Error("No response from AI");
               
-              const result = JSON.parse(resultText);
+              // Robust parsing: strip markdown code blocks if present
+              const cleanedText = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
+              let result;
+              try {
+                  result = JSON.parse(cleanedText);
+              } catch (e) {
+                  console.error("JSON Parse Error:", e, cleanedText);
+                  throw new Error("Failed to parse AI response.");
+              }
 
               if (result.isValid) {
                   setScanStatus("Payment Verified!");
@@ -209,11 +223,23 @@ export const SettingsScreen: React.FC = () => {
          <div className="text-center">
              {paymentStep === 'initial' && (
                  <>
+                    <div className="mb-6 space-y-3">
+                        <button 
+                            onClick={handleManualPayClick}
+                            className="w-full py-3 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl font-bold flex items-center justify-center gap-2 border border-gray-200 dark:border-gray-700 active:scale-95"
+                        >
+                            <ExternalLink className="w-4 h-4" /> Tap to Pay ₹29
+                        </button>
+                        <p className="text-[10px] text-gray-400">If the app didn't open automatically, click above.</p>
+                    </div>
+
+                    <div className="w-full h-px bg-gray-200 dark:bg-gray-700 mb-6"></div>
+
                     <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mx-auto mb-4 animate-bounce-soft">
                         <Upload className="w-8 h-8 text-blue-600 dark:text-blue-400" />
                     </div>
                     <p className="text-gray-600 dark:text-gray-300 mb-6 font-medium text-sm">
-                        Please upload a screenshot of your successful payment of <strong>₹29</strong> to activate Premium instantly.
+                        After payment, please upload the screenshot to activate Premium.
                     </p>
                     <label className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold shadow-lg cursor-pointer hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
                         <span>Upload Screenshot</span>

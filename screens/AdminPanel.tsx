@@ -76,7 +76,7 @@ export const AdminPanelScreen: React.FC = () => {
       }
   };
 
-  const sqlCode = `-- FORCE FIX DATABASE SCHEMA V2
+  const sqlCode = `-- FORCE FIX DATABASE SCHEMA V3
 -- Run this in Supabase SQL Editor to fix "Internal Error" and "Invalid Syntax" issues.
 
 -- 1. Create Tables (If missing)
@@ -136,6 +136,9 @@ alter table messages enable row level security;
 
 create policy "Allow all operations" on users for all using (true) with check (true);
 create policy "Allow all operations" on messages for all using (true) with check (true);
+
+-- 5. REFRESH SCHEMA CACHE
+NOTIFY pgrst, 'reload config';
 `;
 
   const copySql = () => {

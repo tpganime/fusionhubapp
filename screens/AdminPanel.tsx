@@ -55,27 +55,36 @@ export const AdminPanelScreen: React.FC = () => {
     alert('Message sent to all users.');
   };
 
-  const sqlCode = `-- Run this in your Supabase SQL Editor to fix missing columns
+  const sqlCode = `-- Run this in your Supabase SQL Editor to fix errors
 
--- 1. Create Tables
+-- 1. Add Missing Columns (Safe to run multiple times)
+alter table users add column if not exists name text;
+alter table users add column if not exists birthdate text;
+alter table users add column if not exists gender text;
+alter table users add column if not exists is_deactivated boolean default false;
+alter table users add column if not exists blocked_users text[] default '{}';
+alter table users add column if not exists instagram_link text;
+
+-- 2. Drop existing policies (Fixes "policy already exists" error)
+drop policy if exists "Allow all operations" on users;
+drop policy if exists "Allow all operations" on messages;
+
+-- 3. Re-create Policies
+create policy "Allow all operations" on users for all using (true) with check (true);
+create policy "Allow all operations" on messages for all using (true) with check (true);
+
+-- 4. Create Tables (If they don't exist yet)
 create table if not exists users (
   id uuid primary key,
   username text,
-  name text,
   email text,
   password text,
   avatar text,
   description text,
-  birthdate text,
-  gender text,
-  is_private_profile boolean default false,
-  allow_private_chat boolean default true,
   friends text[] default '{}',
   requests text[] default '{}',
   last_seen timestamptz default now(),
-  is_deactivated boolean default false,
-  blocked_users text[] default '{}',
-  instagram_link text
+  blocked_users text[] default '{}'
 );
 
 create table if not exists messages (
@@ -86,21 +95,6 @@ create table if not exists messages (
   timestamp text,
   read boolean default false
 );
-
--- 2. Add Missing Columns (Safe to run even if they exist)
-alter table users add column if not exists name text;
-alter table users add column if not exists birthdate text;
-alter table users add column if not exists gender text;
-alter table users add column if not exists is_deactivated boolean default false;
-alter table users add column if not exists blocked_users text[] default '{}';
-alter table users add column if not exists instagram_link text;
-
--- 3. Enable Public Access (For this specific app architecture)
-alter table users enable row level security;
-create policy "Allow all operations" on users for all using (true) with check (true);
-
-alter table messages enable row level security;
-create policy "Allow all operations" on messages for all using (true) with check (true);
 `;
 
   const copySql = () => {
@@ -186,9 +180,9 @@ create policy "Allow all operations" on messages for all using (true) with check
         <div className="bg-white/70 dark:bg-dark-surface rounded-3xl p-6 shadow-sm border border-white/50 dark:border-gray-800">
            <div className="flex items-center gap-3 mb-4 text-purple-600 dark:text-purple-400">
               <Database className="w-6 h-6" />
-              <h3 className="font-bold text-lg">Database Schema</h3>
+              <h3 className="font-bold text-lg">Database Fixer</h3>
            </div>
-           <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">If you see "Update Failed", run this in Supabase SQL Editor.</p>
+           <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">If you see "Update Failed" or "Missing Column", run this in Supabase SQL Editor.</p>
            <div className="relative">
              <pre className="w-full p-3 bg-gray-900 rounded-xl text-green-400 text-[10px] overflow-x-auto font-mono h-32 border border-gray-700">
                 {sqlCode}

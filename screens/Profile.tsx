@@ -57,6 +57,9 @@ const calculateAge = (birthDateString?: string) => {
     return age;
 };
 
+const FUSION_USER_NAME = "Fusion User";
+const FUSION_USER_AVATAR = "https://ui-avatars.com/api/?name=Fusion+User&background=6b7280&color=fff";
+
 interface Stat {
     day: string;
     date: string;
@@ -73,8 +76,6 @@ export const ProfileScreen: React.FC = () => {
   const [timeSpent, setTimeSpent] = useState("0m");
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [selectedStat, setSelectedStat] = useState<Stat | null>(null);
-  
-  // New Modal States
   const [showShareModal, setShowShareModal] = useState(false);
   const [showUnfollowModal, setShowUnfollowModal] = useState(false);
   const [showMoreOptions, setShowMoreOptions] = useState(false);
@@ -82,13 +83,12 @@ export const ProfileScreen: React.FC = () => {
   useEffect(() => {
       if (isOwnProfile) {
           const update = () => setTimeSpent(getTimeSpent());
-          update(); // Initial call
+          update(); 
           const interval = setInterval(update, 30000); 
           return () => clearInterval(interval);
       }
   }, [isOwnProfile, getTimeSpent]);
 
-  // Reset selected stat when modal closes
   useEffect(() => {
       if (!showStatsModal) setSelectedStat(null);
   }, [showStatsModal]);
@@ -123,9 +123,7 @@ export const ProfileScreen: React.FC = () => {
   }, [isOwnProfile, profileUser, isEditing]);
 
   useEffect(() => {
-    if (showFullAvatar) {
-      setIsZoomed(false);
-    }
+    if (showFullAvatar) setIsZoomed(false);
   }, [showFullAvatar]);
 
   if (!profileUser) {
@@ -139,7 +137,19 @@ export const ProfileScreen: React.FC = () => {
     );
   }
   
-  // Deactivated View
+  // Privacy / Masking Check
+  const isBlocked = currentUser?.blockedUsers.includes(profileUser.id);
+  const isBlockedBy = profileUser.blockedUsers.includes(currentUser?.id || '');
+  const shouldMask = isBlocked || isBlockedBy;
+
+  const displayAvatar = isEditing ? avatar : (shouldMask ? FUSION_USER_AVATAR : profileUser.avatar);
+  const displayUsername = shouldMask ? FUSION_USER_NAME : profileUser.username;
+  const displayName = shouldMask ? FUSION_USER_NAME : (profileUser.name || profileUser.username);
+  const displayDescription = shouldMask ? "Fusion User" : ((profileUser.description && profileUser.description.startsWith('{')) ? "Admin Account" : profileUser.description);
+  
+  const isAdminUser = !shouldMask && checkIsAdmin(profileUser.email);
+  const isOwnerUser = !shouldMask && checkIsOwner(profileUser.email);
+
   if (profileUser.isDeactivated && !isOwnProfile) {
       return (
           <div className="h-full flex flex-col items-center justify-center p-6 text-center animate-fade-in">
@@ -159,7 +169,6 @@ export const ProfileScreen: React.FC = () => {
       if (currentUser.description && currentUser.description.startsWith('{')) {
          finalDescription = currentUser.description;
       }
-
       const success = await updateProfile({
         ...currentUser,
         username,
@@ -170,7 +179,6 @@ export const ProfileScreen: React.FC = () => {
         gender,
         instagramLink
       });
-
       if (success) {
         alert("Profile Saved!");
         setIsEditing(false);
@@ -196,7 +204,6 @@ export const ProfileScreen: React.FC = () => {
   };
 
   const profileLink = `fusionhub.app/u/${profileUser.username}`;
-
   const handleCopyLink = () => {
      navigator.clipboard.writeText(profileLink);
      alert("Profile link copied!");
@@ -226,7 +233,7 @@ export const ProfileScreen: React.FC = () => {
   };
 
   const handleBack = () => {
-      if (window.history.length > 1) {
+      if (window.history.length > 2) {
         navigate(-1);
       } else {
         navigate('/home');
@@ -235,16 +242,11 @@ export const ProfileScreen: React.FC = () => {
 
   const isFriend = currentUser?.friends.includes(profileUser.id);
   const isRequested = profileUser.requests.includes(currentUser?.id || '');
-  const isBlocked = currentUser?.blockedUsers.includes(profileUser.id);
-  const canViewDetails = (isOwnProfile || !profileUser.isPrivateProfile || isFriend) && !isBlocked;
-  const canMessage = (isFriend || profileUser.allowPrivateChat) && !isBlocked;
   
-  const isAdminUser = checkIsAdmin(profileUser.email);
-  const isOwnerUser = checkIsOwner(profileUser.email);
+  const canViewDetails = (isOwnProfile || !profileUser.isPrivateProfile || isFriend) && !shouldMask;
+  const canMessage = (isFriend || profileUser.allowPrivateChat) && !shouldMask;
   
-  const displayAvatar = isEditing ? avatar : profileUser.avatar;
-  const displayDescription = (profileUser.description && profileUser.description.startsWith('{')) ? "Admin Account" : profileUser.description;
-  const displayAge = calculateAge(profileUser.birthdate);
+  const displayAge = !shouldMask ? calculateAge(profileUser.birthdate) : 'N/A';
 
   const weeklyStats = isOwnProfile ? getWeeklyStats() : [];
   const maxMs = Math.max(...weeklyStats.map(s => s.ms), 60000); 
@@ -289,7 +291,7 @@ export const ProfileScreen: React.FC = () => {
                   <UserMinus className="w-8 h-8 text-red-500" />
               </div>
               <p className="text-gray-600 dark:text-gray-300 mb-6">
-                  Are you sure you want to unfollow <span className="font-bold text-gray-900 dark:text-white">{profileUser.username}</span>?
+                  Are you sure you want to unfollow <span className="font-bold text-gray-900 dark:text-white">{displayUsername}</span>?
               </p>
               <div className="flex gap-3">
                   <button onClick={() => setShowUnfollowModal(false)} className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold">Cancel</button>
@@ -308,8 +310,7 @@ export const ProfileScreen: React.FC = () => {
                   <span className="font-bold text-gray-800 dark:text-white flex-1 text-left">Copy Link</span>
               </button>
               
-              {/* Instagram Button (Only if user has link) */}
-              {profileUser.instagramLink && (
+              {profileUser.instagramLink && !shouldMask && (
                   <a href={profileUser.instagramLink} target="_blank" rel="noopener noreferrer" className="w-full flex items-center gap-4 p-4 rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group">
                       <div className="p-3 rounded-full bg-pink-100 dark:bg-pink-900/30 text-pink-500">
                           <Instagram className="w-5 h-5" />
@@ -320,7 +321,7 @@ export const ProfileScreen: React.FC = () => {
           </div>
       </GenericModal>
       
-      {/* More Options Modal (Block/Unblock) */}
+      {/* More Options Modal */}
       <GenericModal isOpen={showMoreOptions} onClose={() => setShowMoreOptions(false)} title="Options">
           <div className="space-y-2">
              {isBlocked ? (
@@ -335,7 +336,7 @@ export const ProfileScreen: React.FC = () => {
           </div>
       </GenericModal>
 
-      {/* Stats Modal - Now Interactive */}
+      {/* Stats Modal */}
       {showStatsModal && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowStatsModal(false)}></div>
@@ -343,7 +344,6 @@ export const ProfileScreen: React.FC = () => {
                 <button className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 transition-colors z-20" onClick={() => setShowStatsModal(false)}>
                     <X className="w-5 h-5 text-gray-500" />
                 </button>
-                
                 <div className="flex flex-col items-center mb-8">
                     <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 tracking-wide">{currentDisplayLabel}</h3>
                     <div className="mt-2 font-black bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500 bg-clip-text text-transparent">
@@ -353,14 +353,12 @@ export const ProfileScreen: React.FC = () => {
                         {currentDisplayDesc}
                     </p>
                 </div>
-                
                 <div className="flex items-end justify-between h-48 gap-3 border-b border-gray-100 dark:border-gray-800 pb-2">
                     {weeklyStats.map((stat, i) => {
                         const heightPercent = Math.max((stat.ms / maxMs) * 100, 4);
                         const isToday = i === 6;
                         const label = isToday ? 'Today' : stat.day;
                         const isSelected = selectedStat?.date === stat.date;
-                        
                         return (
                             <div 
                               key={i} 
@@ -384,18 +382,18 @@ export const ProfileScreen: React.FC = () => {
         </div>
       )}
 
-      {/* Header - Fixed Height */}
+      {/* Header */}
       <div className="flex-none h-14 bg-white/90 dark:bg-black/90 backdrop-blur-md z-40 flex items-center justify-between px-4 sm:max-w-md sm:mx-auto border-b border-gray-100 dark:border-gray-800 transition-all duration-300">
           <div className="flex items-center gap-1">
              {isOwnProfile ? (
                  <>
                      <Lock className="w-3 h-3 text-gray-800 dark:text-white" />
-                     <h1 className="text-xl font-bold text-gray-900 dark:text-white truncate max-w-[150px]">{profileUser.username}</h1>
+                     <h1 className="text-xl font-bold text-gray-900 dark:text-white truncate max-w-[150px]">{displayUsername}</h1>
                  </>
              ) : (
                  <>
                      <button onClick={handleBack} className="mr-2 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 active:scale-95 transition-transform"><ArrowLeft className="w-6 h-6 text-gray-900 dark:text-white" /></button>
-                     <h1 className="text-lg font-bold text-gray-900 dark:text-white truncate max-w-[150px]">{profileUser.username}</h1>
+                     <h1 className="text-lg font-bold text-gray-900 dark:text-white truncate max-w-[150px]">{displayUsername}</h1>
                  </>
              )}
              {isOwnerUser && <Crown className="w-4 h-4 text-yellow-500 fill-yellow-500 ml-1 flex-shrink-0" />}
@@ -410,7 +408,7 @@ export const ProfileScreen: React.FC = () => {
           </div>
       </div>
 
-      {/* Main Content - Scrollable */}
+      {/* Main Content */}
       <div className="flex-1 overflow-y-auto pt-4 px-4 pb-32 no-scrollbar">
          {isBlocked && (
              <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/20 text-red-600 rounded-xl text-center text-sm font-bold">
@@ -418,14 +416,13 @@ export const ProfileScreen: React.FC = () => {
              </div>
          )}
          
-         {/* User Info Section */}
          <div className="mb-6">
              <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">User Info</h2>
              <div className={`p-5 liquid-card flex items-center gap-5 ${enableAnimations ? 'animate-slide-up-fade' : ''}`}>
                 <div className="relative flex-shrink-0">
                    <div 
                      className="w-20 h-20 rounded-full p-[2px] bg-gradient-to-tr from-blue-400 to-purple-500 cursor-pointer shadow-lg active:scale-95 transition-transform"
-                     onClick={() => !isEditing && setShowFullAvatar(true)}
+                     onClick={() => !isEditing && !shouldMask && setShowFullAvatar(true)}
                    >
                       <img src={displayAvatar} alt="avatar" className="w-full h-full rounded-full object-cover border-2 border-white dark:border-black" />
                    </div>
@@ -440,7 +437,7 @@ export const ProfileScreen: React.FC = () => {
                 <div className="flex-1 min-w-0 space-y-1">
                    <div>
                        <h2 className="text-xl font-bold text-gray-900 dark:text-white truncate leading-tight">
-                           {profileUser.name || profileUser.username}
+                           {displayName}
                        </h2>
                        <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
                           {isAdminUser ? (isOwnerUser ? "Owner" : "Administrator") : "Member"}
@@ -462,7 +459,7 @@ export const ProfileScreen: React.FC = () => {
              </div>
          </div>
 
-         {/* Bio / Description */}
+         {/* Bio */}
          <div className={`mb-6 ${enableAnimations ? 'animate-slide-up-fade' : ''}`} style={{ animationDelay: '100ms' }}>
              <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Bio</h2>
              <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 text-sm text-gray-600 dark:text-gray-300 leading-relaxed min-h-[80px] break-words">
@@ -470,7 +467,7 @@ export const ProfileScreen: React.FC = () => {
              </div>
          </div>
 
-         {/* Details (Age & Gender) */}
+         {/* Details */}
          {canViewDetails && !isEditing && (
              <div className={`mb-6 flex gap-4 ${enableAnimations ? 'animate-slide-up-fade' : ''}`} style={{ animationDelay: '150ms' }}>
                  <div className="flex-1 p-3 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 flex flex-col items-center">

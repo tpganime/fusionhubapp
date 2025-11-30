@@ -110,6 +110,7 @@ export const AuthScreen: React.FC = () => {
           allowPrivateChat: true,
           friends: [],
           requests: [],
+          blockedUsers: [],
         };
         await signup(newUser);
         navigate('/home');
@@ -264,3 +265,4 @@ export const AuthScreen: React.FC = () => {
     </div>
   );
 };
+    

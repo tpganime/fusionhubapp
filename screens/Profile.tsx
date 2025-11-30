@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { ComingSoon } from '../components/ComingSoon';
-import { Camera, ArrowLeft, Lock, ShieldCheck, Crown, X, Settings, AlignJustify, Share2, Activity, UserMinus, User as UserIcon, Copy, Twitter, Facebook } from 'lucide-react';
+import { Camera, ArrowLeft, Lock, ShieldCheck, Crown, X, Settings, AlignJustify, Share2, Activity, UserMinus, User as UserIcon, Copy, Instagram, Ban, CheckCircle2 } from 'lucide-react';
 import { Gender } from '../types';
 import { useParams, useNavigate } from 'react-router-dom';
 import { GenericModal } from '../components/GenericModal';
@@ -64,7 +64,7 @@ interface Stat {
 }
 
 export const ProfileScreen: React.FC = () => {
-  const { currentUser, users, updateProfile, sendFriendRequest, unfriend, checkIsAdmin, checkIsOwner, enableAnimations, appConfig, getTimeSpent, getWeeklyStats } = useApp();
+  const { currentUser, users, updateProfile, sendFriendRequest, unfriend, blockUser, unblockUser, checkIsAdmin, checkIsOwner, enableAnimations, appConfig, getTimeSpent, getWeeklyStats } = useApp();
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   
@@ -77,6 +77,7 @@ export const ProfileScreen: React.FC = () => {
   // New Modal States
   const [showShareModal, setShowShareModal] = useState(false);
   const [showUnfollowModal, setShowUnfollowModal] = useState(false);
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
 
   useEffect(() => {
       if (isOwnProfile) {
@@ -107,6 +108,7 @@ export const ProfileScreen: React.FC = () => {
   const [avatar, setAvatar] = useState('');
   const [birthdate, setBirthdate] = useState('');
   const [gender, setGender] = useState<Gender>(Gender.PREFER_NOT_TO_SAY);
+  const [instagramLink, setInstagramLink] = useState('');
 
   useEffect(() => {
     if (isOwnProfile && profileUser && !isEditing) {
@@ -116,6 +118,7 @@ export const ProfileScreen: React.FC = () => {
       setAvatar(profileUser.avatar);
       setBirthdate(profileUser.birthdate || '');
       setGender(profileUser.gender || Gender.PREFER_NOT_TO_SAY);
+      setInstagramLink(profileUser.instagramLink || '');
     }
   }, [isOwnProfile, profileUser, isEditing]);
 
@@ -135,6 +138,20 @@ export const ProfileScreen: React.FC = () => {
       </div>
     );
   }
+  
+  // Deactivated View
+  if (profileUser.isDeactivated && !isOwnProfile) {
+      return (
+          <div className="h-full flex flex-col items-center justify-center p-6 text-center animate-fade-in">
+             <button onClick={() => navigate(-1)} className="absolute top-4 left-4 p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10"><ArrowLeft className="w-6 h-6 dark:text-white" /></button>
+             <div className="w-24 h-24 bg-gray-200 dark:bg-gray-800 rounded-full flex items-center justify-center mb-6">
+                 <UserIcon className="w-10 h-10 text-gray-400" />
+             </div>
+             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Deactivated User</h2>
+             <p className="text-gray-500">This account has been deactivated.</p>
+          </div>
+      );
+  }
 
   const handleSave = async () => {
     if (currentUser) {
@@ -150,7 +167,8 @@ export const ProfileScreen: React.FC = () => {
         description: finalDescription, 
         avatar,
         birthdate,
-        gender
+        gender,
+        instagramLink
       });
 
       if (success) {
@@ -189,6 +207,19 @@ export const ProfileScreen: React.FC = () => {
       await unfriend(profileUser.id);
       setShowUnfollowModal(false);
   };
+  
+  const handleBlock = async () => {
+      await blockUser(profileUser.id);
+      setShowMoreOptions(false);
+      alert("User blocked.");
+      navigate('/home');
+  };
+
+  const handleUnblock = async () => {
+      await unblockUser(profileUser.id);
+      setShowMoreOptions(false);
+      alert("User unblocked.");
+  };
 
   const startChat = () => {
       navigate(`/chat?uid=${profileUser.id}`);
@@ -204,8 +235,9 @@ export const ProfileScreen: React.FC = () => {
 
   const isFriend = currentUser?.friends.includes(profileUser.id);
   const isRequested = profileUser.requests.includes(currentUser?.id || '');
-  const canViewDetails = isOwnProfile || !profileUser.isPrivateProfile || isFriend;
-  const canMessage = isFriend || profileUser.allowPrivateChat;
+  const isBlocked = currentUser?.blockedUsers.includes(profileUser.id);
+  const canViewDetails = (isOwnProfile || !profileUser.isPrivateProfile || isFriend) && !isBlocked;
+  const canMessage = (isFriend || profileUser.allowPrivateChat) && !isBlocked;
   
   const isAdminUser = checkIsAdmin(profileUser.email);
   const isOwnerUser = checkIsOwner(profileUser.email);
@@ -275,13 +307,31 @@ export const ProfileScreen: React.FC = () => {
                   </div>
                   <span className="font-bold text-gray-800 dark:text-white flex-1 text-left">Copy Link</span>
               </button>
-              {/* Dummy Social Buttons */}
-              <button onClick={() => alert("Shared to Twitter!")} className="w-full flex items-center gap-4 p-4 rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group">
-                  <div className="p-3 rounded-full bg-sky-100 dark:bg-sky-900/30 text-sky-500">
-                      <Twitter className="w-5 h-5" />
-                  </div>
-                  <span className="font-bold text-gray-800 dark:text-white flex-1 text-left">Twitter</span>
-              </button>
+              
+              {/* Instagram Button (Only if user has link) */}
+              {profileUser.instagramLink && (
+                  <a href={profileUser.instagramLink} target="_blank" rel="noopener noreferrer" className="w-full flex items-center gap-4 p-4 rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group">
+                      <div className="p-3 rounded-full bg-pink-100 dark:bg-pink-900/30 text-pink-500">
+                          <Instagram className="w-5 h-5" />
+                      </div>
+                      <span className="font-bold text-gray-800 dark:text-white flex-1 text-left">Instagram</span>
+                  </a>
+              )}
+          </div>
+      </GenericModal>
+      
+      {/* More Options Modal (Block/Unblock) */}
+      <GenericModal isOpen={showMoreOptions} onClose={() => setShowMoreOptions(false)} title="Options">
+          <div className="space-y-2">
+             {isBlocked ? (
+                 <button onClick={handleUnblock} className="w-full py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold flex items-center justify-center gap-2">
+                     <CheckCircle2 className="w-5 h-5" /> Unblock User
+                 </button>
+             ) : (
+                 <button onClick={handleBlock} className="w-full py-3 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-600 font-bold flex items-center justify-center gap-2">
+                     <Ban className="w-5 h-5" /> Block User
+                 </button>
+             )}
           </div>
       </GenericModal>
 
@@ -352,12 +402,22 @@ export const ProfileScreen: React.FC = () => {
              {isAdminUser && !isOwnerUser && <ShieldCheck className="w-4 h-4 text-blue-500 ml-1 flex-shrink-0" />}
           </div>
           <div className="flex items-center gap-4">
-              {isOwnProfile ? <button><Settings className="w-6 h-6 text-gray-900 dark:text-white" onClick={() => navigate('/settings')}/></button> : <button><AlignJustify className="w-6 h-6 text-gray-900 dark:text-white" /></button>}
+              {isOwnProfile ? (
+                  <button><Settings className="w-6 h-6 text-gray-900 dark:text-white" onClick={() => navigate('/settings')}/></button> 
+              ) : (
+                  <button onClick={() => setShowMoreOptions(true)}><AlignJustify className="w-6 h-6 text-gray-900 dark:text-white" /></button>
+              )}
           </div>
       </div>
 
       {/* Main Content - Scrollable */}
       <div className="flex-1 overflow-y-auto pt-4 px-4 pb-32 no-scrollbar">
+         {isBlocked && (
+             <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/20 text-red-600 rounded-xl text-center text-sm font-bold">
+                 You have blocked this user.
+             </div>
+         )}
+         
          {/* User Info Section */}
          <div className="mb-6">
              <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">User Info</h2>
@@ -463,7 +523,7 @@ export const ProfileScreen: React.FC = () => {
                               <UserMinus className="w-4 h-4" /> Following
                           </button>
                        ) : (
-                          <button onClick={() => sendFriendRequest(profileUser.id)} disabled={isRequested} className={`flex-1 py-3 rounded-xl font-bold text-sm text-white shadow-lg active:scale-95 ${isRequested ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}>{isRequested ? 'Requested' : 'Follow'}</button>
+                          <button onClick={() => sendFriendRequest(profileUser.id)} disabled={isRequested || isBlocked} className={`flex-1 py-3 rounded-xl font-bold text-sm text-white shadow-lg active:scale-95 ${isRequested || isBlocked ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}>{isRequested ? 'Requested' : 'Follow'}</button>
                        )}
                        <button onClick={startChat} disabled={!canMessage} className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">Message</button>
                     </>
@@ -497,6 +557,10 @@ export const ProfileScreen: React.FC = () => {
                   <div>
                       <label className="text-xs font-bold text-gray-500 uppercase ml-1">Bio</label>
                       <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full p-3 bg-gray-50 dark:bg-black rounded-lg border border-gray-200 dark:border-gray-700 text-sm h-24 resize-none focus:ring-2 focus:ring-blue-500 outline-none mt-1" placeholder="Tell us about yourself..." />
+                  </div>
+                  <div>
+                      <label className="text-xs font-bold text-gray-500 uppercase ml-1">Instagram Link</label>
+                      <input type="text" value={instagramLink} onChange={e => setInstagramLink(e.target.value)} className="w-full p-3 bg-gray-50 dark:bg-black rounded-lg border border-gray-200 dark:border-gray-700 text-sm focus:ring-2 focus:ring-blue-500 outline-none mt-1" placeholder="https://instagram.com/yourprofile" />
                   </div>
                   <div className="flex gap-3 pt-2">
                      <button onClick={() => setIsEditing(false)} className="flex-1 py-2.5 text-sm font-bold text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">Cancel</button>

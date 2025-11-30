@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 import { TopBar } from '../components/TopBar';
 import { ComingSoon } from '../components/ComingSoon';
 import { User } from '../types';
-import { Send, ArrowLeft, CheckCheck, ShieldCheck, Crown, Info } from 'lucide-react';
+import { Send, ArrowLeft, CheckCheck, ShieldCheck, Crown, Info, Ban } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { BROADCAST_ID } from '../constants';
 
@@ -22,9 +22,10 @@ const formatLastSeen = (dateString?: string) => {
 };
 
 export const ChatScreen: React.FC = () => {
-  const { currentUser, users, messages, sendMessage, markConversationAsRead, enableAnimations, checkIsAdmin, checkIsOwner, checkIsOnline, appConfig } = useApp();
+  const { currentUser, users, messages, sendMessage, sendTypingSignal, typingStatus, markConversationAsRead, enableAnimations, checkIsAdmin, checkIsOwner, checkIsOnline, appConfig } = useApp();
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastTypingSentRef = useRef(0);
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -46,23 +47,32 @@ export const ChatScreen: React.FC = () => {
     return <ComingSoon title="Chat" />;
   }
 
-  const chatUsers = users.filter(u => 
-    u.id !== currentUser?.id && 
-    (currentUser?.friends.includes(u.id) || messages.some(m => 
-        m.receiverId !== BROADCAST_ID && 
-        ((m.senderId === u.id && m.receiverId === currentUser?.id) || (m.senderId === currentUser?.id && m.receiverId === u.id))
-    ))
-  );
-
-  const getConversation = (userId: string) => {
+  // Memoize Chat List to prevent lag on every render/keystroke
+  const chatUsers = useMemo(() => {
     if (!currentUser) return [];
-    return messages.filter(m => 
-      (m.senderId === currentUser.id && m.receiverId === userId) ||
-      (m.senderId === userId && m.receiverId === currentUser.id)
-    ).sort((a, b) => a.timestamp - b.timestamp);
-  };
+    
+    // Filter out users who blocked current user from list if desired, or keep them.
+    // Keeping them allows viewing history.
+    
+    return users.filter(u => 
+        u.id !== currentUser?.id && 
+        !u.isDeactivated && // Hide deactivated users from main list? or show them. Let's hide.
+        !currentUser.blockedUsers.includes(u.id) && // Hide users I blocked
+        (currentUser?.friends.includes(u.id) || messages.some(m => 
+            m.receiverId !== BROADCAST_ID && 
+            ((m.senderId === u.id && m.receiverId === currentUser?.id) || (m.senderId === currentUser?.id && m.receiverId === u.id))
+        ))
+    );
+  }, [users, currentUser, messages]);
 
-  const conversation = selectedUser ? getConversation(selectedUser.id) : [];
+  // Memoize Conversation to prevent lag
+  const conversation = useMemo(() => {
+    if (!currentUser || !selectedUser) return [];
+    return messages.filter(m => 
+      (m.senderId === currentUser.id && m.receiverId === selectedUser.id) ||
+      (m.senderId === selectedUser.id && m.receiverId === currentUser.id)
+    ).sort((a, b) => a.timestamp - b.timestamp);
+  }, [messages, currentUser, selectedUser]);
 
   useEffect(() => {
     if (conversation.length > 0) {
@@ -84,7 +94,18 @@ export const ChatScreen: React.FC = () => {
         markConversationAsRead(selectedUser.id);
       }
     }
-  }, [selectedUser, messages, currentUser, markConversationAsRead]);
+  }, [selectedUser, conversation, currentUser, markConversationAsRead]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setInputText(e.target.value);
+      
+      // Throttle typing signal to once every 2 seconds
+      const now = Date.now();
+      if (selectedUser && now - lastTypingSentRef.current > 2000) {
+          sendTypingSignal(selectedUser.id);
+          lastTypingSentRef.current = now;
+      }
+  };
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,12 +150,18 @@ export const ChatScreen: React.FC = () => {
               </div>
             ) : (
               chatUsers.map((user, index) => {
-                const userMsgs = getConversation(user.id);
+                // We use a simpler filter here since we are mapping valid chatUsers
+                const userMsgs = messages.filter(m => 
+                  (m.senderId === currentUser?.id && m.receiverId === user.id) ||
+                  (m.senderId === user.id && m.receiverId === currentUser?.id)
+                ).sort((a, b) => a.timestamp - b.timestamp);
+
                 const lastMsg = userMsgs[userMsgs.length - 1];
                 const hasUnread = lastMsg && lastMsg.senderId === user.id && !lastMsg.read;
                 const isAdminUser = checkIsAdmin(user.email);
                 const isOwnerUser = checkIsOwner(user.email);
                 const isOnline = checkIsOnline(user.id);
+                const isTyping = typingStatus[user.id];
 
                 return (
                   <div
@@ -160,8 +187,8 @@ export const ChatScreen: React.FC = () => {
                         </h3>
                         {lastMsg && <span className="text-[10px] text-gray-500 font-medium">{new Date(lastMsg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>}
                       </div>
-                      <p className={`text-sm truncate ${hasUnread ? 'font-bold text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
-                        {lastMsg ? (lastMsg.senderId === currentUser?.id ? `You: ${lastMsg.content}` : lastMsg.content) : 'Tap to chat'}
+                      <p className={`text-sm truncate ${isTyping ? 'text-blue-500 font-bold animate-pulse' : hasUnread ? 'font-bold text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+                        {isTyping ? 'Typing...' : (lastMsg ? (lastMsg.senderId === currentUser?.id ? `You: ${lastMsg.content}` : lastMsg.content) : 'Tap to chat')}
                       </p>
                     </div>
                   </div>
@@ -178,6 +205,16 @@ export const ChatScreen: React.FC = () => {
   const isOwnerUser = checkIsOwner(selectedUser.email);
   const isAdminUser = checkIsAdmin(selectedUser.email);
   const isSelectedUserOnline = checkIsOnline(selectedUser.id);
+  const isTyping = typingStatus[selectedUser.id];
+  
+  const isBlocked = currentUser?.blockedUsers.includes(selectedUser.id);
+  const isBlockedBy = selectedUser.blockedUsers.includes(currentUser?.id || '');
+  const isDeactivated = selectedUser.isDeactivated;
+  
+  const isDisabled = isBlocked || isBlockedBy || isDeactivated;
+  let statusText = isTyping ? 'Typing...' : (isSelectedUserOnline ? 'Online' : formatLastSeen(selectedUser.lastSeen));
+  if (isDeactivated) statusText = 'Deactivated';
+  else if (isBlocked) statusText = 'Blocked';
 
   return (
     <div className={`flex flex-col h-full bg-transparent ${enableAnimations ? 'animate-fade-in' : ''}`}>
@@ -200,15 +237,15 @@ export const ChatScreen: React.FC = () => {
                 >
                     <div className={`relative flex-shrink-0 ${enableAnimations ? 'animate-pop-in' : ''}`}>
                         <img src={selectedUser.avatar} alt="avatar" className={`w-10 h-10 rounded-full object-cover border ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-white/50'}`} />
-                        {isSelectedUserOnline && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border border-white dark:border-gray-800 shadow-sm animate-pulse"></span>}
+                        {isSelectedUserOnline && !isDeactivated && !isBlocked && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border border-white dark:border-gray-800 shadow-sm animate-pulse"></span>}
                     </div>
                     <div className={`flex flex-col items-start min-w-0 flex-1 ${enableAnimations ? 'animate-slide-up' : ''}`}>
                         <span className="font-bold text-gray-900 dark:text-white text-sm flex items-center gap-1 truncate w-full">
                             {selectedUser.name || selectedUser.username}
                             {isOwnerUser ? <Crown className="w-3 h-3 text-yellow-500 fill-yellow-500 flex-shrink-0" /> : isAdminUser ? <ShieldCheck className="w-3 h-3 text-blue-500 flex-shrink-0" /> : null}
                         </span>
-                        <span className={`text-[10px] font-bold ${isSelectedUserOnline ? 'text-green-500' : 'text-gray-400'}`}>
-                            {isSelectedUserOnline ? 'Online' : formatLastSeen(selectedUser.lastSeen)}
+                        <span className={`text-[10px] font-bold ${isTyping ? 'text-blue-500 animate-pulse' : (isDeactivated || isBlocked) ? 'text-red-500' : isSelectedUserOnline ? 'text-green-500' : 'text-gray-400'}`}>
+                            {statusText}
                         </span>
                     </div>
                     <Info className="w-5 h-5 text-gray-400 flex-shrink-0" />
@@ -261,19 +298,20 @@ export const ChatScreen: React.FC = () => {
       <div className="flex-none p-4 pb-24 z-40 bg-gradient-to-t from-gray-50 via-gray-50/80 to-transparent dark:from-black dark:via-black/80">
         <form 
           onSubmit={handleSend} 
-          className="flex items-center gap-2 p-1.5 shadow-xl sm:max-w-md sm:mx-auto bg-white/90 dark:bg-black/90 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-[2rem] w-full"
+          className={`flex items-center gap-2 p-1.5 shadow-xl sm:max-w-md sm:mx-auto bg-white/90 dark:bg-black/90 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-[2rem] w-full ${isDisabled ? 'opacity-50 pointer-events-none' : ''}`}
         >
           <input
             type="text"
             value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            placeholder="Type a message..."
+            onChange={handleInputChange}
+            placeholder={isDisabled ? (isBlocked ? "You blocked this user" : isDeactivated ? "User deactivated" : "Chat unavailable") : "Type a message..."}
             autoComplete="off"
+            disabled={isDisabled}
             className="flex-1 bg-transparent px-5 py-3 focus:outline-none text-sm text-gray-900 dark:text-white placeholder-gray-500 font-medium min-w-0"
           />
           <button 
             type="submit" 
-            disabled={!inputText.trim()} 
+            disabled={!inputText.trim() || isDisabled} 
             className="p-3 bg-blue-600 rounded-full text-white shadow-lg disabled:opacity-50 transition-all hover:scale-110 active:scale-95 flex-shrink-0 flex items-center justify-center"
           >
             <Send className="w-5 h-5 ml-0.5" />

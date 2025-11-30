@@ -29,6 +29,7 @@ interface AppContextType {
   isAdmin: boolean;
   isOwner: boolean;
   onlineUsers: string[];
+  typingStatus: Record<string, boolean>;
   login: (user: User) => Promise<void>;
   loginWithCredentials: (email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -39,10 +40,13 @@ interface AppContextType {
   deleteAccount: () => Promise<void>;
   deactivateAccount: () => Promise<void>;
   sendMessage: (receiverId: string, content: string) => Promise<void>;
+  sendTypingSignal: (receiverId: string) => Promise<void>;
   broadcastMessage: (content: string) => Promise<void>;
   sendFriendRequest: (targetUserId: string) => Promise<void>;
   acceptFriendRequest: (requesterId: string) => Promise<void>;
   unfriend: (targetUserId: string) => Promise<void>;
+  blockUser: (targetUserId: string) => Promise<void>;
+  unblockUser: (targetUserId: string) => Promise<void>;
   markNotificationRead: (id: string) => void;
   toggleTheme: () => void;
   toggleAnimations: () => void;
@@ -70,7 +74,7 @@ const STORAGE_KEYS = {
   ANIM_SPEED: 'fh_anim_speed_v1',
   LIQUID: 'fh_liquid_v1',
   GLASS_OPACITY: 'fh_glass_opacity_v1',
-  CACHE_USERS: 'fh_cache_users_v2', // Version bumped to ensure clean slate if structure changed
+  CACHE_USERS: 'fh_cache_users_v2', 
   CACHE_MESSAGES: 'fh_cache_messages_v2',
   CACHE_NOTIFICATIONS: 'fh_cache_notifications_v2',
   LAST_RESET: 'fh_last_reset_date',
@@ -104,6 +108,9 @@ const mapUserFromDB = (dbUser: any): User => {
       friends: Array.isArray(dbUser.friends) ? dbUser.friends : [],
       requests: Array.isArray(dbUser.requests) ? dbUser.requests : [],
       lastSeen: dbUser.last_seen,
+      isDeactivated: !!dbUser.is_deactivated,
+      blockedUsers: Array.isArray(dbUser.blocked_users) ? dbUser.blocked_users : [],
+      instagramLink: dbUser.instagram_link
     };
   } catch (e) {
     console.error("Error mapping user:", e, dbUser);
@@ -116,6 +123,7 @@ const mapUserFromDB = (dbUser: any): User => {
       allowPrivateChat: false,
       friends: [],
       requests: [],
+      blockedUsers: []
     };
   }
 };
@@ -135,6 +143,9 @@ const mapUserToDB = (user: User) => ({
   friends: user.friends || [],
   requests: user.requests || [],
   last_seen: user.lastSeen,
+  is_deactivated: user.isDeactivated,
+  blocked_users: user.blockedUsers || [],
+  instagram_link: user.instagramLink
 });
 
 const mapMessageFromDB = (dbMsg: any): Message => {
@@ -205,6 +216,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [isLoading, setIsLoading] = useState(!currentUser); 
 
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+  const [typingStatus, setTypingStatus] = useState<Record<string, boolean>>({});
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
   const [isSwitchAccountModalOpen, setIsSwitchAccountModalOpen] = useState(false);
   
@@ -266,6 +278,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const currentUserRef = useRef<User | null>(null);
   const usersRef = useRef<User[]>([]);
   const notificationsRef = useRef<AppNotification[]>([]);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const typingTimeoutRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   useEffect(() => { currentUserRef.current = currentUser; }, [currentUser]);
   useEffect(() => { usersRef.current = users; }, [users]);
@@ -499,9 +513,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const login = async (user: User) => { 
-      setCurrentUser(user); 
-      localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id); 
-      saveAccountToHistory(user);
+      // If user was deactivated, reactivate on login
+      if (user.isDeactivated) {
+          const reactivatedUser = { ...user, isDeactivated: false };
+          await supabase.from('users').update({ is_deactivated: false }).eq('id', user.id);
+          setCurrentUser(reactivatedUser);
+          localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id); 
+          saveAccountToHistory(reactivatedUser);
+      } else {
+          setCurrentUser(user); 
+          localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id); 
+          saveAccountToHistory(user);
+      }
+      
       checkPermissionStatus();
       setIsSwitchAccountModalOpen(false);
       
@@ -581,17 +605,41 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           logout(); 
       }
   };
-  const deactivateAccount = async () => { logout(); };
+  
+  const deactivateAccount = async () => { 
+      if (currentUser) {
+          await updateProfile({ ...currentUser, isDeactivated: true });
+          logout(); 
+      }
+  };
   
   const sendMessage = async (receiverId: string, content: string) => {
     if (!currentUser) return;
+
+    // Check Block Status
+    const receiver = users.find(u => u.id === receiverId);
+    if (!receiver) return;
+
+    if (currentUser.blockedUsers.includes(receiverId)) {
+        alert("You have blocked this user.");
+        return;
+    }
+    if (receiver.blockedUsers.includes(currentUser.id)) {
+        alert("Message cannot be delivered.");
+        return;
+    }
+    
+    if (receiver.isDeactivated) {
+        alert("This user has deactivated their account.");
+        return;
+    }
+
     const newMsg: Message = { id: generateUUID(), senderId: currentUser.id, receiverId, content, timestamp: Date.now(), read: false };
     
     // Optimistic Update
     setMessages(prev => [...prev, newMsg]);
     playSendSound();
     
-    // Explicitly cache immediately for responsiveness
     const currentCache = JSON.parse(localStorage.getItem(STORAGE_KEYS.CACHE_MESSAGES) || '[]');
     localStorage.setItem(STORAGE_KEYS.CACHE_MESSAGES, JSON.stringify([...currentCache, newMsg]));
 
@@ -600,7 +648,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (error) {
             console.error("Message Send Error:", error);
             triggerNotification("Error", "Message failed to send.");
-            // Rollback
             setMessages(prev => prev.filter(m => m.id !== newMsg.id));
         }
     } catch (e) {
@@ -608,6 +655,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setMessages(prev => prev.filter(m => m.id !== newMsg.id));
         alert("Failed to send message due to network error.");
     }
+  };
+
+  const sendTypingSignal = async (receiverId: string) => {
+    if (!channelRef.current || !currentUserRef.current) return;
+    try {
+      await channelRef.current.send({
+        type: 'broadcast',
+        event: 'typing',
+        payload: { from: currentUserRef.current.id, to: receiverId }
+      });
+    } catch(e) { console.error("Typing signal failed", e); }
   };
 
   const broadcastMessage = async (content: string) => {
@@ -679,6 +737,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           const theirNewFriends = (data.friends || []).filter((id: string) => id !== currentUser.id);
           await supabase.from('users').update({ friends: theirNewFriends }).eq('id', targetUserId);
       }
+  };
+
+  const blockUser = async (targetUserId: string) => {
+      if (!currentUser) return;
+      const newBlocked = [...currentUser.blockedUsers, targetUserId];
+      
+      // Also unfriend if friends
+      if (currentUser.friends.includes(targetUserId)) {
+          await unfriend(targetUserId);
+      }
+      
+      await updateProfile({ ...currentUser, blockedUsers: newBlocked });
+  };
+
+  const unblockUser = async (targetUserId: string) => {
+      if (!currentUser) return;
+      const newBlocked = currentUser.blockedUsers.filter(id => id !== targetUserId);
+      await updateProfile({ ...currentUser, blockedUsers: newBlocked });
   };
 
   const markNotificationRead = (id: string) => {
@@ -812,7 +888,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         });
 
         if (currentUserRef.current && newMsg.receiverId === currentUserRef.current.id) {
-          const sender = usersRef.current.find(u => u.id === newMsg.senderId);
+            // Check blocking
+            const sender = usersRef.current.find(u => u.id === newMsg.senderId);
+            if (sender && currentUserRef.current.blockedUsers.includes(sender.id)) {
+                return; // Suppress blocked message notification
+            }
+
           const senderName = sender ? sender.username : 'Someone';
           
           playNotificationSound();
@@ -842,6 +923,26 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const updatedMsg = mapMessageFromDB(payload.new);
         setMessages(prev => prev.map(m => m.id === updatedMsg.id ? updatedMsg : m));
       })
+      .on('broadcast', { event: 'typing' }, (payload) => {
+         const { from, to } = payload.payload;
+         if (currentUserRef.current && to === currentUserRef.current.id) {
+             // Check if blocked
+             if (currentUserRef.current.blockedUsers.includes(from)) return;
+
+             if (typingTimeoutRef.current[from]) {
+                 clearTimeout(typingTimeoutRef.current[from]);
+             }
+             setTypingStatus(prev => ({ ...prev, [from]: true }));
+             
+             typingTimeoutRef.current[from] = setTimeout(() => {
+                 setTypingStatus(prev => {
+                     const next = { ...prev };
+                     delete next[from];
+                     return next;
+                 });
+             }, 3000);
+         }
+      })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, async (payload) => {
         if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
           const updatedUser = mapUserFromDB(payload.new);
@@ -854,7 +955,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             const oldRequests = currentUserRef.current.requests || [];
             const newRequests = updatedUser.requests || [];
             
-            // STRICT DIFF: Only notify if ID is in new but NOT in old
             const addedRequests = newRequests.filter(reqId => !oldRequests.includes(reqId));
             
             const notifiedRequestIds = new Set(notificationsRef.current.filter(n => n.type === 'friend_request').map(n => n.data?.requesterId));
@@ -866,6 +966,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 setCurrentUser(updatedUser);
 
                 for (const reqId of idsToProcess) {
+                   // Check blocking
+                   if (updatedUser.blockedUsers.includes(reqId)) continue;
+
                    let requester = usersRef.current.find(u => u.id === reqId);
                    if (!requester) {
                        const { data } = await supabase.from('users').select('*').eq('id', reqId).single();
@@ -905,16 +1008,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (currentUser) channel.track({ user_id: currentUser.id, online_at: new Date().toISOString() });
       })
       .subscribe();
+    
+    channelRef.current = channel;
 
-    return () => { supabase.removeChannel(channel); };
+    return () => { supabase.removeChannel(channel); channelRef.current = null; };
   }, []);
 
   return (
     <AppContext.Provider value={{
       currentUser, users, messages, notifications, knownAccounts, theme, isLoading, enableAnimations, animationSpeed, enableLiquid, glassOpacity, showPermissionPrompt, notificationPermission, isSwitchAccountModalOpen,
-      appConfig, isAdmin, isOwner, onlineUsers,
+      appConfig, isAdmin, isOwner, onlineUsers, typingStatus,
       login, loginWithCredentials, logout, switchAccount, removeKnownAccount, signup, updateProfile, deleteAccount, deactivateAccount,
-      sendMessage, broadcastMessage, sendFriendRequest, acceptFriendRequest, unfriend, markNotificationRead,
+      sendMessage, sendTypingSignal, broadcastMessage, sendFriendRequest, acceptFriendRequest, unfriend, blockUser, unblockUser, markNotificationRead,
       toggleTheme, toggleAnimations, setAnimationSpeed, toggleLiquid, setGlassOpacity, markConversationAsRead, checkIsAdmin, checkIsOwner, checkIsOnline, enableNotifications, closePermissionPrompt, updateAppConfig, getTimeSpent, getWeeklyStats, openSwitchAccountModal
     }}>
       {children}

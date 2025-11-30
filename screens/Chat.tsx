@@ -89,14 +89,20 @@ export const ChatScreen: React.FC = () => {
     if (inputText.trim() && selectedUser) {
       const text = inputText;
       setInputText(''); // Clear immediately for better UX
-      await sendMessage(selectedUser.id, text);
+      try {
+        await sendMessage(selectedUser.id, text);
+      } catch (error) {
+        console.error("Failed to send message", error);
+        setInputText(text); // Restore text on failure
+      }
     }
   };
 
-  const handleProfileClick = (e: React.MouseEvent) => {
+  const handleProfileClick = (e: React.MouseEvent, userId?: string) => {
     e.stopPropagation(); // Prevent any bubbling
-    if (selectedUser) {
-        navigate(`/user/${selectedUser.id}`);
+    const targetId = userId || selectedUser?.id;
+    if (targetId) {
+        navigate(`/user/${targetId}`);
     }
   };
 
@@ -122,18 +128,24 @@ export const ChatScreen: React.FC = () => {
                 const isOnline = checkIsOnline(user.id);
 
                 return (
-                  <button
+                  <div
                     key={user.id}
-                    onClick={() => setSelectedUser(user)}
                     className={`w-full flex items-center p-4 liquid-card hover:bg-white/40 dark:hover:bg-white/10 transition-all hover:scale-[1.02] active:scale-95 transform-gpu will-change-transform ${enableAnimations ? 'animate-slide-up-fade opacity-0' : ''}`}
                     style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'both' }}
                   >
-                    <div className="relative">
+                    <button 
+                        onClick={(e) => handleProfileClick(e, user.id)}
+                        className="relative flex-shrink-0 z-10"
+                    >
                       <img src={user.avatar} alt={user.username} className={`w-14 h-14 rounded-full object-cover border-2 ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-white/50'}`} />
                       {hasUnread && <span className="absolute top-0 right-0 w-4 h-4 bg-blue-500 rounded-full border-2 border-white animate-pulse"></span>}
                       {isOnline && !hasUnread && <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white dark:border-gray-800 shadow-sm animate-pulse-slow"></span>}
-                    </div>
-                    <div className="ml-4 text-left flex-1 min-w-0">
+                    </button>
+                    
+                    <button 
+                        onClick={() => setSelectedUser(user)}
+                        className="ml-4 text-left flex-1 min-w-0 h-full flex flex-col justify-center"
+                    >
                       <div className="flex justify-between items-center mb-1">
                         <h3 className={`font-bold text-lg truncate flex items-center gap-1 ${hasUnread ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>
                             {user.name || user.username}
@@ -144,8 +156,8 @@ export const ChatScreen: React.FC = () => {
                       <p className={`text-sm truncate ${hasUnread ? 'font-bold text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
                         {lastMsg ? (lastMsg.senderId === currentUser?.id ? `You: ${lastMsg.content}` : lastMsg.content) : 'Tap to chat'}
                       </p>
-                    </div>
-                  </button>
+                    </button>
+                  </div>
                 );
               })
             )}
@@ -166,23 +178,23 @@ export const ChatScreen: React.FC = () => {
         <div className="flex items-center gap-2 w-full">
             <button 
                 onClick={() => setSelectedUser(null)} 
-                className="p-2 -ml-2 rounded-full hover:bg-white/20 transition-colors text-gray-800 dark:text-white"
+                className="p-2 rounded-full hover:bg-white/20 transition-colors text-gray-800 dark:text-white flex items-center justify-center"
             >
                 <ArrowLeft className="w-6 h-6" />
             </button>
             
             <button 
-                onClick={handleProfileClick}
+                onClick={(e) => handleProfileClick(e)}
                 className="flex items-center gap-3 hover:bg-white/20 dark:hover:bg-white/10 p-1.5 pr-4 rounded-full transition-all flex-1"
             >
-                <div className={`relative ${enableAnimations ? 'animate-pop-in' : ''}`}>
+                <div className={`relative flex-shrink-0 ${enableAnimations ? 'animate-pop-in' : ''}`}>
                     <img src={selectedUser.avatar} alt="avatar" className={`w-10 h-10 rounded-full object-cover border ${isOwnerUser ? 'border-yellow-400' : isAdminUser ? 'border-blue-500' : 'border-white/50'}`} />
                     {isSelectedUserOnline && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border border-white dark:border-gray-800 shadow-sm animate-pulse"></span>}
                 </div>
-                <div className={`flex flex-col items-start ${enableAnimations ? 'animate-slide-up' : ''}`}>
-                    <span className="font-bold text-gray-900 dark:text-white text-sm flex items-center gap-1">
+                <div className={`flex flex-col items-start min-w-0 ${enableAnimations ? 'animate-slide-up' : ''}`}>
+                    <span className="font-bold text-gray-900 dark:text-white text-sm flex items-center gap-1 truncate w-full">
                         {selectedUser.name || selectedUser.username}
-                        {isOwnerUser ? <Crown className="w-3 h-3 text-yellow-500 fill-yellow-500" /> : isAdminUser ? <ShieldCheck className="w-3 h-3 text-blue-500" /> : null}
+                        {isOwnerUser ? <Crown className="w-3 h-3 text-yellow-500 fill-yellow-500 flex-shrink-0" /> : isAdminUser ? <ShieldCheck className="w-3 h-3 text-blue-500 flex-shrink-0" /> : null}
                     </span>
                     <span className={`text-[10px] font-bold ${isSelectedUserOnline ? 'text-green-500' : 'text-gray-400'}`}>
                         {isSelectedUserOnline ? 'Online' : formatLastSeen(selectedUser.lastSeen)}
@@ -233,10 +245,10 @@ export const ChatScreen: React.FC = () => {
       </div>
 
       {/* Input Area */}
-      <div className={`fixed bottom-28 left-0 right-0 px-4 z-[70] pointer-events-none ${enableAnimations ? 'animate-slide-up' : ''}`}>
+      <div className={`fixed bottom-[6.5rem] left-0 right-0 px-4 z-[100] pointer-events-none ${enableAnimations ? 'animate-slide-up' : ''}`}>
         <form 
           onSubmit={handleSend} 
-          className="pointer-events-auto flex items-center gap-2 p-1.5 shadow-2xl sm:max-w-md sm:mx-auto bg-white/40 dark:bg-black/40 backdrop-blur-xl border border-white/30 dark:border-white/10 rounded-[2rem]"
+          className="pointer-events-auto flex items-center gap-2 p-1.5 shadow-2xl sm:max-w-md sm:mx-auto bg-white/40 dark:bg-black/40 backdrop-blur-xl border border-white/30 dark:border-white/10 rounded-[2rem] w-full"
         >
           <input
             type="text"
@@ -244,12 +256,12 @@ export const ChatScreen: React.FC = () => {
             onChange={(e) => setInputText(e.target.value)}
             placeholder="Type a message..."
             autoComplete="off"
-            className="flex-1 bg-transparent px-5 py-3 focus:outline-none text-sm text-gray-900 dark:text-white placeholder-gray-500 font-medium"
+            className="flex-1 bg-transparent px-5 py-3 focus:outline-none text-sm text-gray-900 dark:text-white placeholder-gray-500 font-medium min-w-0"
           />
           <button 
             type="submit" 
             disabled={!inputText.trim()} 
-            className="p-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full text-white shadow-lg disabled:opacity-50 transition-all hover:scale-110 active:scale-95 flex-shrink-0"
+            className="p-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full text-white shadow-lg disabled:opacity-50 transition-all hover:scale-110 active:scale-95 flex-shrink-0 flex items-center justify-center"
           >
             <Send className="w-5 h-5 ml-0.5" />
           </button>

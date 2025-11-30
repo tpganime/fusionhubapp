@@ -186,7 +186,6 @@ export const ProfileScreen: React.FC = () => {
   };
 
   const startChat = () => {
-      // Use query param for persistence
       navigate(`/chat?uid=${profileUser.id}`);
   };
 
@@ -290,7 +289,7 @@ export const ProfileScreen: React.FC = () => {
                  </>
              ) : (
                  <>
-                     <button onClick={() => navigate(-1)} className="mr-4"><ArrowLeft className="w-6 h-6 text-gray-900 dark:text-white" /></button>
+                     <button onClick={() => navigate(-1)} className="mr-3 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-white/10"><ArrowLeft className="w-6 h-6 text-gray-900 dark:text-white" /></button>
                      <h1 className="text-lg font-bold text-gray-900 dark:text-white">{profileUser.username}</h1>
                  </>
              )}

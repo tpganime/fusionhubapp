@@ -244,149 +244,35 @@
           will-change: transform, opacity; 
       }
 
-      /* LIQUID TOGGLE SWITCH - ROBUST FIX */
+      /* SIMPLIFIED LIQUID TOGGLE - RED/GREEN */
       .liquid-toggle {
-        --transition: 0.6s;
-        --ease: cubic-bezier(0.34, 1.56, 0.64, 1);
-        --unchecked: #cbd5e1;
-        --active-color: #22c55e;
-        /* Default mix */
-        --checked: color-mix(in srgb, var(--active-color) calc(var(--complete) * 1%), var(--unchecked));
-        --border: 3px; 
-        --width: 52;   
-        --height: 32;  
-        height: calc(var(--height) * 1px);
-        width: calc(var(--width) * 1px);
-        border-radius: 100px;
-        border: 0;
-        padding: 0;
-        cursor: pointer;
+        width: 52px;
+        height: 32px;
+        border-radius: 999px;
         position: relative;
-        overflow: visible;
-        container-type: inline-size;
-        background: transparent;
-        outline-offset: 2px;
-        -webkit-tap-highlight-color: transparent;
-        transition: --complete 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-        transform-style: preserve-3d;
+        cursor: pointer;
+        background: #FF3B30; /* Red for Off */
+        transition: background 0.3s ease;
+        border: none;
+        padding: 4px;
+        overflow: hidden;
       }
-      .liquid-toggle:active {
-         transform: scale(0.95) translateZ(-2px);
-      }
-
-      /* Forced state colors to ensure visibility if animation fails */
-      .liquid-toggle[aria-pressed="false"] .indicator,
-      .liquid-toggle[aria-pressed="false"] .indicator--masked,
-      .liquid-toggle[aria-pressed="false"] .liquid__track {
-         background: var(--unchecked) !important; 
-         transition: background 0.4s ease;
+      .liquid-toggle.active {
+        background: #34C759; /* Green for On */
       }
       
-      .liquid-toggle[aria-pressed="true"] .indicator,
-      .liquid-toggle[aria-pressed="true"] .indicator--masked,
-      .liquid-toggle[aria-pressed="true"] .liquid__track {
-         background: var(--active-color) !important;
-         transition: background 0.4s ease;
-      }
-
-      .liquid-toggle .knockout {
-        height: calc(var(--height) * 1px);
-        width: calc(var(--width) * 1px);
-        border-radius: 100px;
-        filter: url(#remove-black);
-        position: absolute;
-        inset: 0;
-        will-change: filter;
-        transform: translate3d(0, 0, 0);
-      }
-
-      .liquid-toggle .indicator--masked .mask {
-        position: absolute;
-        height: calc(100% - (2 * var(--border)));
-        width: calc(60% - (2 * var(--border)));
-        top: 50%;
-        background: #000;
-        left: var(--border);
-        border-radius: 100px;
-        translate: calc((var(--complete) / 100) * (100cqi - 60cqi - (0 * var(--border)))) -50%;
-        transition-property: height, width, margin, scale, translate;
-        transition-duration: var(--transition);
-        transition-timing-function: var(--ease);
-        will-change: height, width, margin;
-      }
-
-      .liquid-toggle .liquids {
-        position: absolute;
-        inset: 0;
-        transform: translate3d(0, 0, 0);
-        border-radius: 100px;
-        overflow: hidden;
-        filter: url(#goo);
-      }
-
-      .liquid-toggle .liquid__shadow {
-        position: absolute;
-        inset: 0;
-        box-shadow: inset 0px 0px 3px 4px var(--checked), inset calc(((var(--complete) / 100) * 8px) + -4px) 0px 3px 4px var(--checked);
-        border-radius: 100px;
-        transition: box-shadow calc(var(--transition) * 0.5) ease-out;
-      }
-
-      .liquid-toggle .liquid__track {
-        content: '';
-        height: calc((var(--height) * 1px) - (0 * var(--border)));
-        width: calc((var(--width) * 1px) - (0 * var(--border)));
-        border-radius: 100px;
-        position: absolute;
-        top: 50%;
-        left: 0;
-        transition-property: height, width, filter, left, background;
-        transition-duration: var(--transition);
-        transition-timing-function: var(--ease);
-        translate: calc((var(--complete) / 100) * (100cqi - 100% - (6 * var(--border)))) -50%;
-      }
-
-      .liquid-toggle .indicator__liquid {
-        position: absolute;
-        height: calc(100% - (2 * var(--border)));
-        width: calc(60% - (2 * var(--border)));
-        container-type: inline-size;
-        top: 50%;
-        background: #0000;
-        left: var(--border);
-        border-radius: 100px;
-        translate: calc((var(--complete) / 100) * (100cqi - 100% - (2 * var(--border)))) -50%;
-        transition-property: scale, translate;
-        transition-duration: var(--transition);
-        transition-timing-function: var(--ease);
-      }
-
-      .liquid-toggle .indicator__liquid .cover {
-        content: '';
-        position: absolute;
-        inset: 0;
+      .liquid-toggle .toggle-circle {
+        width: 24px;
+        height: 24px;
         background: white;
-        border-radius: 100px;
-        transition: opacity var(--transition) var(--ease);
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        transform: translateX(0);
       }
-
-      .liquid-toggle[data-active='true'] .indicator--masked .mask {
-        height: calc((100% - (2 * var(--border))) * 1.4);
-        width: calc((60% - (2 * var(--border))) * 1.4);
-        margin-left: calc((60% - (2 * var(--border))) * -0.2);
-      }
-      .liquid-toggle[data-active='true'] .indicator__liquid {
-        scale: 1.4 0.8;
-      }
-      .liquid-toggle[data-active='true'] .wrapper {
-        filter: blur(0px);
-      }
-      .liquid-toggle[data-active='true'] .indicator__liquid .cover {
-        opacity: 0; 
-      }
-      .liquid-toggle[data-active='true'] .indicator__liquid .liquid__track {
-        left: calc(var(--border) * 3);
-        height: calc((var(--height) * 1px) - (6 * var(--border)));
+      
+      .liquid-toggle.active .toggle-circle {
+        transform: translateX(20px);
       }
 
       /* LIQUID SLIDER STYLES */
@@ -497,19 +383,6 @@
           <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur" />
           <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 16 -10" result="goo" />
           <feComposite in="SourceGraphic" in2="goo" operator="atop" />
-        </filter>
-        <filter id="knockout" colorInterpolationFilters="sRGB">
-          <feColorMatrix result="knocked" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  -1 -1 -1 1 0" />
-          <feComponentTransfer>
-            <feFuncR type="linear" slope="3" intercept="-1" />
-            <feFuncG type="linear" slope="3" intercept="-1" />
-            <feFuncB type="linear" slope="3" intercept="-1" />
-          </feComponentTransfer>
-        </filter>
-        <filter id="remove-black" color-interpolation-filters="sRGB">
-          <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  -255 -255 -255 0 1" result="black-pixels" />
-          <feMorphology in="black-pixels" operator="dilate" radius="0.5" result="smoothed" />
-          <feComposite in="SourceGraphic" in2="smoothed" operator="out" />
         </filter>
     </svg>
     <script type="module" src="/index.tsx"></script>

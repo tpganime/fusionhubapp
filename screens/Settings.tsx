@@ -1,16 +1,20 @@
-
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lock, Eye, Trash2, LogOut, Shield, ChevronRight, Moon, Sun, Zap, LayoutDashboard, Bell, Droplets, Sliders, Power, Gauge, ArrowRight as ArrowRightIcon, Users, Plus, X, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Lock, Eye, Trash2, LogOut, Shield, ChevronRight, Moon, Sun, Zap, LayoutDashboard, Bell, Droplets, Sliders, Power, Gauge, ArrowRight as ArrowRightIcon, Users, Plus, X, MessageCircle, AlertTriangle } from 'lucide-react';
 import { PRIVACY_POLICY_TEXT } from '../constants';
 import { LiquidSlider } from '../components/LiquidSlider';
 import { LiquidToggle } from '../components/LiquidToggle';
+import { GenericModal } from '../components/GenericModal';
 
 export const SettingsScreen: React.FC = () => {
   const { currentUser, updateProfile, logout, switchAccount, removeKnownAccount, knownAccounts, deleteAccount, deactivateAccount, theme, toggleTheme, enableAnimations, toggleAnimations, animationSpeed, setAnimationSpeed, enableLiquid, toggleLiquid, glassOpacity, setGlassOpacity, isAdmin, enableNotifications, notificationPermission, openSwitchAccountModal } = useApp();
   const navigate = useNavigate();
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
+  
+  // Modal States
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   
   const isNotificationGranted = notificationPermission === 'granted';
 
@@ -21,18 +25,14 @@ export const SettingsScreen: React.FC = () => {
     navigate('/');
   };
 
-  const handleDelete = () => {
-    if (window.confirm("Are you sure you want to delete your account?")) {
+  const handleConfirmDelete = () => {
       deleteAccount();
       navigate('/');
-    }
   };
 
-  const handleDeactivate = () => {
-      if (window.confirm("Deactivate your account?")) {
-          deactivateAccount();
-          navigate('/');
-      }
+  const handleConfirmDeactivate = () => {
+      deactivateAccount();
+      navigate('/');
   };
 
   const transparencyValue = Math.round((1.0 - glassOpacity) * 100);
@@ -70,6 +70,38 @@ export const SettingsScreen: React.FC = () => {
   return (
     <div className={`h-full overflow-y-auto pb-40 no-scrollbar ${enableAnimations ? 'animate-fade-in' : ''}`}>
       
+      {/* Deactivate Modal */}
+      <GenericModal isOpen={showDeactivateModal} onClose={() => setShowDeactivateModal(false)} title="Deactivate Account">
+          <div className="text-center">
+               <div className="w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center mx-auto mb-4">
+                  <Power className="w-8 h-8 text-gray-600 dark:text-gray-400" />
+               </div>
+               <p className="text-gray-600 dark:text-gray-300 mb-6">
+                  This will temporarily disable your account. You can reactivate it anytime by logging back in.
+               </p>
+               <div className="flex gap-3">
+                  <button onClick={() => setShowDeactivateModal(false)} className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold">Cancel</button>
+                  <button onClick={handleConfirmDeactivate} className="flex-1 py-3 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-black font-bold">Deactivate</button>
+              </div>
+          </div>
+      </GenericModal>
+
+      {/* Delete Modal */}
+      <GenericModal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} title="Delete Account">
+          <div className="text-center">
+               <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4 animate-pulse">
+                  <AlertTriangle className="w-8 h-8 text-red-500" />
+               </div>
+               <p className="text-gray-600 dark:text-gray-300 mb-6 font-medium">
+                  This action is permanent and cannot be undone. All your data will be erased.
+               </p>
+               <div className="flex gap-3">
+                  <button onClick={() => setShowDeleteModal(false)} className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold">Cancel</button>
+                  <button onClick={handleConfirmDelete} className="flex-1 py-3 rounded-xl bg-red-600 text-white font-bold shadow-lg shadow-red-600/30 hover:bg-red-700">Delete</button>
+              </div>
+          </div>
+      </GenericModal>
+
       <div className="sticky top-4 mx-4 z-50 glass-panel p-3 flex items-center mb-6 shadow-lg">
         <button onClick={() => navigate('/profile')} className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
           <ArrowLeft className="w-6 h-6 text-gray-900 dark:text-white" />
@@ -207,13 +239,13 @@ export const SettingsScreen: React.FC = () => {
         <section>
           <h3 className="text-xs font-bold text-red-500/70 uppercase mb-3 ml-2 tracking-wider">Danger Zone</h3>
           <div className="liquid-card divide-y divide-gray-200/30 dark:divide-white/10">
-            <button onClick={handleDeactivate} className="w-full p-5 flex items-center justify-between text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800/20 first:rounded-t-3xl last:rounded-b-3xl">
+            <button onClick={() => setShowDeactivateModal(true)} className="w-full p-5 flex items-center justify-between text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800/20 first:rounded-t-3xl last:rounded-b-3xl">
                <div className="flex items-center gap-4">
                  <div className="p-2.5 bg-gray-200 dark:bg-gray-800 rounded-xl"><Power className="w-5 h-5" /></div>
                  <span className="font-bold">Deactivate</span>
                </div>
             </button>
-            <button onClick={handleDelete} className="w-full p-5 flex items-center justify-between text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 first:rounded-t-3xl last:rounded-b-3xl">
+            <button onClick={() => setShowDeleteModal(true)} className="w-full p-5 flex items-center justify-between text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 first:rounded-t-3xl last:rounded-b-3xl">
                <div className="flex items-center gap-4">
                  <div className="p-2.5 bg-red-100 dark:bg-red-900/30 rounded-xl"><Trash2 className="w-5 h-5" /></div>
                  <span className="font-bold">Delete</span>

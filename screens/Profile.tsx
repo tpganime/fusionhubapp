@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { ComingSoon } from '../components/ComingSoon';
-import { Camera, ArrowLeft, Lock, ShieldCheck, Crown, X, Settings, AlignJustify, Share2, Activity, UserMinus, User as UserIcon } from 'lucide-react';
+import { Camera, ArrowLeft, Lock, ShieldCheck, Crown, X, Settings, AlignJustify, Share2, Activity, UserMinus, User as UserIcon, Copy, Twitter, Facebook } from 'lucide-react';
 import { Gender } from '../types';
 import { useParams, useNavigate } from 'react-router-dom';
+import { GenericModal } from '../components/GenericModal';
 
 const compressImage = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -65,6 +65,10 @@ export const ProfileScreen: React.FC = () => {
 
   const [timeSpent, setTimeSpent] = useState("0m");
   const [showStatsModal, setShowStatsModal] = useState(false);
+  
+  // New Modal States
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showUnfollowModal, setShowUnfollowModal] = useState(false);
 
   useEffect(() => {
       if (isOwnProfile) {
@@ -165,26 +169,12 @@ export const ProfileScreen: React.FC = () => {
   const handleCopyLink = () => {
      navigator.clipboard.writeText(profileLink);
      alert("Profile link copied!");
+     setShowShareModal(false);
   };
 
-  const handleShare = async () => {
-     if (navigator.share) {
-         try {
-             await navigator.share({
-                 title: 'FusionHub Profile',
-                 text: `Check out ${profileUser.username} on FusionHub!`,
-                 url: window.location.href
-             });
-         } catch (e) { console.log('Error sharing', e); }
-     } else {
-         handleCopyLink();
-     }
-  };
-
-  const handleUnfriend = async () => {
-      if (window.confirm(`Are you sure you want to unfriend ${profileUser.username}?`)) {
-          await unfriend(profileUser.id);
-      }
+  const handleConfirmUnfollow = async () => {
+      await unfriend(profileUser.id);
+      setShowUnfollowModal(false);
   };
 
   const startChat = () => {
@@ -192,7 +182,6 @@ export const ProfileScreen: React.FC = () => {
   };
 
   const handleBack = () => {
-      // Safer back navigation check
       if (window.history.length > 1) {
         navigate(-1);
       } else {
@@ -212,7 +201,6 @@ export const ProfileScreen: React.FC = () => {
   const displayDescription = (profileUser.description && profileUser.description.startsWith('{')) ? "Admin Account" : profileUser.description;
   const displayAge = calculateAge(profileUser.birthdate);
 
-  // Stats for Modal
   const weeklyStats = isOwnProfile ? getWeeklyStats() : [];
   const maxMs = Math.max(...weeklyStats.map(s => s.ms), 60000); 
   const totalMs = weeklyStats.reduce((acc, curr) => acc + curr.ms, 0);
@@ -245,6 +233,41 @@ export const ProfileScreen: React.FC = () => {
         </div>
       )}
 
+      {/* Unfollow Confirmation Modal */}
+      <GenericModal isOpen={showUnfollowModal} onClose={() => setShowUnfollowModal(false)} title="Unfollow User">
+          <div className="text-center">
+              <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
+                  <UserMinus className="w-8 h-8 text-red-500" />
+              </div>
+              <p className="text-gray-600 dark:text-gray-300 mb-6">
+                  Are you sure you want to unfollow <span className="font-bold text-gray-900 dark:text-white">{profileUser.username}</span>?
+              </p>
+              <div className="flex gap-3">
+                  <button onClick={() => setShowUnfollowModal(false)} className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold">Cancel</button>
+                  <button onClick={handleConfirmUnfollow} className="flex-1 py-3 rounded-xl bg-red-500 text-white font-bold shadow-lg shadow-red-500/30">Unfollow</button>
+              </div>
+          </div>
+      </GenericModal>
+
+      {/* Share Modal */}
+      <GenericModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} title="Share Profile">
+          <div className="space-y-4">
+              <button onClick={handleCopyLink} className="w-full flex items-center gap-4 p-4 rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group">
+                  <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                      <Copy className="w-5 h-5" />
+                  </div>
+                  <span className="font-bold text-gray-800 dark:text-white flex-1 text-left">Copy Link</span>
+              </button>
+              {/* Dummy Social Buttons */}
+              <button onClick={() => alert("Shared to Twitter!")} className="w-full flex items-center gap-4 p-4 rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group">
+                  <div className="p-3 rounded-full bg-sky-100 dark:bg-sky-900/30 text-sky-500">
+                      <Twitter className="w-5 h-5" />
+                  </div>
+                  <span className="font-bold text-gray-800 dark:text-white flex-1 text-left">Twitter</span>
+              </button>
+          </div>
+      </GenericModal>
+
       {/* Stats Modal */}
       {showStatsModal && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
@@ -267,7 +290,7 @@ export const ProfileScreen: React.FC = () => {
                 
                 <div className="flex items-end justify-between h-48 gap-3 border-b border-gray-100 dark:border-gray-800 pb-2">
                     {weeklyStats.map((stat, i) => {
-                        const heightPercent = Math.max((stat.ms / maxMs) * 100, 4); // Min height 4% for visibility
+                        const heightPercent = Math.max((stat.ms / maxMs) * 100, 4);
                         const isToday = i === 6;
                         const label = isToday ? 'Today' : stat.day;
                         
@@ -314,11 +337,10 @@ export const ProfileScreen: React.FC = () => {
 
       {/* Main Content - Scrollable */}
       <div className="flex-1 overflow-y-auto pt-4 px-4 pb-32 no-scrollbar">
-         {/* User Info Section - Style Updated */}
+         {/* User Info Section */}
          <div className="mb-6">
              <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">User Info</h2>
              <div className={`p-5 liquid-card flex items-center gap-5 ${enableAnimations ? 'animate-slide-up-fade' : ''}`}>
-                {/* Avatar Left */}
                 <div className="relative flex-shrink-0">
                    <div 
                      className="w-20 h-20 rounded-full p-[2px] bg-gradient-to-tr from-blue-400 to-purple-500 cursor-pointer shadow-lg active:scale-95 transition-transform"
@@ -334,7 +356,6 @@ export const ProfileScreen: React.FC = () => {
                    )}
                 </div>
 
-                {/* Info Right */}
                 <div className="flex-1 min-w-0 space-y-1">
                    <div>
                        <h2 className="text-xl font-bold text-gray-900 dark:text-white truncate leading-tight">
@@ -345,7 +366,6 @@ export const ProfileScreen: React.FC = () => {
                        </p>
                    </div>
                    
-                   {/* Email - Only visible to self */}
                    {isOwnProfile && (
                        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-1">
                            <span className="font-semibold text-gray-700 dark:text-gray-300">Email:</span>
@@ -353,7 +373,6 @@ export const ProfileScreen: React.FC = () => {
                        </div>
                    )}
                    
-                   {/* Joined Date */}
                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                         <span className="font-semibold text-gray-700 dark:text-gray-300">Joined:</span>
                         <span>Nov 2025</span>
@@ -370,7 +389,7 @@ export const ProfileScreen: React.FC = () => {
              </div>
          </div>
 
-         {/* Details (Age & Gender) - Visible if allowed */}
+         {/* Details (Age & Gender) */}
          {canViewDetails && !isEditing && (
              <div className={`mb-6 flex gap-4 ${enableAnimations ? 'animate-slide-up-fade' : ''}`} style={{ animationDelay: '150ms' }}>
                  <div className="flex-1 p-3 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 flex flex-col items-center">
@@ -419,7 +438,7 @@ export const ProfileScreen: React.FC = () => {
                 ) : (
                     <>
                        {isFriend ? (
-                          <button onClick={handleUnfriend} className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-sm hover:bg-red-50 dark:hover:bg-red-900/10 hover:text-red-600 flex items-center justify-center gap-2 active:scale-95">
+                          <button onClick={() => setShowUnfollowModal(true)} className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-sm hover:bg-red-50 dark:hover:bg-red-900/10 hover:text-red-600 flex items-center justify-center gap-2 active:scale-95">
                               <UserMinus className="w-4 h-4" /> Following
                           </button>
                        ) : (
@@ -428,7 +447,7 @@ export const ProfileScreen: React.FC = () => {
                        <button onClick={startChat} disabled={!canMessage} className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">Message</button>
                     </>
                 )}
-                <button onClick={handleShare} className="p-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors active:scale-95"><Share2 className="w-5 h-5" /></button>
+                <button onClick={() => setShowShareModal(true)} className="p-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors active:scale-95"><Share2 className="w-5 h-5" /></button>
             </div>
          )}
 

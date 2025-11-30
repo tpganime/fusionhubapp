@@ -512,6 +512,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   };
 
+  const updatePresence = async (user: User) => {
+    if (channelRef.current) {
+        await channelRef.current.track({ user_id: user.id, online_at: new Date().toISOString() });
+    }
+  };
+
   const login = async (user: User) => { 
       // If user was deactivated, reactivate on login
       if (user.isDeactivated) {
@@ -520,10 +526,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           setCurrentUser(reactivatedUser);
           localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id); 
           saveAccountToHistory(reactivatedUser);
+          updatePresence(reactivatedUser);
       } else {
           setCurrentUser(user); 
           localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, user.id); 
           saveAccountToHistory(user);
+          updatePresence(user);
       }
       
       checkPermissionStatus();
@@ -564,7 +572,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setKnownAccounts(prev => prev.filter(u => u.id !== userId));
   };
 
-  const logout = () => { setCurrentUser(null); localStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID); setNotifications([]); };
+  const logout = () => { 
+      if (channelRef.current) {
+          channelRef.current.untrack();
+      }
+      setCurrentUser(null); 
+      localStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID); 
+      setNotifications([]); 
+  };
   const signup = async (user: User) => {
       setUsers(prev => [...prev, user]);
       await login(user);
@@ -647,8 +662,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const { error } = await supabase.from('messages').insert(mapMessageToDB(newMsg));
         if (error) {
             console.error("Message Send Error:", error);
-            triggerNotification("Error", "Message failed to send.");
             setMessages(prev => prev.filter(m => m.id !== newMsg.id));
+            if (error.code === '42P01') { // undefined_table
+                alert("System Error: The 'messages' table does not exist. Please ask the Admin to run the database setup in Admin Panel.");
+            } else {
+                alert("Failed to send message: " + error.message);
+            }
         }
     } catch (e) {
         console.error("Network Exception:", e);
@@ -676,28 +695,35 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const sendFriendRequest = async (targetUserId: string) => {
     if (!currentUser) return;
     
-    setUsers(prev => prev.map(u => {
-        if (u.id === targetUserId) {
-            if (u.requests.includes(currentUser.id)) return u;
-            return { ...u, requests: [...u.requests, currentUser.id] };
-        }
-        return u;
-    }));
-    
-    const { data } = await supabase.from('users').select('requests').eq('id', targetUserId).single();
-    if (data) {
-        let currentRequests = data.requests || [];
+    try {
+        setUsers(prev => prev.map(u => {
+            if (u.id === targetUserId) {
+                if (u.requests.includes(currentUser.id)) return u;
+                return { ...u, requests: [...u.requests, currentUser.id] };
+            }
+            return u;
+        }));
         
-        if (currentRequests.includes(currentUser.id)) {
-            const filtered = currentRequests.filter((id: string) => id !== currentUser.id);
-            await supabase.from('users').update({ requests: filtered }).eq('id', targetUserId);
-            
-            setTimeout(async () => {
-                await supabase.from('users').update({ requests: [...filtered, currentUser.id] }).eq('id', targetUserId);
-            }, 800); 
-        } else {
-            await supabase.from('users').update({ requests: [...currentRequests, currentUser.id] }).eq('id', targetUserId);
+        const { data, error } = await supabase.from('users').select('requests').eq('id', targetUserId).single();
+        if (error) throw error;
+
+        if (data) {
+            let currentRequests = data.requests || [];
+            if (!currentRequests.includes(currentUser.id)) {
+                const { error: updateError } = await supabase.from('users').update({ requests: [...currentRequests, currentUser.id] }).eq('id', targetUserId);
+                if (updateError) throw updateError;
+            }
         }
+    } catch (error: any) {
+        console.error("Failed to send friend request:", error);
+        alert(`Failed to send request: ${error.message || 'Unknown error'}`);
+        // Revert optimistic update
+        setUsers(prev => prev.map(u => {
+             if (u.id === targetUserId) {
+                 return { ...u, requests: u.requests.filter(id => id !== currentUser.id) };
+             }
+             return u;
+        }));
     }
   };
 
@@ -1003,11 +1029,25 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       })
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState();
-        const onlineIds = Object.keys(state);
-        setOnlineUsers(onlineIds);
-        if (currentUser) channel.track({ user_id: currentUser.id, online_at: new Date().toISOString() });
+        // The keys are just unique presence IDs, not user IDs. The values are arrays of state objects.
+        const activeUserIds = new Set<string>();
+        
+        for (const key in state) {
+            const presences = state[key] as any[];
+            presences.forEach(p => {
+                if (p.user_id) activeUserIds.add(p.user_id);
+            });
+        }
+        
+        setOnlineUsers(Array.from(activeUserIds));
       })
-      .subscribe();
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+             if (currentUserRef.current) {
+                 await channel.track({ user_id: currentUserRef.current.id, online_at: new Date().toISOString() });
+             }
+        }
+      });
     
     channelRef.current = channel;
 

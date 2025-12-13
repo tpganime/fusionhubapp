@@ -1,5 +1,4 @@
 
-
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
@@ -183,7 +182,7 @@ NOTIFY pgrst, 'reload config';
       </GenericModal>
 
       <div className="flex-none bg-white/90 dark:bg-black/90 border-b border-gray-200 dark:border-gray-800 p-4 flex items-center z-50 shadow-sm">
-        <button onClick={() => navigate('/settings')} className="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors relative z-50 cursor-pointer">
+        <button onClick={() => navigate('/settings')} className="p-2 -ml-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors relative z-50 cursor-pointer">
           <ArrowLeft className="w-6 h-6 text-gray-900 dark:text-white" />
         </button>
         <h2 className="text-xl font-bold ml-2 text-gray-900 dark:text-white">Admin Panel</h2>
@@ -192,7 +191,7 @@ NOTIFY pgrst, 'reload config';
       <main className="flex-1 overflow-y-auto p-4 space-y-6 max-w-md mx-auto w-full no-scrollbar pb-24">
         
         {/* User Management Card */}
-        <div className="bg-gray-50 dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
+        <div className="glass-panel p-6 shadow-sm">
            <div className="flex items-center gap-3 mb-4 text-green-600 dark:text-green-400">
               <Users className="w-6 h-6" />
               <h3 className="font-bold text-lg">User Management</h3>
@@ -207,7 +206,7 @@ NOTIFY pgrst, 'reload config';
         </div>
 
         {/* Feature Management (Coming Soon Toggles) */}
-        <div className="bg-gray-50 dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
+        <div className="glass-panel p-6 shadow-sm">
            <div className="flex items-center gap-3 mb-4 text-orange-600 dark:text-orange-400">
               <Layers className="w-6 h-6" />
               <h3 className="font-bold text-lg">App Features</h3>
@@ -244,7 +243,7 @@ NOTIFY pgrst, 'reload config';
         </div>
 
         {/* Broadcast */}
-        <div className="bg-gray-50 dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
+        <div className="glass-panel p-6 shadow-sm">
            <div className="flex items-center gap-3 mb-4 text-blue-600 dark:text-blue-400">
               <Volume2 className="w-6 h-6" />
               <h3 className="font-bold text-lg">System Broadcast</h3>
@@ -265,7 +264,7 @@ NOTIFY pgrst, 'reload config';
         </div>
         
         {/* Database Schema Generator */}
-        <div className="bg-gray-50 dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
+        <div className="glass-panel p-6 shadow-sm">
            <div className="flex items-center gap-3 mb-4 text-purple-600 dark:text-purple-400">
               <Database className="w-6 h-6" />
               <h3 className="font-bold text-lg">Database Fixer</h3>

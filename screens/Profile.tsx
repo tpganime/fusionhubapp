@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { ComingSoon } from '../components/ComingSoon';
@@ -385,7 +384,7 @@ export const ProfileScreen: React.FC = () => {
       )}
 
       {/* Header */}
-      <div className="flex-none h-14 bg-white/90 dark:bg-black/90 backdrop-blur-md z-40 flex items-center justify-between px-4 sm:max-w-md sm:mx-auto border-b border-gray-100 dark:border-gray-800 transition-all duration-300">
+      <div className="flex-none h-14 glass-panel border-b-0 border-t-0 rounded-none z-40 flex items-center justify-between px-4 sm:max-w-md sm:mx-auto shadow-sm transition-all duration-300">
           <div className="flex items-center gap-1">
              {isOwnProfile ? (
                  <>
@@ -394,7 +393,7 @@ export const ProfileScreen: React.FC = () => {
                  </>
              ) : (
                  <>
-                     <button onClick={handleBack} className="mr-2 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 active:scale-95 transition-transform"><ArrowLeft className="w-6 h-6 text-gray-900 dark:text-white" /></button>
+                     <button onClick={handleBack} className="mr-2 p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-transform"><ArrowLeft className="w-6 h-6 text-gray-900 dark:text-white" /></button>
                      <h1 className="text-lg font-bold text-gray-900 dark:text-white truncate max-w-[150px]">{displayUsername}</h1>
                  </>
              )}
@@ -421,7 +420,7 @@ export const ProfileScreen: React.FC = () => {
          
          <div className="mb-6">
              <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">User Info</h2>
-             <div className={`p-5 liquid-card flex items-center gap-5 ${enableAnimations ? 'animate-slide-up-fade' : ''}`}>
+             <div className={`p-5 glass-panel flex items-center gap-5 ${enableAnimations ? 'animate-slide-up-fade' : ''}`}>
                 <div className="relative flex-shrink-0">
                    <div 
                      className={`w-20 h-20 rounded-full p-[2px] cursor-pointer shadow-lg active:scale-95 transition-transform ${isPremiumUser ? 'bg-gradient-to-tr from-yellow-300 to-orange-500' : 'bg-gradient-to-tr from-blue-400 to-purple-500'}`}
@@ -466,7 +465,7 @@ export const ProfileScreen: React.FC = () => {
          {/* Bio */}
          <div className={`mb-6 ${enableAnimations ? 'animate-slide-up-fade' : ''}`} style={{ animationDelay: '100ms' }}>
              <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Bio</h2>
-             <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 text-sm text-gray-600 dark:text-gray-300 leading-relaxed min-h-[80px] break-words">
+             <div className="p-4 glass-panel text-sm text-gray-600 dark:text-gray-300 leading-relaxed min-h-[80px] break-words">
                  {displayDescription || "No bio available."}
              </div>
          </div>
@@ -474,11 +473,11 @@ export const ProfileScreen: React.FC = () => {
          {/* Details */}
          {canViewDetails && !isEditing && (
              <div className={`mb-6 flex gap-4 ${enableAnimations ? 'animate-slide-up-fade' : ''}`} style={{ animationDelay: '150ms' }}>
-                 <div className="flex-1 p-3 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 flex flex-col items-center">
+                 <div className="flex-1 p-3 glass-panel flex flex-col items-center">
                      <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Age</span>
                      <span className="text-lg font-bold text-gray-900 dark:text-white">{displayAge !== null ? displayAge : 'N/A'}</span>
                  </div>
-                 <div className="flex-1 p-3 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 flex flex-col items-center">
+                 <div className="flex-1 p-3 glass-panel flex flex-col items-center">
                      <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Gender</span>
                      <span className="text-lg font-bold text-gray-900 dark:text-white capitalize">{profileUser.gender || 'N/A'}</span>
                  </div>
@@ -520,16 +519,16 @@ export const ProfileScreen: React.FC = () => {
                 ) : (
                     <>
                        {isFriend ? (
-                          <button onClick={() => setShowUnfollowModal(true)} className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-sm hover:bg-red-50 dark:hover:bg-red-900/10 hover:text-red-600 flex items-center justify-center gap-2 active:scale-95">
+                          <button onClick={() => setShowUnfollowModal(true)} className="flex-1 py-3 rounded-xl glass-panel text-gray-900 dark:text-white font-bold text-sm hover:bg-red-50 dark:hover:bg-red-900/10 hover:text-red-600 flex items-center justify-center gap-2 active:scale-95">
                               <UserMinus className="w-4 h-4" /> Following
                           </button>
                        ) : (
                           <button onClick={() => sendFriendRequest(profileUser.id)} disabled={isRequested || isBlocked} className={`flex-1 py-3 rounded-xl font-bold text-sm text-white shadow-lg active:scale-95 ${isRequested || isBlocked ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}>{isRequested ? 'Requested' : 'Follow'}</button>
                        )}
-                       <button onClick={startChat} disabled={!canMessage} className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">Message</button>
+                       <button onClick={startChat} disabled={!canMessage} className="flex-1 py-3 rounded-xl glass-panel text-gray-900 dark:text-white font-bold text-sm hover:bg-white/40 dark:hover:bg-white/10 transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">Message</button>
                     </>
                 )}
-                <button onClick={() => setShowShareModal(true)} className="p-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors active:scale-95"><Share2 className="w-5 h-5" /></button>
+                <button onClick={() => setShowShareModal(true)} className="p-3 rounded-xl glass-panel text-gray-900 dark:text-white hover:bg-white/40 dark:hover:bg-white/10 transition-colors active:scale-95"><Share2 className="w-5 h-5" /></button>
             </div>
          )}
 

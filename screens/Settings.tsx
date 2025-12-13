@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
@@ -241,17 +240,17 @@ export const SettingsScreen: React.FC = () => {
   if (showPrivacyPolicy) {
     return (
       <div className="absolute inset-0 z-50 flex flex-col bg-white dark:bg-black overflow-hidden animate-fade-in">
-        <div className="flex-none p-4 z-50 bg-white/90 dark:bg-black/90 border-b border-gray-200 dark:border-gray-800 flex items-center shadow-sm">
+        <div className="flex-none p-4 z-50 glass-panel rounded-none border-x-0 border-t-0 flex items-center shadow-sm">
           <button 
              onClick={() => setShowPrivacyPolicy(false)} 
-             className="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+             className="p-2 -ml-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
           >
             <ArrowLeft className="w-6 h-6 text-gray-900 dark:text-white" />
           </button>
           <h2 className="text-lg font-bold ml-2 text-gray-900 dark:text-white">Privacy Policy</h2>
         </div>
         <div className="flex-1 overflow-y-auto no-scrollbar p-4 pb-20">
-          <div className="p-6 bg-gray-50 dark:bg-gray-900 rounded-3xl whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300 leading-relaxed border border-gray-100 dark:border-gray-800">
+          <div className="p-6 glass-panel whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
             {PRIVACY_POLICY_TEXT}
           </div>
         </div>
@@ -375,10 +374,10 @@ export const SettingsScreen: React.FC = () => {
       </GenericModal>
 
       {/* Header */}
-      <div className="flex-none p-4 bg-white/90 dark:bg-black/90 border-b border-gray-200 dark:border-gray-800 flex items-center shadow-sm z-50">
+      <div className="flex-none p-4 glass-panel border-b-0 flex items-center shadow-sm z-50">
         <button 
            onClick={handleBack} 
-           className="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+           className="p-2 -ml-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
         >
           <ArrowLeft className="w-6 h-6 text-gray-900 dark:text-white" />
         </button>
@@ -417,7 +416,7 @@ export const SettingsScreen: React.FC = () => {
                  </div>
              </div>
         ) : (
-            <div className="bg-gradient-to-br from-gray-800 to-black border border-gray-700 rounded-3xl p-6 relative overflow-hidden">
+            <div className="glass-panel p-6 relative overflow-hidden bg-gradient-to-br from-gray-800/80 to-black/80">
                  <div className="absolute top-0 right-0 p-4 opacity-10"><Crown className="w-32 h-32 text-yellow-500" /></div>
                  <div className="relative z-10">
                      <div className="flex items-center justify-between">
@@ -433,12 +432,12 @@ export const SettingsScreen: React.FC = () => {
             </div>
         )}
 
-        {/* ... Rest of Settings (Appearance, Admin, etc. kept identical) ... */}
+        {/* ... Rest of Settings (Appearance, Admin, etc.) using glass-panel ... */}
         {isAdmin && (
           <section>
             <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 ml-2 tracking-wider">Admin</h3>
-            <div className="bg-gray-50 dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800">
-               <button onClick={() => navigate('/admin')} className="w-full p-5 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors rounded-3xl">
+            <div className="glass-panel">
+               <button onClick={() => navigate('/admin')} className="w-full p-5 flex items-center justify-between hover:bg-black/5 dark:hover:bg-white/5 transition-colors rounded-3xl">
                  <div className="flex items-center gap-4">
                    <div className="p-2.5 bg-gradient-to-br from-red-500 to-orange-500 rounded-xl text-white shadow-lg"><LayoutDashboard className="w-5 h-5" /></div>
                    <span className="font-bold text-gray-900 dark:text-white">Admin Panel</span>
@@ -451,7 +450,7 @@ export const SettingsScreen: React.FC = () => {
 
         <section>
           <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 ml-2 tracking-wider">Appearance</h3>
-          <div className="bg-gray-50 dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 divide-y divide-gray-200 dark:divide-gray-800">
+          <div className="glass-panel divide-y divide-gray-200/50 dark:divide-gray-700/50">
              <div className="p-5 flex items-center justify-between">
                <div className="flex items-center gap-4">
                  <div className={`p-2.5 rounded-xl shadow-md ${theme === 'dark' ? 'bg-indigo-900 text-indigo-300' : 'bg-yellow-100 text-yellow-600'}`}>
@@ -542,7 +541,7 @@ export const SettingsScreen: React.FC = () => {
 
         <section>
           <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 ml-2 tracking-wider">Privacy</h3>
-          <div className="bg-gray-50 dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 divide-y divide-gray-200 dark:divide-gray-800">
+          <div className="glass-panel divide-y divide-gray-200/50 dark:divide-gray-700/50">
             <div className="p-5 flex items-center justify-between">
                <div className="flex items-center gap-4">
                  <div className="p-2.5 bg-gray-100 dark:bg-gray-800 rounded-xl text-gray-600 dark:text-gray-300 shadow-md">
@@ -573,8 +572,8 @@ export const SettingsScreen: React.FC = () => {
 
         <section>
           <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 ml-2 tracking-wider">Legal</h3>
-          <div className="bg-gray-50 dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800">
-            <button onClick={() => setShowPrivacyPolicy(true)} className="w-full p-5 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors rounded-3xl">
+          <div className="glass-panel">
+            <button onClick={() => setShowPrivacyPolicy(true)} className="w-full p-5 flex items-center justify-between hover:bg-black/5 dark:hover:bg-white/5 transition-colors rounded-3xl">
                <div className="flex items-center gap-4">
                  <div className="p-2.5 bg-green-100 dark:bg-green-900/50 rounded-xl text-green-600 dark:text-green-300 shadow-md"><Shield className="w-5 h-5" /></div>
                  <span className="font-bold text-gray-900 dark:text-white text-sm">Privacy Policy</span>
@@ -586,8 +585,8 @@ export const SettingsScreen: React.FC = () => {
 
         <section>
           <h3 className="text-xs font-bold text-red-500/70 uppercase mb-3 ml-2 tracking-wider">Danger Zone</h3>
-          <div className="bg-gray-50 dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 divide-y divide-gray-200 dark:divide-gray-800">
-            <button onClick={() => setShowDeactivateModal(true)} className="w-full p-5 flex items-center justify-between text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 first:rounded-t-3xl last:rounded-b-3xl">
+          <div className="glass-panel divide-y divide-gray-200/50 dark:divide-gray-700/50">
+            <button onClick={() => setShowDeactivateModal(true)} className="w-full p-5 flex items-center justify-between text-gray-500 hover:bg-black/5 dark:hover:bg-white/5 first:rounded-t-3xl last:rounded-b-3xl">
                <div className="flex items-center gap-4">
                  <div className="p-2.5 bg-gray-200 dark:bg-gray-800 rounded-xl"><Power className="w-5 h-5" /></div>
                  <span className="font-bold">Deactivate</span>
@@ -605,7 +604,7 @@ export const SettingsScreen: React.FC = () => {
         <div className="flex gap-4 pb-8">
             <button 
               onClick={() => openSwitchAccountModal(true)}
-              className="flex-1 py-4 flex flex-col items-center justify-center rounded-[2rem] border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors shadow-sm active:scale-95 group"
+              className="flex-1 py-4 flex flex-col items-center justify-center rounded-[2rem] glass-panel hover:bg-white/40 dark:hover:bg-white/10 transition-colors shadow-sm active:scale-95 group"
             >
                <div className="p-2.5 bg-blue-100 dark:bg-blue-900/30 rounded-full mb-2 text-blue-600 dark:text-blue-400">
                   <Users className="w-5 h-5" />
@@ -615,7 +614,7 @@ export const SettingsScreen: React.FC = () => {
 
             <button 
               onClick={handleLogout}
-              className="flex-[2] py-4 flex items-center justify-between px-6 rounded-[2rem] border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors shadow-sm active:scale-95 group"
+              className="flex-[2] py-4 flex items-center justify-between px-6 rounded-[2rem] glass-panel hover:bg-white/40 dark:hover:bg-white/10 transition-colors shadow-sm active:scale-95 group"
             >
                <span className="text-lg font-bold text-gray-800 dark:text-white">Log Out</span>
                <div className="p-2 bg-white dark:bg-black rounded-full group-hover:translate-x-1 transition-transform border border-gray-200 dark:border-gray-700">

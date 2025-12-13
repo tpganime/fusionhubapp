@@ -23,6 +23,7 @@ interface AppContextType {
   animationSpeed: AnimationSpeed;
   enableLiquid: boolean;
   glassOpacity: number;
+  enableHaptics: boolean;
   showPermissionPrompt: boolean;
   notificationPermission: NotificationPermission;
   isSwitchAccountModalOpen: boolean;
@@ -54,6 +55,8 @@ interface AppContextType {
   setAnimationSpeed: (speed: AnimationSpeed) => void;
   toggleLiquid: () => void;
   setGlassOpacity: (opacity: number) => void;
+  toggleHaptics: () => void;
+  triggerHaptic: () => void;
   markConversationAsRead: (senderId: string) => void;
   checkIsAdmin: (email: string) => boolean;
   checkIsOwner: (email: string) => boolean;
@@ -75,6 +78,7 @@ const STORAGE_KEYS = {
   ANIM_SPEED: 'fh_anim_speed_v1',
   LIQUID: 'fh_liquid_v1',
   GLASS_OPACITY: 'fh_glass_opacity_v1',
+  HAPTICS: 'fh_haptics_v1',
   CACHE_USERS: 'fh_cache_users_v2', 
   CACHE_MESSAGES: 'fh_cache_messages_v2',
   CACHE_NOTIFICATIONS: 'fh_cache_notifications_v2',
@@ -285,6 +289,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return 0.35;
   });
 
+  const [enableHaptics, setEnableHaptics] = useState(() => {
+      if (typeof window !== 'undefined') {
+          try { return localStorage.getItem(STORAGE_KEYS.HAPTICS) !== 'false'; } catch(e) { return true; }
+      }
+      return true;
+  });
+
   const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
   const [appConfig, setAppConfig] = useState<AppConfig>(DEFAULT_CONFIG);
 
@@ -399,6 +410,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     localStorage.setItem(STORAGE_KEYS.ANIMATIONS, String(enableAnimations));
   }, [enableAnimations]);
 
+  useEffect(() => {
+      localStorage.setItem(STORAGE_KEYS.HAPTICS, String(enableHaptics));
+  }, [enableHaptics]);
+
   // -- OPTIMIZED TIME TRACKING (Strict 12 AM IST Reset) --
   useEffect(() => {
     if (!currentUser) return;
@@ -502,6 +517,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     } catch (e) {}
   };
 
+  const triggerHaptic = () => {
+      if (enableHaptics && navigator.vibrate) {
+          try {
+              navigator.vibrate(15); // Short, sharp vibration
+          } catch (e) {}
+      }
+  };
+
   const playSendSound = () => {
     try {
       const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
@@ -526,6 +549,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const N = window.Notification as any; 
     const hasPermission = "Notification" in window && N.permission === "granted";
     playNotificationSound();
+    triggerHaptic();
 
     if (isHidden && hasPermission) {
       try {
@@ -538,6 +562,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (!("Notification" in window)) return;
     const permission = await window.Notification.requestPermission();
     setNotificationPermission(permission);
+    triggerHaptic();
     if (permission === "granted") {
       playNotificationSound();
       new Notification("Notifications Enabled", { body: "You will now receive alerts!", icon: '/favicon.ico' });
@@ -696,6 +721,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     // Optimistic Update
     setMessages(prev => [...prev, newMsg]);
     playSendSound();
+    triggerHaptic();
     
     const currentCache = JSON.parse(localStorage.getItem(STORAGE_KEYS.CACHE_MESSAGES) || '[]');
     localStorage.setItem(STORAGE_KEYS.CACHE_MESSAGES, JSON.stringify([...currentCache, newMsg]));
@@ -740,6 +766,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const sendFriendRequest = async (targetUserId: string) => {
     if (!currentUser) return;
+    triggerHaptic();
     
     try {
         setUsers(prev => prev.map(u => {
@@ -775,6 +802,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const acceptFriendRequest = async (requesterId: string) => {
     if (!currentUser) return;
+    triggerHaptic();
     const myNewFriends = [...currentUser.friends, requesterId];
     const myNewRequests = currentUser.requests.filter(r => r !== requesterId);
     
@@ -793,6 +821,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const unfriend = async (targetUserId: string) => {
       if (!currentUser) return;
+      triggerHaptic();
       
       const myNewFriends = currentUser.friends.filter(id => id !== targetUserId);
       setCurrentUser(prev => prev ? ({ ...prev, friends: myNewFriends }) : null);
@@ -813,6 +842,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const blockUser = async (targetUserId: string) => {
       if (!currentUser) return;
+      triggerHaptic();
       const newBlocked = [...currentUser.blockedUsers, targetUserId];
       
       // Also unfriend if friends
@@ -825,6 +855,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const unblockUser = async (targetUserId: string) => {
       if (!currentUser) return;
+      triggerHaptic();
       const newBlocked = currentUser.blockedUsers.filter(id => id !== targetUserId);
       await updateProfile({ ...currentUser, blockedUsers: newBlocked });
   };
@@ -867,16 +898,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
-  const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  const toggleTheme = () => {
+      triggerHaptic();
+      setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
   
   // Restricted toggles
   const toggleAnimations = () => {
+      triggerHaptic();
       if (currentUser && !currentUser.isPremium) return;
       setEnableAnimations(prev => !prev);
   };
-  const toggleLiquid = () => setEnableLiquid(prev => !prev);
+  const toggleLiquid = () => {
+      triggerHaptic();
+      setEnableLiquid(prev => !prev);
+  };
+  const toggleHaptics = () => {
+      // Allow disabling even if logic says enable, so force a vibrate to confirm change
+      if (!enableHaptics && navigator.vibrate) navigator.vibrate(20);
+      setEnableHaptics(prev => !prev);
+  };
   
-  const openSwitchAccountModal = (isOpen: boolean) => setIsSwitchAccountModalOpen(isOpen);
+  const openSwitchAccountModal = (isOpen: boolean) => {
+      if(isOpen) triggerHaptic();
+      setIsSwitchAccountModalOpen(isOpen);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -974,6 +1020,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           const senderName = sender ? sender.username : 'Someone';
           
           playNotificationSound();
+          triggerHaptic();
           const notif: AppNotification = { 
               id: Date.now().toString(), 
               type: 'message', 
@@ -991,6 +1038,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
            const sender = usersRef.current.find(u => u.id === newMsg.senderId);
            const senderName = sender?.username || "Admin";
            playNotificationSound();
+           triggerHaptic();
            const notif: AppNotification = { id: Date.now().toString(), type: 'system', content: `📢 ${senderName}: ${newMsg.content}`, read: false, timestamp: Date.now(), data: {} };
            setNotifications(prev => [notif, ...prev]);
            triggerNotification(`Announcement from ${senderName}`, newMsg.content);
@@ -1062,6 +1110,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                          if (prev.some(n => n.id === notifId)) return prev;
                          
                          playNotificationSound();
+                         triggerHaptic();
                          const notif: AppNotification = {
                            id: notifId,
                            type: 'friend_request',
@@ -1108,11 +1157,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   return (
     <AppContext.Provider value={{
-      currentUser, users, messages, notifications, knownAccounts, theme, isLoading, enableAnimations, animationSpeed, enableLiquid, glassOpacity, showPermissionPrompt, notificationPermission, isSwitchAccountModalOpen,
+      currentUser, users, messages, notifications, knownAccounts, theme, isLoading, enableAnimations, animationSpeed, enableLiquid, glassOpacity, enableHaptics, showPermissionPrompt, notificationPermission, isSwitchAccountModalOpen,
       appConfig, isAdmin, isOwner, onlineUsers, typingStatus,
       login, loginWithCredentials, logout, switchAccount, removeKnownAccount, signup, updateProfile, deleteAccount, deactivateAccount,
       sendMessage, sendTypingSignal, broadcastMessage, sendFriendRequest, acceptFriendRequest, unfriend, blockUser, unblockUser, markNotificationRead,
-      toggleTheme, toggleAnimations, setAnimationSpeed, toggleLiquid, setGlassOpacity, markConversationAsRead, checkIsAdmin, checkIsOwner, checkIsOnline, enableNotifications, closePermissionPrompt, updateAppConfig, getTimeSpent, getWeeklyStats, openSwitchAccountModal
+      toggleTheme, toggleAnimations, setAnimationSpeed, toggleLiquid, setGlassOpacity, toggleHaptics, triggerHaptic, markConversationAsRead, checkIsAdmin, checkIsOwner, checkIsOnline, enableNotifications, closePermissionPrompt, updateAppConfig, getTimeSpent, getWeeklyStats, openSwitchAccountModal
     }}>
       {children}
     </AppContext.Provider>

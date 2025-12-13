@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lock, Trash2, Power, ChevronRight, Moon, Sun, Zap, LayoutDashboard, Bell, Droplets, Sliders, ArrowRight as ArrowRightIcon, Users, Shield, MessageCircle, AlertTriangle, Copy, Gauge, Crown, Upload, CheckCircle2, ScanLine, XCircle, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Lock, Trash2, Power, ChevronRight, Moon, Sun, Zap, LayoutDashboard, Bell, Droplets, Sliders, ArrowRight as ArrowRightIcon, Users, Shield, MessageCircle, AlertTriangle, Copy, Gauge, Crown, Upload, CheckCircle2, ScanLine, XCircle, ExternalLink, Vibration } from 'lucide-react';
 import { PRIVACY_POLICY_TEXT } from '../constants';
 import { LiquidSlider } from '../components/LiquidSlider';
 import { LiquidToggle } from '../components/LiquidToggle';
@@ -50,7 +50,7 @@ const compressImageForAI = (file: File): Promise<string> => {
 };
 
 export const SettingsScreen: React.FC = () => {
-  const { currentUser, updateProfile, logout, switchAccount, removeKnownAccount, knownAccounts, deleteAccount, deactivateAccount, theme, toggleTheme, enableAnimations, toggleAnimations, animationSpeed, setAnimationSpeed, enableLiquid, toggleLiquid, glassOpacity, setGlassOpacity, isAdmin, enableNotifications, notificationPermission, openSwitchAccountModal } = useApp();
+  const { currentUser, updateProfile, logout, switchAccount, removeKnownAccount, knownAccounts, deleteAccount, deactivateAccount, theme, toggleTheme, enableAnimations, toggleAnimations, animationSpeed, setAnimationSpeed, enableLiquid, toggleLiquid, glassOpacity, setGlassOpacity, enableHaptics, toggleHaptics, triggerHaptic, isAdmin, enableNotifications, notificationPermission, openSwitchAccountModal } = useApp();
   const navigate = useNavigate();
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
   
@@ -85,22 +85,28 @@ export const SettingsScreen: React.FC = () => {
   const transparencyValue = Math.round((1.0 - glassOpacity) * 100);
   const handleTransparencyChange = (val: number) => {
       if (!isPremium) return;
+      // Invert Logic: Slider 100% = 0.0 Opacity (Transparent)
+      // Slider 0% = 1.0 Opacity (Solid)
       let newOpacity = 1.0 - (val / 100.0);
       if (val >= 98) newOpacity = 0; 
+      if (val <= 2) newOpacity = 1;
       setGlassOpacity(newOpacity);
   };
 
   const handleAnimationSpeedChange = (speed: 'fast' | 'balanced' | 'relaxed') => {
+      triggerHaptic();
       if (!isPremium) return;
       setAnimationSpeed(speed);
   };
 
   const togglePrivateProfile = async () => {
+    triggerHaptic();
     if (!currentUser) return;
     await updateProfile({ ...currentUser, isPrivateProfile: !currentUser.isPrivateProfile });
   };
 
   const toggleAllowMessages = async () => {
+    triggerHaptic();
     if (!currentUser) return;
     await updateProfile({ ...currentUser, allowPrivateChat: !currentUser.allowPrivateChat });
   };
@@ -119,6 +125,7 @@ export const SettingsScreen: React.FC = () => {
   };
 
   const openUpiLink = () => {
+      triggerHaptic();
       const upiUrl = generateUpiUrl();
       // Most reliable way for Android
       window.location.href = upiUrl;
@@ -202,21 +209,25 @@ export const SettingsScreen: React.FC = () => {
                           const success = await updateProfile({ ...currentUser, isPremium: true, premiumExpiry: expiry });
                           if (success) {
                               setPaymentStep('success');
+                              triggerHaptic();
                           } else {
                               setFailReason("Database Error: Run 'Database Fixer' in Admin Panel.");
                               setPaymentStep('failed');
+                              triggerHaptic();
                           }
                       }
                   }, 1000);
               } else {
                   setFailReason(result.reason || "Could not verify payment amount or success status.");
                   setPaymentStep('failed');
+                  triggerHaptic();
               }
 
           } catch (error: any) {
               console.error("Scan Error:", error);
               setFailReason("Scan failed. Please upload a clear screenshot.");
               setPaymentStep('failed');
+              triggerHaptic();
           }
       }
   };
@@ -460,7 +471,7 @@ export const SettingsScreen: React.FC = () => {
             </div>
             
             {enableLiquid && (
-               <div className={`p-5 animate-slide-up ${!isPremium ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
+               <div className={`p-5 animate-slide-up ${!isPremium ? 'opacity-50 grayscale' : ''}`}>
                    <div className="flex items-center gap-4 mb-3">
                        <div className="p-2.5 bg-gray-100 dark:bg-gray-800 rounded-xl text-gray-600 dark:text-gray-300 shadow-md"><Sliders className="w-5 h-5" /></div>
                        <div className="flex flex-col flex-1">
@@ -473,9 +484,21 @@ export const SettingsScreen: React.FC = () => {
                           </span>
                        </div>
                    </div>
-                   <div><LiquidSlider value={transparencyValue} onChange={handleTransparencyChange} /></div>
+                   <div className={!isPremium ? 'pointer-events-none' : ''}>
+                      <LiquidSlider value={transparencyValue} onChange={handleTransparencyChange} />
+                   </div>
                </div>
             )}
+
+            <div className="p-5 flex items-center justify-between">
+               <div className="flex items-center gap-4">
+                 <div className="p-2.5 bg-purple-100 dark:bg-purple-900/50 rounded-xl text-purple-600 dark:text-purple-300 shadow-md"><Vibration className="w-5 h-5" /></div>
+                 <div className="flex flex-col">
+                     <span className="font-bold text-gray-900 dark:text-white text-sm">Haptic Feedback</span>
+                 </div>
+               </div>
+               <div><LiquidToggle checked={enableHaptics} onChange={toggleHaptics} /></div>
+            </div>
 
             <div className={`p-5 flex items-center justify-between ${!isPremium ? 'opacity-50 pointer-events-none' : ''}`}>
                <div className="flex items-center gap-4">

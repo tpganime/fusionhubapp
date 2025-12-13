@@ -7,7 +7,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Notification } from '../types';
 
 export const TopBar: React.FC = () => {
-  const { currentUser, notifications, acceptFriendRequest, markNotificationRead, checkIsAdmin, checkIsOwner, enableAnimations } = useApp();
+  const { currentUser, notifications, acceptFriendRequest, markNotificationRead, checkIsAdmin, checkIsOwner, enableAnimations, triggerHaptic } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
   const [showNotifs, setShowNotifs] = useState(false);
@@ -15,16 +15,33 @@ export const TopBar: React.FC = () => {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const handleAccept = (requesterId: string, notifId: string) => {
+    triggerHaptic();
     acceptFriendRequest(requesterId);
     markNotificationRead(notifId);
   };
 
   const handleNotificationClick = (n: Notification) => {
+    triggerHaptic();
     if (n.type === 'message' && n.data?.targetUser) {
       navigate(`/chat?uid=${n.data.targetUser.id}`);
       setShowNotifs(false);
       markNotificationRead(n.id);
     }
+  };
+  
+  const toggleNotifications = () => {
+      triggerHaptic();
+      setShowNotifs(!showNotifs);
+  };
+  
+  const goToSettings = () => {
+      triggerHaptic();
+      navigate('/settings');
+  };
+  
+  const goToProfile = () => {
+      triggerHaptic();
+      navigate('/profile');
   };
 
   const isOwnerUser = currentUser ? checkIsOwner(currentUser.email) : false;
@@ -46,7 +63,7 @@ export const TopBar: React.FC = () => {
           
           {/* Notifications */}
           <div className="relative">
-            <button onClick={() => setShowNotifs(!showNotifs)} className="p-2.5 rounded-full hover:bg-white/40 dark:hover:bg-white/10 transition-all relative active:scale-95">
+            <button onClick={toggleNotifications} className="p-2.5 rounded-full hover:bg-white/40 dark:hover:bg-white/10 transition-all relative active:scale-95">
               <Bell className="w-5 h-5 text-gray-700 dark:text-gray-200" />
               {unreadCount > 0 && (
                 <span className="absolute top-1.5 right-1.5 w-3.5 h-3.5 bg-red-500 text-white text-[9px] font-bold flex items-center justify-center rounded-full animate-pulse shadow-sm">
@@ -115,11 +132,11 @@ export const TopBar: React.FC = () => {
 
           {/* Profile / Settings Button */}
           {location.pathname === '/profile' ? (
-             <button onClick={() => navigate('/settings')} className="p-2.5 rounded-full hover:bg-white/40 dark:hover:bg-white/10 transition-all active:scale-95">
+             <button onClick={goToSettings} className="p-2.5 rounded-full hover:bg-white/40 dark:hover:bg-white/10 transition-all active:scale-95">
                <Settings className="w-5 h-5 text-gray-700 dark:text-gray-200" />
              </button>
           ) : (
-             <button onClick={() => navigate('/profile')} className="relative group">
+             <button onClick={goToProfile} className="relative group">
                 <div className={`w-10 h-10 rounded-full overflow-hidden border-2 border-white/80 dark:border-white/20 shadow-lg group-hover:scale-105 transition-transform ${enableAnimations ? 'animate-pop-in' : ''} ${isPremiumUser ? 'border-yellow-400 ring-2 ring-yellow-400/30' : ''}`}>
                   {currentUser?.avatar ? (
                     <img src={currentUser.avatar} alt="Profile" className="w-full h-full object-cover" />

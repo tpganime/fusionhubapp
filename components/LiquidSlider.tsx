@@ -1,5 +1,7 @@
 
+
 import React, { useRef, useEffect, useState } from 'react';
+import { useApp } from '../context/AppContext';
 
 interface LiquidSliderProps {
   value: number; // 0 to 100
@@ -10,6 +12,7 @@ export const LiquidSlider: React.FC<LiquidSliderProps> = ({ value, onChange }) =
   const sliderRef = useRef<HTMLDivElement>(null);
   const thumbRef = useRef<HTMLDivElement>(null);
   const [isActive, setIsActive] = useState(false);
+  const { triggerHaptic } = useApp();
 
   // Calculate percentage for initial render and updates
   const percentage = Math.min(100, Math.max(0, value));
@@ -20,17 +23,25 @@ export const LiquidSlider: React.FC<LiquidSliderProps> = ({ value, onChange }) =
     const offsetX = clientX - rect.left;
     let percent = (offsetX / rect.width) * 100;
     percent = Math.max(0, Math.min(100, percent));
+    
+    // Trigger haptics only on significant changes (every 5%) to avoid vibration spam
+    if (Math.round(percent) % 5 === 0 && Math.round(percent) !== Math.round(value)) {
+        triggerHaptic();
+    }
+    
     onChange(Math.round(percent));
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsActive(true);
     handleMove(e.clientX);
+    triggerHaptic();
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setIsActive(true);
     handleMove(e.touches[0].clientX);
+    triggerHaptic();
   };
 
   useEffect(() => {

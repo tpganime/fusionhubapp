@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { Home, MessageCircle, Search, User } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -7,7 +8,7 @@ import { useApp } from '../context/AppContext';
 export const BottomNav: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { openSwitchAccountModal } = useApp();
+  const { openSwitchAccountModal, triggerHaptic } = useApp();
 
   // Hide BottomNav when in an active chat conversation
   // This prevents the input field from being covered by the nav bar on mobile
@@ -28,11 +29,13 @@ export const BottomNav: React.FC = () => {
   const currentIndex = activeIndex === -1 ? 0 : activeIndex;
 
   const handleTabClick = (tab: typeof tabs[0]) => {
+      triggerHaptic();
       navigate(tab.path);
   };
 
   const handleDoubleClick = (tabId: string) => {
       if (tabId === 'profile') {
+          triggerHaptic();
           openSwitchAccountModal(true);
       }
   };
